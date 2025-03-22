@@ -1,0 +1,21 @@
+{% load static %} #carga archivos staticos de manera correcta
+
+<div class="Header">
+    <div class="CntHeader logo-left">
+        <!-- Usando la etiqueta static para cargar la imagen -->
+        <img src="{% static 'image/logo_polibanz.png' %}" alt="Logo PoliBAnz" style="width:75px;height:75px;">
+    </div>
+    <div class="CntHeader text-center">
+        <h1 class="header-text">
+            <p>|POLICÍA</p>
+            <p>|BOLIVARIANA</p>
+            <p>|DEL</p>
+            <p>|ESTADO</p>
+            <p>|ANZOÁTEGUI</p>
+        </h1>
+    </div>
+    <div class="CntHeader logo-right">
+        <!-- Usando la etiqueta static para cargar la imagen -->
+        <img src="{% static 'image/MinRIntPaz.png' %}" alt="Logo MinRInteriorPaz" style="width:75px;height:75px;">
+    </div>
+</div>

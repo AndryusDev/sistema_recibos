@@ -1,0 +1,35 @@
+# Ignorar entorno virtual
+venv/
+env/
+
+# Ignorar archivos Python compilados
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+
+# Ignorar variables de entorno y configuraciones sensibles
+.env
+.env.*
+
+# Ignorar bases de datos SQLite
+db.sqlite3
+*.sqlite3
+
+# Ignorar logs y archivos de backup
+*.log
+*.bak
+
+# Ignorar caché de Django
+/staticfiles/
+/media/
+
+# Ignorar configuraciones de IDEs y editores
+.vscode/
+.idea/
+*.swp
+
+# Ignorar archivos del sistema operativo
+.DS_Store
+Thumbs.db
+

@@ -1,0 +1,72 @@
+
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión</title>
+    <script src="{% static 'javascript/common.js' %}" defer></script>
+    <script src="{% static 'javascript/login.js' %}" defer></script> 
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}">
+    <!-- <link rel="stylesheet" href="/css/all.min.css"> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  </head>
+  <body>
+    <header>
+      {% include 'header.html' %}
+    </header>
+    <main class="container">
+      <div class="left-section">
+        <div class="form-container">
+          <h2>Iniciar Sesión</h2>
+          <form id="loginForm" method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="CodIdentPsna">Número de Cédula:</label>
+              <div class="input-group">
+                <select id="prefix" name="prefix" class="prefix" aria-label="Prefijo de cédula">
+                  <option value="V" {% if prefix == 'V' %}selected{% endif %}>V</option>
+                  <option value="E" {% if prefix == 'E' %}selected{% endif %}>E</option>
+                  <option value="P" {% if prefix == 'P' %}selected{% endif %}>P</option>
+                </select>
+                <input type="text" id="CodIdentPsna" name="CodIdentPsna" placeholder="Ej: 99.999.999" value="{{ id_number }}" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label id="LblUsername" for="username">Nombre de usuario:</label>
+              <input type="text" id="username" name="username" disabled required>
+            </div>
+            <div class="form-group">
+              <label id="LblPassword" for="password">Contraseña:</label>
+              <div class="input-group">
+                <input type="password" id="password" name="password" disabled required>
+                <span id="togglePassword" class="fa fa-eye" aria-label="Mostrar/Ocultar contraseña" disabled></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <button type="button" id="loginButton" onclick="AutenticarUsuario()" disabled>Ingresar al sistema</button>
+            </div>
+            <div id="error-message" style="color: red;"></div>
+          </form>
+          <div class="form-links">
+            
+          </div>
+        </div>
+      </div>
+      <div class="right-section">
+        <img src="{% static 'image/fondo_login.jpg' %}" alt="Imagen de fondo">
+      </div>
+    </main>
+    <footer class="FooterWeb">
+      {% include "footer.html" %}
+    </footer>
+    <!--<script>
+      window.enableFields = {{ enable_fields_json | safe }};
+    </script> -->
+  </body>
+</html>
+
+
