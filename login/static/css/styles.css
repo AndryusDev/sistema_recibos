@@ -207,6 +207,25 @@ button:disabled {
     padding: 20px;
 }
 
+/*ESTILOS DIEGO*/
+.formulario {
+    display: flex;
+}
+
+.formulario__imagen img {
+    width: 40vw;
+}
+
+.formulario__contenedor {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    width: 100%;
+    background-color: #f2f2f2;
+}
+/*ESTILOS DIEGO*/
+
 /* Consultas de medios para mejorar la responsividad */
 @media (max-width: 768px) {
     .container {
