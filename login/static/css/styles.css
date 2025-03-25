@@ -1,3 +1,10 @@
+/* Reset General */
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
@@ -15,6 +22,11 @@ body {
     align-items: center;
     padding: 10px;
     box-sizing: border-box;
+}
+
+.header-text p {
+    margin: 0;
+    line-height: 1; /* Ajusta el valor según necesites */
 }
 
 .CntHeader {
@@ -217,12 +229,12 @@ button:disabled {
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 5px 7px rgba(0, 0, 0, 0.2);
-    margin: 40px auto;
+    margin: 50px auto;
 }
 
   /* Imagen Ajustada */
 .formulario__imagen {
-    width: 40%;
+    width: 55%;
     overflow: hidden;
 }
 
@@ -255,6 +267,22 @@ button:disabled {
     gap: 20px;
 }
 
+.formulario__prefijo {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Espaciado entre el prefijo y el input */
+}
+
+.formulario__prefijo select {
+    width: auto;
+    padding: 12px;
+    border-radius: 10px;
+    border: 3px solid #ccc;
+    background-color: #fff;
+    font-size: 1rem;
+    appearance: none; /* Elimina el estilo por defecto del navegador */
+}
+
   /* Estilos Generales para Inputs y Labels */
 .formulario__contenido label {
     width: 100%;
@@ -280,17 +308,26 @@ button:disabled {
 
   /* Ajustes para Botones */
 .formulario__boton {
-    background-color: #545461;
+    background-color: #1E2A39;
     color: #fff;
     border: none;
     padding: 12px 24px;
-    border-radius: 20px;
+    border-radius: 12px;
     cursor: pointer;
     font-size: 1rem;
 }
 
 .formulario__boton:hover {
-    background-color: #1f1fd6;
+    background-color: #0574ff;
+}
+
+.formulario__texto a {
+    color: #1E2A39;  /* Color del texto */
+    text-decoration: none;  /* Eliminar el subrayado */
+}
+
+.formulario__texto {
+    margin-top: 15px;  /* Ajusta el valor según lo necesites */
 }
 
   /* Responsivo */
