@@ -9,3 +9,6 @@ def login(request):
 
 def crear_cuenta(request):
     return render(request, 'crear_cuenta.html')
+
+def recuperar_contraseña(request):
+    return render(request, 'recuperar_contraseña.html')

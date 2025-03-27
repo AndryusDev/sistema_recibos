@@ -12,6 +12,7 @@ body {
     flex-direction: column;
     min-height: 100vh;
     margin: 0;
+
 }
 
 /* Estilos para la cabecera */
@@ -67,7 +68,7 @@ body {
     margin-top: auto;
     padding: 10px;
     text-align: right;
-    margin-top: 50px;
+    /*margin-top: 50px;*/ 
 }
 
 /* Estilos para el contenedor principal */
@@ -232,6 +233,7 @@ button:disabled {
     overflow: hidden;
     box-shadow: 0 5px 7px rgba(0, 0, 0, 0.2);
     margin: auto auto;
+    margin-bottom: 50px;
 }
 
   /* Imagen Ajustada */

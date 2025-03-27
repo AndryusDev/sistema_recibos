@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="{% static 'javascript/common.js' %}" defer></script>
+    <script src="{% static 'javascript/login.js' %}" defer></script> 
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}">
+    <title>Recuperar Contraseña</title>
+</head>
+<body>
+    <header>
+    {% include 'header.html' %}
+    </header>
+    <main class="container">
+        <section class="card">
+            <h2>Recuperar Contraseña</h2>
+            <p>Ingrese su cédula o usuario para recuperar su contraseña.</p>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="cedula">Cédula o Usuario:</label>
+                    <input type="text" name="cedula" id="cedula" required>
+                </div>
+                <button type="submit" class="btn">Continuar</button>
+            </form>
+        </section>
+    </main>
+    <footer class="FooterWeb">
+    {% include "footer.html" %}
+    </footer>
+    <!--<script>
+    window.enableFields = {{ enable_fields_json | safe }};
+    </script> -->
+</body>
+</html>
