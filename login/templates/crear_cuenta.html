@@ -21,86 +21,91 @@
             <div>
                 <h1>Gestión de Cuenta</h1>
                 <div class="formulario__contenedor__barraprogreso">
-                    <div class="step active">
-                        <span class="number">1</span>
-                        <span class="text">Autenticación</span>
+                    <div class="step active" id="step1" onclick="goToStep(1)">
+                        <div class="number">1</div>
+                        <div class="label">Verificación de Usuario</div>
                     </div>
-                    <div class="step">
-                        <span class="number">2</span>
-                        <span class="text">información</span>
+                    <div class="line"></div>
+                    <div class="step" id="step2" onclick="goToStep(2)">
+                        <div class="number">2</div>
+                        <div class="label">Crear Cuenta</div>
                     </div>
-                    <div class="step">
-                        <span class="number">3</span>
-                        <span class="text">Preguntas de Seguridad</span>
+                    <div class="line"></div>
+                    <div class="step" id="step3" onclick="goToStep(3)">
+                        <div class="number">3</div>
+                        <div class="label">Preguntas de Seguridad</div>
                     </div>
                 </div>
             </div>
-            <h2 class="formulario__titulo">Crear Cuenta</h2>
-            <form class="formulario__contenido">
+            <div class="formulario__contenedor__contenido">
+                <form class="fomulario__contenido1" id="formulario1">
+                                <!--Seccion de la cedula-->
+                    <div class="formulario__cedula">
+                        <label for="">Número de Cédula:</label>
 
-                
-                <!--Seccion de la cedula-->
-                <div class="formulario__cedula">
-                    <label for="">Número de Cédula:</label>
-
-                    <div class="formulario__prefijo">
-                        <!--Selector de prefijo-->
-                        <select id="prefijo" name="prefijo" class="prefijo" aria-label="Prefijo de cédula">
-                        <option value="V" {% if prefix == 'V' %}selected{% endif %}>V</option>
-                        <option value="E" {% if prefix == 'E' %}selected{% endif %}>E</option>
-                        <option value="P" {% if prefix == 'P' %}selected{% endif %}>P</option>
-                        </select>
-                        <input class="formulario__input" type="text" id="formulario_cedula" name="formulario_cedula" placeholder="Ej: 99.999.999" value="{{ id_number }}"required>
+                        <div class="formulario__prefijo">
+                            <!--Selector de prefijo-->
+                            <select id="prefijo" name="prefijo" class="prefijo" aria-label="Prefijo de cédula">
+                            <option value="V" {% if prefix == 'V' %}selected{% endif %}>V</option>
+                            <option value="E" {% if prefix == 'E' %}selected{% endif %}>E</option>
+                            <option value="P" {% if prefix == 'P' %}selected{% endif %}>P</option>
+                            </select>
+                            <input class="formulario__input" type="text" id="formulario_cedula" name="formulario_cedula" placeholder="Ej: 99.999.999" value="{{ id_number }}"required>
+                        </div>
                     </div>
-                </div>
+                    <button type="button" onclick="nextStep()">Siguiente</button>
+                </form>
+                <form class="formulario__contenido">
 
-                <!--Seccion de primer nombre-->
-                <div class="formulario__contenido__nombre">
-                    <label class="formulario__label" for="primer_nombre">Primer Nombre</label>
-                    <input class="formulario__input" type="text" name="primer_nombre" id="primer_nombre" required>
-                </div>
+                    <h2 class="formulario__titulo">Crear Cuenta</h2>
+                
+                    <!--Seccion de primer nombre-->
+                    <div class="formulario__contenido__nombre">
+                        <label class="formulario__label" for="primer_nombre">Primer Nombre</label>
+                        <input class="formulario__input" type="text" name="primer_nombre" id="primer_nombre" required>
+                    </div>
 
-                <!--Seccion de primer apellido-->
-                <div class="formulario__contenido__apellido">
-                    <label class="formulario__label" for="primer_apellido">Primer Apellido</label>
-                    <input class="formulario__input" type="text" name="primer_apellido" id="primer_apellido" required>
-                </div>
-                <!--Seccion de segundo nombre-->
-                <div class="formulario__contenido__nombre2">
-                    <label class="formulario__label" for="segundo_nombre">Segundo Nombre</label>
-                    <input class="formulario__input" type="text" name="segundo_nombre" id="segundo_nombre" required>
-                </div>
+                    <!--Seccion de primer apellido-->
+                    <div class="formulario__contenido__apellido">
+                        <label class="formulario__label" for="primer_apellido">Primer Apellido</label>
+                        <input class="formulario__input" type="text" name="primer_apellido" id="primer_apellido" required>
+                    </div>
+                    <!--Seccion de segundo nombre-->
+                    <div class="formulario__contenido__nombre2">
+                        <label class="formulario__label" for="segundo_nombre">Segundo Nombre</label>
+                        <input class="formulario__input" type="text" name="segundo_nombre" id="segundo_nombre" required>
+                    </div>
 
-                <!--Seccion de segundo apellido-->
-                <div class="formulario__contenido__apellido2">
-                    <label class="formulario__label" for="segundo_apellido">Segundo Apellido</label>
-                    <input class="formulario__input" type="text" name="segundo_apellido" id="segundo_apellido" required>
-                </div>
+                    <!--Seccion de segundo apellido-->
+                    <div class="formulario__contenido__apellido2">
+                        <label class="formulario__label" for="segundo_apellido">Segundo Apellido</label>
+                        <input class="formulario__input" type="text" name="segundo_apellido" id="segundo_apellido" required>
+                    </div>
 
-                <!--Seccion de correo-->
-                <div>
-                    <label class="formulario__contenido__correo" for="correo">Correo Electronico</label>
-                    <input class="formulario__input" type="email" name="correo" id="correo" required>
-                </div>
+                    <!--Seccion de correo-->
+                    <div>
+                        <label class="formulario__contenido__correo" for="correo">Correo Electronico</label>
+                        <input class="formulario__input" type="email" name="correo" id="correo" required>
+                    </div>
 
-                <!--Seccion de contraseña-->
-                <div class="formulario__contenido__confirmarcontraseña">
-                    <label class="formulario__label" for="constraseña">Contraseña</label>
-                    <input class="formulario__input" type="password" name="contraseña" id="contraseña" required>
-                </div>
+                    <!--Seccion de contraseña-->
+                    <div class="formulario__contenido__confirmarcontraseña">
+                        <label class="formulario__label" for="constraseña">Contraseña</label>
+                        <input class="formulario__input" type="password" name="contraseña" id="contraseña" required>
+                    </div>
 
-                <!--Seccion de  Confirmar Contraseña-->
-                <div class="formulario__contenido__confirmarcontraseña">
-                    <label class="formulario__label" for="confirmar_constraseña"> Confirmar Contraseña</label>
-                    <input class="formulario__input" type="password" name="confirmar_contraseña" id="confirmar_contraseña" required>
-                </div>
+                    <!--Seccion de  Confirmar Contraseña-->
+                    <div class="formulario__contenido__confirmarcontraseña">
+                        <label class="formulario__label" for="confirmar_constraseña"> Confirmar Contraseña</label>
+                        <input class="formulario__input" type="password" name="confirmar_contraseña" id="confirmar_contraseña" required>
+                    </div>
 
-                <!--Boton para crear cuenta-->
-                <div>
-                    <button class="formulario__boton" type="submit">Crear Cuenta</button>
-                </div>
-            </form>
-
+                    <!--Boton para crear cuenta-->
+                    <div>
+                        <button class="formulario__boton" type="submit">Crear Cuenta</button>
+                    </div>
+                </form>
+            </div>
             <p class="formulario__texto">¿Ya tienes una cuenta? <a href="/login" class="formulario_enlace"> Iniciar Sesión</a></p>
         </div>
     </main>
