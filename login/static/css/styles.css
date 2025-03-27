@@ -262,7 +262,11 @@ button:disabled {
 }
 /* FORMULARIO CONTENIDO 1*/
 .formulario__contenido1 {
-    flex-direction: row;
+    display: flex;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    height: 500px;
 }
 /* Barra de ubicacion de procesos*/
 .formulario__contenedor__barraprogreso {
@@ -311,6 +315,7 @@ button:disabled {
     color: #1E2A39;
     margin-top: 10px;
     margin-bottom: 10px;
+    width: 100%;
 }
 
 .formulario__contenido {
@@ -321,10 +326,8 @@ button:disabled {
 
 .formulario__contenido1 {
     display: flex;
-    flex-direction: row; /* Alinea los elementos en fila */
-    gap: 10px; /* Espacio entre los elementos */
-    align-items: center; /* Alinea los elementos verticalmente al centro */
-    justify-content: flex-start; /* Alinea los elementos a la izquierda */
+    flex-wrap: wrap;
+    gap: 20px;
 }
 
 .formulario__prefijo {
@@ -367,7 +370,7 @@ button:disabled {
 }
 
   /* Ajustes para Botones */
-.formulario__boton {
+.formulario__boton, .button1 {
     background-color: #1E2A39;
     color: #fff;
     border: none;
@@ -377,7 +380,7 @@ button:disabled {
     font-size: 1rem;
 }
 
-.formulario__boton:hover {
+.formulario__boton:hover, .button1:hover {
     background-color: #0574ff;
 }
 
