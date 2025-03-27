@@ -255,6 +255,71 @@ button:disabled {
     justify-content: center;
 }
 
+/* Barra de ubicacion de procesos*/
+.formulario__contenedor__barraprogreso {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px auto;
+    gap: 20px;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #a0aec0;
+}
+
+.step .number {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #a0aec0;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.step.active .number {
+    background-color: #1E90FF; /* Azul vibrante */
+}
+
+.step.active {
+    color: #1E90FF;
+}
+
+.step-text {
+    max-width: 100px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 12px;
+}
+
+.connector {
+    width: 40px;
+    height: 2px;
+    background-color: #a0aec0;
+}
+
+.step.active + .connector {
+    background-color: #1E90FF;
+}
+
+@media (max-width: 400px) {
+    .connector {
+    width: 20px;
+}
+    .step-text {
+    max-width: 80px;
+    }
+}
+
 .formulario__titulo {
     font-size: 1.8rem;
     color: #1E2A39;
