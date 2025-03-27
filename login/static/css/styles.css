@@ -260,14 +260,7 @@ button:disabled {
 .formulario__contenedor__contenido {
     display: flex;
 }
-/* FORMULARIO CONTENIDO 1*/
-.formulario__contenido1 {
-    display: flex;
-    text-align: center;
-    align-items: center;
-    justify-content: center;
-    height: 500px;
-}
+
 /* Barra de ubicacion de procesos*/
 .formulario__contenedor__barraprogreso {
     display: flex;
@@ -310,7 +303,7 @@ button:disabled {
     color: #0056b3;
 }
 
-.formulario__titulo {
+.formulario__titulo, .formulario__titulo1{
     font-size: 1.8rem;
     color: #1E2A39;
     margin-top: 10px;
@@ -322,12 +315,21 @@ button:disabled {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
+    height: 500px;
 }
 
-.formulario__contenido1 {
+/* FORMULARIO CONTENIDO 1*/
+.formulario__contenido__autenticacion {
+    padding: 20px;
     display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
+    flex-direction: column;
+    height: 500px;
+    gap: 50px;
+    align-items: center;
+}
+
+.formulario__contenido__autenticacion h2 {
+    margin-top: 10px;
 }
 
 .formulario__prefijo {
@@ -370,7 +372,7 @@ button:disabled {
 }
 
   /* Ajustes para Botones */
-.formulario__boton, .button1 {
+.formulario__boton, .formulario__boton__autenticacion {
     background-color: #1E2A39;
     color: #fff;
     border: none;
@@ -380,7 +382,7 @@ button:disabled {
     font-size: 1rem;
 }
 
-.formulario__boton:hover, .button1:hover {
+.formulario__boton:hover, .formulario__boton__autenticacion:hover {
     background-color: #0574ff;
 }
 

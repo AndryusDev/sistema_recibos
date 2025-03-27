@@ -38,7 +38,8 @@
             </div>
     
             <div class="formulario__contenedor__contenido">
-                <form class="formulario__contenido1" id="formulario1">
+                <form class="formulario__contenido__autenticacion" id="formulario1">
+                    <h2 class="formulario__titulo1">Autenticación de Usuario</h2>
                     <!-- Sección de la cédula -->
                     <div class="formulario__cedula">
                         <label for="">Número de Cédula:</label>
@@ -51,7 +52,7 @@
                             <input class="formulario__input" type="text" id="formulario_cedula" name="formulario_cedula" placeholder="Ej: 99.999.999" value="{{ id_number }}" required>
                         </div>
                     </div>
-                    <button class="button1" type="button" onclick="nextStep()">Siguiente</button>
+                    <button class="formulario__boton__autenticacion" type="button" onclick="nextStep()">Siguiente</button>
                 </form>
     
                 <form class="formulario__contenido">
