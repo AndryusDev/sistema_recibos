@@ -489,18 +489,17 @@ button:disabled {
 /* Select */
 .formulario__select {
     width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    padding: 12px;
+    border: 3px solid #ccc;
+    border-radius: 10px;
 }
 
 /* Inputs */
 .formulario__input {
     width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 3px solid #ccc;
 }
 
 /* Botones */
@@ -510,5 +509,8 @@ button:disabled {
     margin-top: 15px;
 }
 
+.formulario__contenedor.toggle .formulario__contenedor__contenido {
+    transform: translateX(-105%);
+}
 
 
