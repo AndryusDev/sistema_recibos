@@ -517,11 +517,16 @@ button:disabled {
 
 .formulario__contenedor.toggle .formulario__contenedor__contenido {
     transform: translateX(-105%);
-    transition: transform 0.5s ease-in-out;
+    transition: transform 0.5s ease-in-out; /*importante para mover a la izquierda*/
 }
 
 .formulario__contenedor.toggle-2 .formulario__contenedor__contenido {
     transform: translateX(-213%); /* Mover más a la izquierda */
+    transition: transform 0.5s ease-in-out;
+}
+
+.formulario__contenedor.toggle-3 .formulario__contenedor__contenido {
+    transform: translateX(-105%);
     transition: transform 0.5s ease-in-out;
 }
 
