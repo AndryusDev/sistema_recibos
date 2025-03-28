@@ -265,7 +265,7 @@ button:disabled {
 }
 
 .formulario__contenido__autenticacion,
-.formulario__contenido {
+.formulario__contenido, .formulario__contenido__preguntasseguridad {
     min-width: 105%;
     transition: trasnform 0.5s ease-in-out;
     border: 5px solid red;
@@ -382,7 +382,7 @@ button:disabled {
 }
 
   /* Ajustes para Botones */
-.formulario__boton, .formulario__boton__autenticacion {
+.formulario__boton, .formulario__boton__autenticacion, .boton__anterior, .boton__confirmar {
     background-color: #1E2A39;
     color: #fff;
     border: none;
@@ -392,7 +392,7 @@ button:disabled {
     font-size: 1rem;
 }
 
-.formulario__boton:hover, .formulario__boton__autenticacion:hover {
+.formulario__boton:hover, .formulario__boton__autenticacion:hover, .boton__anterior:hover, .boton__confirmar:hover {
     background-color: #0574ff;
 }
 
@@ -464,5 +464,51 @@ button:disabled {
         margin-bottom: 10px; /* Espacio entre los elementos en pantallas pequeñas */
     }
 }
+/* Contenedor principal */
+.formulario__contenido__preguntasseguridad {
+    background-color: #ffffff;
+    padding: 20px;
+    width: 350px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilos para cada grupo de pregunta */
+.formulario__grupo {
+    margin-bottom: 15px;
+}
+
+/* Etiquetas */
+.formulario__grupo label {
+    display: block;
+    font-size: 14px;
+    color: #003366;
+    margin-bottom: 5px;
+}
+
+/* Select */
+.formulario__select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Inputs */
+.formulario__input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Botones */
+.formulario__botones {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
 
 

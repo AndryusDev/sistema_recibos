@@ -105,6 +105,51 @@
                         <button class="formulario__boton" type="submit">Crear Cuenta</button>
                     </div>
                 </form>
+                <div class="formulario__contenido__preguntasseguridad">
+                    <h2 class="formulario__titulo">Preguntas de Seguridad</h2>
+                    
+                    <!-- Pregunta 1 -->
+                    <div class="formulario__grupo">
+                        <label for="pregunta1">01 Pregunta Seguridad *</label>
+                        <select id="pregunta1" class="formulario__select">
+                            <option value="" disabled selected>Seleccione una pregunta</option>
+                            <option value="mascota">¿Cuál es el nombre de tu primera mascota?</option>
+                            <option value="escuela">¿En qué escuela primaria estudiaste?</option>
+                            <option value="ciudad">¿En qué ciudad naciste?</option>
+                        </select>
+                        <input type="text" id="respuesta1" class="formulario__input" placeholder="Ingrese su respuesta">
+                    </div>
+            
+                    <!-- Pregunta 2 -->
+                    <div class="formulario__grupo">
+                        <label for="pregunta2">02 Pregunta Seguridad *</label>
+                        <select id="pregunta2" class="formulario__select">
+                            <option value="" disabled selected>Seleccione una pregunta</option>
+                            <option value="color">¿Cuál es tu color favorito?</option>
+                            <option value="madre">¿Cuál es el segundo nombre de tu madre?</option>
+                            <option value="deporte">¿Cuál es tu deporte favorito?</option>
+                        </select>
+                        <input type="text" id="respuesta2" class="formulario__input" placeholder="Ingrese su respuesta">
+                    </div>
+            
+                    <!-- Pregunta 3 -->
+                    <div class="formulario__grupo">
+                        <label for="pregunta3">03 Pregunta Seguridad *</label>
+                        <select id="pregunta3" class="formulario__select">
+                            <option value="" disabled selected>Seleccione una pregunta</option>
+                            <option value="pelicula">¿Cuál es tu película favorita?</option>
+                            <option value="amigo">¿Cómo se llama tu mejor amigo de la infancia?</option>
+                            <option value="comida">¿Cuál es tu comida favorita?</option>
+                        </select>
+                        <input type="text" id="respuesta3" class="formulario__input" placeholder="Ingrese su respuesta">
+                    </div>
+            
+                    <!-- Botones -->
+                    <div class="formulario__botones">
+                        <button class="boton__anterior">Anterior</button>
+                        <button class="boton__confirmar">Confirmar</button>
+                    </div>
+                </div>
             </div>
     
             <p class="formulario__texto">¿Ya tienes una cuenta? <a href="/login" class="formulario_enlace"> Iniciar Sesión</a></p>
