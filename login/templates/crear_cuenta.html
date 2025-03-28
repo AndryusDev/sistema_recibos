@@ -102,10 +102,10 @@
     
                     <!-- Botón para crear cuenta -->
                     <div>
-                        <button class="formulario__boton" type="submit">Crear Cuenta</button>
+                        <button id="formulario__boton__crearcuenta" class="formulario__boton__crearcuenta" type="button">Crear Cuenta</button>
                     </div>
                 </form>
-                <div class="formulario__contenido__preguntasseguridad">
+                <form id="formulario__contenido__preguntasseguridad" class="formulario__contenido__preguntasseguridad">
                     <h2 class="formulario__titulo">Preguntas de Seguridad</h2>
                     
                     <!-- Pregunta 1 -->
@@ -149,12 +149,14 @@
                         <button class="boton__anterior">Anterior</button>
                         <button class="boton__confirmar">Confirmar</button>
                     </div>
-                </div>
+                </form>
             </div>
     
             <p class="formulario__texto">¿Ya tienes una cuenta? <a href="/login" class="formulario_enlace"> Iniciar Sesión</a></p>
         </div>
     </main>
+        <!-- Enlace al archivo JavaScript -->
+    <script src="{% static 'javascript/script.js' %}"></script>
     <footer class="FooterWeb">
         {% include 'footer.html' %}
     </footer>
