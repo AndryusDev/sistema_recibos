@@ -294,7 +294,7 @@ button:disabled {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background-color: #007bff;
+    background-color: #ff008c;
     color: white;
     display: flex;
     justify-content: center;
@@ -555,3 +555,4 @@ button:disabled {
     pointer-events: none;  /* Desactiva la interacción */
     opacity: 0.5; /* Cambia la apariencia para mostrar que está deshabilitado */
 }
+

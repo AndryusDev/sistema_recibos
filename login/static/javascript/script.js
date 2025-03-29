@@ -48,77 +48,78 @@ const steps = document.querySelectorAll(".step");
 // Variable para rastrear el paso actual
 let currentStep = 1;
 
+// Conjunto de pasos completados
+let steps_completados = new Set([1]);
+
 // Función para actualizar la barra de progreso
 function updateProgressBar() {
     steps.forEach((step, index) => {
-        if (index + 1 <= currentStep) {
-            step.classList.add("active"); // Activa los pasos completados
+        let stepNumber = index + 1;
+
+        if (steps_completados.has(stepNumber)) {
+            step.classList.add("active");
+            step.classList.remove("disabled");
         } else {
-            step.classList.remove("active"); // Desactiva los pasos siguientes
+            step.classList.remove("active");
+            step.classList.add("disabled");
         }
     });
 }
 
 // Función para cambiar de paso
 function goToStep(stepNumber) {
-    if (stepNumber < 1 || stepNumber > 4) return; // Ajustado para que el paso 4 también esté permitido
+    if (stepNumber < 1 || stepNumber > 4) return;
 
-    currentStep = stepNumber; // Actualiza el paso actual
+    currentStep = stepNumber;
+    steps_completados.add(stepNumber); // Se marca el paso como completado
 
-    // Resetea todas las clases del formulario
-    formularioContenedor.classList.remove("toggle", "toggle-2", "toggle-3", "toggle-4");
+    formulario__contenedor.classList.remove("toggle", "toggle-2", "toggle-3", "toggle-4");
 
-    // Agrega la clase según el paso actual
     if (currentStep === 1) {
-        formularioContenedor.classList.add("toggle-4"); // Muestra "Verificación de Usuario"
+        formulario__contenedor.classList.add("toggle-4");
     } else if (currentStep === 2) {
-        formularioContenedor.classList.add("toggle-3"); // Muestra "Crear Cuenta"
+        formulario__contenedor.classList.add("toggle-3");
     } else if (currentStep === 3) {
-        formularioContenedor.classList.add("toggle-2"); // Muestra "Preguntas de Seguridad"
+        formulario__contenedor.classList.add("toggle-2");
     } else if (currentStep === 4) {
-        formularioContenedor.classList.add("toggle-4"); // Muestra "Confirmación"
+        formulario__contenedor.classList.add("toggle-4");
     }
 
-    // Actualiza la barra de progreso
     updateProgressBar();
 }
 
 // Eventos de botones para avanzar y retroceder
-formularioBotonAutenticacion.addEventListener("click", () => {
+formulario__boton__autenticacion.addEventListener("click", () => {
     if (currentStep === 1) {
-        currentStep = 2; // Se mueve al paso 2
-        goToStep(currentStep);
+        goToStep(2);
     }
 });
 
-formularioBotonCrearCuenta.addEventListener("click", () => {
+formulario__boton__crearcuenta.addEventListener("click", () => {
     if (currentStep === 2) {
-        currentStep = 3; // Se mueve al paso 3
-        goToStep(currentStep);
+        goToStep(3);
     }
 });
 
-botonAnterior.addEventListener("click", () => {
+boton__anterior.addEventListener("click", () => {
     if (currentStep > 1) {
-        currentStep--; // Retrocede un paso
+        currentStep--; // Retrocede un paso sin eliminarlo de steps_completados
         goToStep(currentStep);
     }
 });
 
-botonConfirmar.addEventListener("click", () => {
+boton__confirmar.addEventListener("click", () => {
     if (currentStep < 4) {
-        currentStep++; // Avanza al siguiente paso solo si no es el paso 4
-        goToStep(currentStep);
+        goToStep(currentStep + 1);
     }
 });
 
 // Eventos de la barra de progreso para cambiar de paso
 steps.forEach((step, index) => {
     step.addEventListener("click", () => {
-        // Solo cambia de paso si el paso seleccionado es diferente al actual
-        if (index + 1 !== currentStep) {
-            currentStep = index + 1; // Actualiza la variable currentStep
-            goToStep(currentStep); // Llama a goToStep con el nuevo paso
+        let clickedStep = index + 1;
+        if (steps_completados.has(clickedStep)) {
+            goToStep(clickedStep);
         }
     });
 });
