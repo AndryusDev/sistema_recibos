@@ -226,7 +226,7 @@ button:disabled {
 /* Contenedor Principal */
 .formulario {
     display: flex;
-    max-width: 1000px;
+    max-width: 1200px;
     width: 100%;
     background-color: #fff;
     border-radius: 20px;
@@ -557,6 +557,9 @@ button:disabled {
 .step.disabled {
     pointer-events: none;  /* Desactiva la interacción */
     opacity: 0.5; /* Cambia la apariencia para mostrar que está deshabilitado */
+}
+.step.completed .number {
+    background-color: #0574ff; /* Azul para pasos ya desbloqueados */
 }
 
 

@@ -5,6 +5,7 @@ const boton__confirmar = document.getElementById("boton__confirmar");
 const formulario__contenedor = document.querySelector(".formulario__contenedor");
 
 
+
 /* Funcionalidad de los botones*/
 function resetClases() {
     formulario__contenedor.classList.remove("toggle", "toggle-2", "toggle-3", "toggle-4");
@@ -50,8 +51,8 @@ let currentStep = 1;
 
 // Conjunto de pasos completados
 let steps_completados = new Set([1]);
-
-// Función para actualizar la barra de progreso y cambio de colores
+// steps_completados.has(stepNumber
+// Función para actualizar la barra de progreso
 function updateProgressBar() {
     steps.forEach((step, index) => {
         let stepNumber = index + 1;
