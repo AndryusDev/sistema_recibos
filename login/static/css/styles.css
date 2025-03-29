@@ -529,6 +529,10 @@ button:disabled {
     transform: translateX(-105%);
     transition: transform 0.5s ease-in-out;
 }
+.formulario__contenedor.toggle-4 .formulario__contenedor__contenido {
+    transform: translateX(-5%);
+    transition: transform 0.5s ease-in-out;
+}
 
 .step.active .number {
     background-color: #d41922;
@@ -546,3 +550,8 @@ button:disabled {
     opacity: 0.8;
 }
 
+/*Desactivar barra de procesos no desbloqueados*/
+.step.disabled {
+    pointer-events: none;  /* Desactiva la interacción */
+    opacity: 0.5; /* Cambia la apariencia para mostrar que está deshabilitado */
+}
