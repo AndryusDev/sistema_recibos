@@ -4,6 +4,8 @@ const boton__anterior = document.getElementById("boton__anterior");
 const boton__confirmar = document.getElementById("boton__confirmar");
 const formulario__contenedor = document.querySelector(".formulario__contenedor");
 
+
+/* Funcionalidad de los botones*/
 function resetClases() {
     formulario__contenedor.classList.remove("toggle", "toggle-2", "toggle-3", "toggle-4");
 }
@@ -32,6 +34,7 @@ boton__confirmar.addEventListener("click", () => {
     formulario__contenedor.classList.add("toggle-4");
 });
 
+/* Funcionalidad de la barra de progresos */
 const formularioContenedor = document.querySelector(".formulario__contenedor");
 const steps = document.querySelectorAll(".step");
 
