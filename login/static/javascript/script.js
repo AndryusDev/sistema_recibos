@@ -51,17 +51,23 @@ let currentStep = 1;
 // Conjunto de pasos completados
 let steps_completados = new Set([1]);
 
-// Función para actualizar la barra de progreso
+// Función para actualizar la barra de progreso y cambio de colores
 function updateProgressBar() {
     steps.forEach((step, index) => {
         let stepNumber = index + 1;
 
-        if (steps_completados.has(stepNumber)) {
+        if (stepNumber === currentStep) {
+            // Paso actual en rojo
             step.classList.add("active");
-            step.classList.remove("disabled");
+            step.classList.remove("disabled", "completed");
+        } else if (stepNumber < currentStep) {
+            // Pasos anteriores desbloqueados y en azul
+            step.classList.add("completed");
+            step.classList.remove("active", "disabled");
         } else {
-            step.classList.remove("active");
+            // Pasos futuros siguen bloqueados
             step.classList.add("disabled");
+            step.classList.remove("active", "completed");
         }
     });
 }

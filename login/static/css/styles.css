@@ -230,7 +230,7 @@ button:disabled {
     width: 100%;
     background-color: #fff;
     border-radius: 20px;
-    /*overflow: hidden;*/
+    overflow: hidden;
     box-shadow: 0 5px 7px rgba(0, 0, 0, 0.2);
     margin: auto auto;
     margin-bottom: 50px;
@@ -257,6 +257,7 @@ button:disabled {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    overflow: hidden;
 }
 
 .formulario__contenedor__contenido {
@@ -269,12 +270,12 @@ button:disabled {
 .formulario__contenido {
     min-width: 105%;
     transition: trasnform 0.5s ease-in-out;
-    border: 5px solid red;
+    /*border: 5px solid red;*/
 }
 .formulario__contenido__preguntasseguridad {
     min-width: 105%;
     transition: trasnform 0.5s ease-in-out;
-    border: 5px solid red;
+    /*border: 5px solid red;*/
 }
 
 /* Barra de ubicacion de procesos*/
@@ -294,7 +295,7 @@ button:disabled {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background-color: #ff008c;
+    background-color: #007bff;
     color: white;
     display: flex;
     justify-content: center;
@@ -384,11 +385,11 @@ button:disabled {
 .formulario__contenido__apellido2,
 .formulario__contenido__contraseña,
 .formulario__contenido__confirmarcontraseña {
-    width: calc(50% - 10px);
+    width: calc(50% - 15px);
 }
 
   /* Ajustes para Botones */
-.formulario__boton__crearcuenta, .formulario__boton__autenticacion, .boton__anterior, .boton__confirmar {
+.formulario__boton__crearcuenta, .formulario__boton__autenticacion, .boton__anterior, .boton__confirmar, .formulario__boton__crearcuenta__anterior {
     background-color: #1E2A39;
     color: #fff;
     border: none;
@@ -398,7 +399,7 @@ button:disabled {
     font-size: 1rem;
 }
 
-.formulario__boton__crearcuenta:hover, .formulario__boton__autenticacion:hover, .boton__anterior:hover, .boton__confirmar:hover {
+.formulario__boton__crearcuenta:hover, .formulario__boton__autenticacion:hover, .boton__anterior:hover, .boton__confirmar:hover, .formulario__boton__crearcuenta__anterior:hover {
     background-color: #0574ff;
 }
 
@@ -474,9 +475,7 @@ button:disabled {
 .formulario__contenido__preguntasseguridad {
     background-color: #ffffff;
     padding: 10px;
-
     border-radius: 8px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Estilos para cada grupo de pregunta */
@@ -509,10 +508,14 @@ button:disabled {
 }
 
 /* Botones */
-.formulario__botones {
+.formulario__botones, .formulario__botones__crearcuenta {
     display: flex;
+    width: 100%;
     justify-content: space-between;
     margin-top: 15px;
+}
+.formulario__botones__crearcuenta {
+    margin-right : 10px;
 }
 
 .formulario__contenedor.toggle .formulario__contenedor__contenido {
@@ -526,11 +529,11 @@ button:disabled {
 }
 
 .formulario__contenedor.toggle-3 .formulario__contenedor__contenido {
-    transform: translateX(-105%);
+    transform: translateX(-107%);
     transition: transform 0.5s ease-in-out;
 }
 .formulario__contenedor.toggle-4 .formulario__contenedor__contenido {
-    transform: translateX(-5%);
+    transform: translateX(0%);
     transition: transform 0.5s ease-in-out;
 }
 
@@ -541,7 +544,7 @@ button:disabled {
 }
 
 /* Asegura que los pasos no se distorsionen */
-.step {
+.step, .number {
     cursor: pointer;
     transition: 0.3s;
 }
@@ -555,4 +558,5 @@ button:disabled {
     pointer-events: none;  /* Desactiva la interacción */
     opacity: 0.5; /* Cambia la apariencia para mostrar que está deshabilitado */
 }
+
 
