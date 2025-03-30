@@ -2,6 +2,7 @@ const formulario__boton__autenticacion = document.getElementById("formulario__bo
 const formulario__boton__crearcuenta = document.getElementById("formulario__boton__crearcuenta");
 const boton__anterior = document.getElementById("boton__anterior");
 const boton__confirmar = document.getElementById("boton__confirmar");
+const formulario__boton__crearcuenta__anterior = document.getElementById("formulario__boton__crearcuenta__anterior");
 const formulario__contenedor = document.querySelector(".formulario__contenedor");
 
 
@@ -70,6 +71,9 @@ function updateProgressBar() {
             step.classList.add("disabled");
             step.classList.remove("active", "completed");
         }
+        if (steps_completados.has(stepNumber)) {
+            step.classList.remove("disabled");
+        }
     });
 }
 
@@ -118,6 +122,12 @@ boton__anterior.addEventListener("click", () => {
 boton__confirmar.addEventListener("click", () => {
     if (currentStep < 4) {
         goToStep(currentStep + 1);
+    }
+});
+formulario__boton__crearcuenta__anterior.addEventListener("click", () => {
+    if (currentStep > 1) {
+        currentStep--; // Retrocede un paso
+        goToStep(currentStep);
     }
 });
 
