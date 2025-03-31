@@ -14,19 +14,89 @@
     <header>
     {% include 'header.html' %}
     </header>
-    <main class="container">
-        <section class="card">
-            <h2>Recuperar Contraseña</h2>
-            <p>Ingrese su cédula o usuario para recuperar su contraseña.</p>
-            <form method="POST">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="cedula">Cédula o Usuario:</label>
-                    <input type="text" name="cedula" id="cedula" required>
+    <main class="contenedor__recuperarcontraseña">
+        <div class="contendor__recuperarcontraseña__contenido">
+            <div>
+                <h1>Recuperar Contraseña</h1>
+                <div class="formulario__contenedor__barraprogreso">
+                    <div class="step active" id="step1" onclick="goToStep(1)">
+                        <div class="number">1</div>
+                        <div class="label">Validación de Usuario</div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="step" id="step2" onclick="goToStep(2)">
+                        <div class="number">2</div>
+                        <div class="label">Preguntas de Seguridad</div>
+                    </div>
+                    <div class="line"></div>
+                    <div class="step" id="step3" onclick="goToStep(3)">
+                        <div class="number">3</div>
+                        <div class="label">Cambiar Contraseña</div>
+                    </div>
                 </div>
-                <button type="submit" class="btn">Continuar</button>
-            </form>
-        </section>
+            </div>
+            <div class="contenedor__recuperarcontraseña__contenido__panel">
+                <form class="contenedor__recuperarcontraseña__contenido__panel__certificacion" id="contenedor1">
+                    <h2 class="contenedor__recuperarcontraseña__contenido__panel__certificaciontitulo">Certificar Usuario</h2>
+                    <!-- Sección de la cédula -->
+                    <div class="formulario__contenido__cedula__recuperarcontraseña">
+                        <label for="">Número de Cédula:</label>
+                        <div class="formulario__prefijo__recuperarcontraseña">
+                            <select id="prefijo__recuperarcontraseña" name="prefijo__recuperarcontraseña" class="prefijo__recuperarcontraseña" aria-label="Prefijo de cédula">
+                                <option value="V" {% if prefix == 'V' %}selected{% endif %}>V</option>
+                                <option value="E" {% if prefix == 'E' %}selected{% endif %}>E</option>
+                                <option value="P" {% if prefix == 'P' %}selected{% endif %}>P</option>
+                            </select>
+                            <input class="formulario__input" type="text" id="contenedor_cedula" name="contenedor_cedula" placeholder="Ej: 99.999.999" value="{{ id_number }}" required>
+                        </div>
+                    </div>
+                    <button id="contenedor__boton__verificacion" class="contenedor__boton__verificacion" type="button" onclick="nextStep()  ">Certificar</button>
+                </form>
+    
+                <form class="contenedor__recuperarcontraseña__contenido__panel__respuestapreguntas">
+                    <h2 class="contenedor__recuperarcontraseña__contenido__panel__preguntastitulo">Responde las preguntas de seguridad</h2>
+
+                    <!-- Sección de Responder preguntas de seguridad -->
+                        <!-- Preguntas dinámicas -->
+                    <div class="contenedor__repuestasdeprerguntas">
+                        <label class="formulario__label" id="pregunta1">hola como estas</label>
+                        <input class="contenido__input__respuestapeguntas" type="text" id="respuesta1" placeholder="Tu respuesta">
+                    </div>
+
+                    <div class="contenedor__repuestasdeprerguntas">
+                        <label class="formulario__label" id="pregunta2">Como te a ido</label>
+                        <input class="contenido__input__respuestapeguntas" type="text" id="respuesta2" placeholder="Tu respuesta">
+                    </div>
+                    <!-- Botón para crear cuenta -->
+                    <div class="formulario__botones__crearcuenta">
+                        <button id="formulario__boton__crearcuenta__anterior" class="formulario__boton__crearcuenta__anterior" type="button">Anterior</button>
+                        <button id="formulario__boton__crearcuenta" class="formulario__boton__crearcuenta" type="button">Crear Cuenta</button>
+                    </div>
+                </form>
+                <form id="contenedor__recuperarcontraseña__contenido__panel__cambiarcontraseña" class="contenedor__recuperarcontraseña__contenido__panel__cambiarcontraseña">
+                    
+                        <h2 class="contenedor__recuperarcontraseña__contenido__panel__cambiarcontraseñatitulo">Cambiar Contraseña</h2>
+                        <div class="contenedor__cambiarcontraseña">
+                            <label for="nueva_contraseña">Nueva Contraseña:</label>
+                            <input class="formulario__input" type="password" id="nueva_contraseña" placeholder="Ingrese nueva     contraseña">
+                        </div>
+                    
+                        <div class="contenedor__cambiarcontraseña">
+                            <label for="confirmar_contraseña">Confirmar Contraseña:</label>
+                            <input class="formulario__input" type="password" id="confirmar_contraseña" placeholder="Confirme nueva contraseña">
+                        </div>
+                        <!-- Botones -->
+                    <div class="formulario__botones__cambiarcontraseña">
+                        <button id="boton__anterior__cambiarcontraseña" class="boton__anterior__cambiarcontraseña" type="button">Anterior</button>
+                        <button id="boton__cambiarcontraseña" class="boton__cambiarcontraseña" type="button">Cambiar Contraseña</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="contenedor__recuperarcontraseña__imagen">
+            <img src="{% static 'image/imagen_recuperarcontraseña.jpg' %}">
+
+        </div>
     </main>
     <footer class="FooterWeb">
     {% include "footer.html" %}
