@@ -251,13 +251,13 @@ button:disabled {
 }
 
   /* Formulario Contenedor */
-.formulario__contenedor,.contendor__recuperarcontraseña__contenido {
+.formulario__contenedor,.contenedor__recuperarcontraseña__contenido {
     width: 50%;
     padding: 20px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    /*overflow: hidden;*/
+    overflow: hidden;
 }
 .contenedor__repuestasdeprerguntas, .contenedor__cambiarcontraseña{
     width: 100%;
@@ -277,28 +277,28 @@ button:disabled {
 .formulario__contenido, .contenedor__recuperarcontraseña__contenido__panel__certificacion, .contenedor__recuperarcontraseña__contenido__panel__respuestapreguntas, .contenedor__recuperarcontraseña__contenido__panel__cambiarcontraseña {
     min-width: 105%;
     transition: trasnform 0.5s ease-in-out;
-    border: 5px solid red;
+    /*border: 5px solid red;*/
 }
 .formulario__contenido__preguntasseguridad, .contenedor__recuperarcontraseña__contenido__panel__respuestapreguntas{
     min-width: 105%;
     transition: trasnform 0.5s ease-in-out;
-    border: 5px solid red;
+    /*border: 5px solid red;*/
 }
 
 /* Barra de ubicacion de procesos*/
-.formulario__contenedor__barraprogreso {
+.formulario__contenedor__barraprogreso, .formulario__contenedor__barraprogreso__cambiarcontraseña {
     display: flex;
     align-items: center;
     margin-bottom: 10px;
     margin-top: 10px;
 }
-.step {
+.step, .cambiarcontraseña_step {
     display: flex;
     flex-direction: column;
     align-items: center;
     cursor: pointer;
 }
-.number {
+.number, .cambiarcontraseña_number {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -309,20 +309,20 @@ button:disabled {
     align-items: center;
     font-size: 18px;
 }
-.label {
+.label, .cambiarcontraseña_label {
     margin-top: 8px;
     font-size: 14px;
     color: #333;
 }
-.line {
+.line, .cambiarcontraseña_line {
     width: 80px;
     height: 4px;
     background-color: rgba(0, 0, 0, 0.12);
 }
-.active .number {
+.active .number, .active .cambiarcontraseña_number {
     background-color: #0056b3;
 }
-.active .label {
+.active .label, .active .cambiarcontraseña_label {
     font-weight: bold;
     color: #0056b3;
 }
@@ -534,17 +534,17 @@ button:disabled {
 }
 
 .formulario__contenedor.toggle .formulario__contenedor__contenido {
-    transform: translateX(-105%);
+    transform: translateX(0%);
     transition: transform 0.5s ease-in-out; /*importante para mover a la izquierda*/
 }
 
 .formulario__contenedor.toggle-2 .formulario__contenedor__contenido {
-    transform: translateX(-213%); /* Mover más a la izquierda */
+    transform: translateX(-105%); /* Mover más a la izquierda */
     transition: transform 0.5s ease-in-out;
 }
 
 .formulario__contenedor.toggle-3 .formulario__contenedor__contenido {
-    transform: translateX(-107%);
+    transform: translateX(-213%);
     transition: transform 0.5s ease-in-out;
 }
 .formulario__contenedor.toggle-4 .formulario__contenedor__contenido {
@@ -552,30 +552,44 @@ button:disabled {
     transition: transform 0.5s ease-in-out;
 }
 
-.step.active .number {
+.step.active .number,
+.cambiarcontraseña_step.active .cambiarcontraseña_number {
     background-color: #d41922;
     color: white;
     font-weight: bold;
 }
 
 /* Asegura que los pasos no se distorsionen */
-.step, .number {
+.step, .number, .cambiarcontraseña_step, .cambiarcontraseña_number {
     cursor: pointer;
     transition: 0.3s;
 }
 
-.step:hover {
+.step:hover, .cambiarcontraseña_step:hover {
     opacity: 0.8;
 }
 
 /*Desactivar barra de procesos no desbloqueados*/
-.step.disabled {
+.step.disabled, .cambiarcontraseña_step.disabled {
     pointer-events: none;  /* Desactiva la interacción */
     opacity: 0.5; /* Cambia la apariencia para mostrar que está deshabilitado */
 }
-.step.completed .number {
+.step.completed .number, .cambiarcontraseña_step.completed .cambiarcontraseña_number {
     background-color: #0574ff; /* Azul para pasos ya desbloqueados */
 }
 
-
 /*formulario recuperar cuenta*/
+/* Animación para mover el panel */
+.contenedor__recuperarcontraseña__contenido.toggle .contenedor__recuperarcontraseña__contenido__panel {
+    transform: translateX(0%);
+}
+
+/* Panel 2: Preguntas de seguridad */
+.contenedor__recuperarcontraseña__contenido.toggle-2 .contenedor__recuperarcontraseña__contenido__panel {
+    transform: translateX(-105%);
+}
+
+/* Panel 3: Cambiar contraseña */
+.contenedor__recuperarcontraseña__contenido.toggle-3 .contenedor__recuperarcontraseña__contenido__panel {
+    transform: translateX(-210%);
+}

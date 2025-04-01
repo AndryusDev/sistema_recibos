@@ -87,11 +87,11 @@ function goToStep(stepNumber) {
     formulario__contenedor.classList.remove("toggle", "toggle-2", "toggle-3", "toggle-4");
 
     if (currentStep === 1) {
-        formulario__contenedor.classList.add("toggle-4");
+        formulario__contenedor.classList.add("toggle");
     } else if (currentStep === 2) {
-        formulario__contenedor.classList.add("toggle-3");
-    } else if (currentStep === 3) {
         formulario__contenedor.classList.add("toggle-2");
+    } else if (currentStep === 3) {
+        formulario__contenedor.classList.add("toggle-3");
     } else if (currentStep === 4) {
         formulario__contenedor.classList.add("toggle-4");
     }

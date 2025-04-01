@@ -4,10 +4,7 @@
     {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="{% static 'javascript/common.js' %}" defer></script>
-    <script src="{% static 'javascript/login.js' %}" defer></script> 
     <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}">
     <title>Recuperar Contraseña</title>
 </head>
 <body>
@@ -15,23 +12,23 @@
     {% include 'header.html' %}
     </header>
     <main class="contenedor__recuperarcontraseña">
-        <div class="contendor__recuperarcontraseña__contenido">
+        <div class="contenedor__recuperarcontraseña__contenido">
             <div>
                 <h1>Recuperar Contraseña</h1>
-                <div class="formulario__contenedor__barraprogreso">
-                    <div class="step active" id="step1" onclick="goToStep(1)">
-                        <div class="number">1</div>
-                        <div class="label">Validación de Usuario</div>
+                <div class="formulario__contenedor__barraprogreso__cambiarcontraseña">
+                    <div class="cambiarcontraseña_step active" id="cambiarcontraseña_step1" onclick="goToStep__camb(1)">
+                        <div class="cambiarcontraseña_number">1</div>
+                        <div class="cambiarcontraseña_label">Validación de Usuario</div>
                     </div>
-                    <div class="line"></div>
-                    <div class="step" id="step2" onclick="goToStep(2)">
-                        <div class="number">2</div>
-                        <div class="label">Preguntas de Seguridad</div>
+                    <div class="cambiarcontraseña_line"></div>
+                    <div class="cambiarcontraseña_step" id="cambiarcontraseña_step2" onclick="goToStep__camb(2)">
+                        <div class="cambiarcontraseña_number">2</div>
+                        <div class="cambiarcontraseña_label">Preguntas de Seguridad</div>
                     </div>
-                    <div class="line"></div>
-                    <div class="step" id="step3" onclick="goToStep(3)">
-                        <div class="number">3</div>
-                        <div class="label">Cambiar Contraseña</div>
+                    <div class="cambiarcontraseña_line"></div>
+                    <div class="cambiarcontraseña_step" id="cambiarcontraseña_step3" onclick="goToStep__camb(3)">
+                        <div class="cambiarcontraseña_number">3</div>
+                        <div class="cambiarcontraseña_label">Cambiar Contraseña</div>
                     </div>
                 </div>
             </div>
@@ -50,7 +47,7 @@
                             <input class="formulario__input" type="text" id="contenedor_cedula" name="contenedor_cedula" placeholder="Ej: 99.999.999" value="{{ id_number }}" required>
                         </div>
                     </div>
-                    <button id="contenedor__boton__verificacion" class="contenedor__boton__verificacion" type="button" onclick="nextStep()  ">Certificar</button>
+                    <button id="contenedor__boton__verificacion" class="contenedor__boton__verificacion" type="button" onclick="nextStep()">Certificar</button>
                 </form>
     
                 <form class="contenedor__recuperarcontraseña__contenido__panel__respuestapreguntas">
@@ -69,12 +66,12 @@
                     </div>
                     <!-- Botón para crear cuenta -->
                     <div class="formulario__botones__crearcuenta">
-                        <button id="formulario__boton__crearcuenta__anterior" class="formulario__boton__crearcuenta__anterior" type="button">Anterior</button>
-                        <button id="formulario__boton__crearcuenta" class="formulario__boton__crearcuenta" type="button">Crear Cuenta</button>
+                        <button id="formulario__boton__preguntas__anterior" class="formulario__boton__crearcuenta__anterior" type="button">Anterior</button>
+                        <button id="formulario__boton__preguntas" class="formulario__boton__crearcuenta" type="button">Aceptar</button>
                     </div>
                 </form>
                 <form id="contenedor__recuperarcontraseña__contenido__panel__cambiarcontraseña" class="contenedor__recuperarcontraseña__contenido__panel__cambiarcontraseña">
-                    
+
                         <h2 class="contenedor__recuperarcontraseña__contenido__panel__cambiarcontraseñatitulo">Cambiar Contraseña</h2>
                         <div class="contenedor__cambiarcontraseña">
                             <label for="nueva_contraseña">Nueva Contraseña:</label>
@@ -98,6 +95,8 @@
 
         </div>
     </main>
+    <!-- Enlace al archivo JavaScript -->
+    <script src="{% static 'javascript/recuperar_contraseña.js' %}"></script>
     <footer class="FooterWeb">
     {% include "footer.html" %}
     </footer>
