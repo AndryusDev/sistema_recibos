@@ -151,8 +151,9 @@ body {
 }
 
 .form-group label {
-    display: block;
+    display: block;    
     margin-bottom: 5px;
+    width: 100%;
 }
 
 .form-group input, .form-group select, .form-group button {

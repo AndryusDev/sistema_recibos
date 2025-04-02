@@ -25,14 +25,13 @@
           <form id="loginForm" method="POST" action="{% url 'login' %}">
             {% csrf_token %}
             <div class="form-group">
-              <label id="LblUsername" for="username">Nombre de usuario:</label>
-              <input type="text" id="username" name="username" disabled required>
+              <label id="LblUsername" for="username">Correo Electronico:</label>
+              <input type="email" id="username" name="username" required>
             </div>
             <div class="form-group">
               <label id="LblPassword" for="password">Contraseña:</label>
               <div class="input-group">
-                <input type="password" id="password" name="password" disabled required>
-                <span id="togglePassword" class="fa fa-eye" aria-label="Mostrar/Ocultar contraseña" disabled></span>
+                <input type="password" id="password" name="password" required>
               </div>
             </div>
             <div class="form-group">
