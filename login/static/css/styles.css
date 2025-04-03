@@ -603,6 +603,7 @@ button:disabled {
     transform: translateX(-210%);
 }
 
+/* ANIMACION DE RECUPERAR_CONTRASEÑA Y CREAR CUENTA*/
 .formulario__imagen, .contenedor__recuperarcontraseña__contenido {
     animation: slideInLeft 0.8s ease-out 0.2s both;
 }
