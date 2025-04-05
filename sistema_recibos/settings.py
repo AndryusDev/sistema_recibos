@@ -55,11 +55,10 @@ REST_FRAMEWORK = {
 
 # Observacion: Quitar algunos
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
-    'SLIDING_TOKEN_LIFETIME': timedelta(days=30),
-    'SLIDING_TOKEN_REFRESH_LIFETIME_LATE_USER': timedelta(days=1),
-    'SLIDING_TOKEN_LIFETIME_LATE_USER': timedelta(days=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Token expira en 1 hora
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # Token de refresco expira en 1 día
+    'ROTATE_REFRESH_TOKENS': True,                   # Genera un nuevo token al refrescar
+    'BLACKLIST_AFTER_ROTATION': True,                # Invalida el token anterior
 }
 
 MIDDLEWARE = [
