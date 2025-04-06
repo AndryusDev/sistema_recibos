@@ -51,15 +51,15 @@ class usuario(models.Model):
         db_table = 'usuarios'
     
     def set_password(self, raw_password):
-        """Hashea la contraseña"""
-        self.contraseña_hash = make_password(raw_password)
-    
+        """Guardar contraseña sin hash (solo para pruebas)"""
+        self.contraseña_hash = raw_password  # ← No la está cifrando
+
     def check_password(self, raw_password):
-        """Verifica la contraseña"""
-        return check_password(raw_password, self.contraseña_hash)
-    
+        """Comparación directa de contraseña (solo para pruebas)"""
+        return self.contraseña_hash == raw_password  # ← Comparación directa
+
     def __str__(self):
-        return f"{self.email} ({self.empleado_cedula})"
+        return f"{self.email} ({self.empleado})"
     
 
 class usuario_rol(models.Model):

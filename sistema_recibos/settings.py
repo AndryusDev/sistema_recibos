@@ -50,7 +50,11 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'django.contrib.auth.backends.ModelBackend',
     ),
+    'AUTHENTICATION_BACKENDS' : (
+    'django.contrib.auth.backends.ModelBackend',  # Backend por defecto
+)
 }
 
 # Observacion: Quitar algunos
