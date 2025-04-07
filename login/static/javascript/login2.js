@@ -23,7 +23,7 @@ function AutenticarUsuario(event) {
             localStorage.setItem('access_token', data.access);
             localStorage.setItem('refresh_token', data.refresh);  // Opcional
             console.log("Token guardado:", data.access);  // Verifica en consola
-            window.location.href = '/dashboard/';
+            window.location.href = '/crear_cuenta/';
         } else {
             console.error("El servidor no devolvió un token");
         }
