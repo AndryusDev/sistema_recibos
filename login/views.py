@@ -34,19 +34,21 @@ from rest_framework.permissions import AllowAny
 
 class CustomLoginView(APIView):
     permission_classes = [AllowAny]
+    
+    def get(self, request):
+        return render(request, 'login.html')
 
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
+        print("Correo recibido:", email)
 
-        User = get_user_model()
         try:
             user = usuario.objects.get(email=email)
-
-        except User.DoesNotExist:
+        except usuario.DoesNotExist:
             return Response({"error": "Email no registrado"}, status=HTTP_400_BAD_REQUEST)
 
-        if user.check_password(password):  # o simplemente user.contraseña_hash == password si no estás usando hash
+        if user.check_password(password):
             refresh = RefreshToken.for_user(user)
             return Response({
                 "access": str(refresh.access_token),
