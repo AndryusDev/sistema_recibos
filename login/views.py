@@ -34,6 +34,7 @@ from rest_framework.permissions import AllowAny
 
 class CustomLoginView(APIView):
     permission_classes = [AllowAny]
+    http_method_names = ['post', 'get']
     
     def get(self, request):
         return render(request, 'login.html')
@@ -42,6 +43,7 @@ class CustomLoginView(APIView):
         email = request.data.get("email")
         password = request.data.get("password")
         print("Correo recibido:", email)
+        print("Datos recibidos en backend:", email, password)  # Verificación
 
         try:
             user = usuario.objects.get(email=email)

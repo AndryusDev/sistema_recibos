@@ -7,32 +7,26 @@ function AutenticarUsuario(event) {
     };
 
     console.log("Enviando:", formData);  // Verifica en consola del navegador (F12)
-
+    console.log("Datos enviados al backend:", formData);  // Verificación antes del fetch()
+    
     fetch('/login/', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',  // ¡Este es crítico!
-            'X-CSRFToken': 'tu-csrf-token',     // Solo necesario si usas CSRF
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            email: "correo@ejemplo.com",        // Asegúrate que sea "email" (no "username")
-            password: "tucontraseña"
-        }),
+        body: JSON.stringify({ email, password }),
     })
-    .then(response => {
-        console.log("Respuesta recibida:", response);  // Depuración
-        if (!response.ok) {
-            return response.json().then(err => { throw err; });
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        localStorage.setItem('access_token', data.access);
-        window.location.href = '/dashboard/';
+        if (data.access) {
+            // Guarda el token en Local Storage
+            localStorage.setItem('access_token', data.access);
+            localStorage.setItem('refresh_token', data.refresh);  // Opcional
+            console.log("Token guardado:", data.access);  // Verifica en consola
+            window.location.href = '/dashboard/';
+        } else {
+            console.error("El servidor no devolvió un token");
+        }
     })
-    .catch(error => {
-        console.error("Error completo:", error);
-        document.getElementById('error-message').textContent = 
-            error.error || "Error al iniciar sesión";
-    });
+    .catch(error => console.error("Error:", error));
 }
