@@ -21,18 +21,50 @@ def crear_cuenta(request):
 def recuperar_contraseña(request):
     return render(request, 'recuperar_contraseña.html')
 
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-
-from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 
-class CustomLoginView(APIView):
+from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from .models import empleado  # Asume que tienes un modelo Empleado
+
+
+from .models import empleado  # Asegúrate de importar tu modelo User
+
+from .models import empleado, usuario  # Importa tu modelo usuario actual
+
+def verificar_empleado(request):
+    if request.method == 'POST':
+        cedula = request.POST.get('formulario_cedula', None)
+
+        try:
+            # Busca al empleado
+            empleado_instance = empleado.objects.get(cedula=cedula)
+            
+            # Verifica si tiene usuario asociado (usando tu modelo actual)
+            tiene_usuario = usuario.objects.filter(empleado=empleado_instance).exists()
+            
+            request.session['empleado_cedula'] = empleado_instance.cedula
+            return JsonResponse({
+                'status': 'success',
+                'tiene_usuario': tiene_usuario,
+                'message': 'Empleado verificado correctamente'
+            })
+            
+        except empleado.DoesNotExist:
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'No eres empleado registrado'
+            }, status=400)
+    
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+"""class CustomLoginView(APIView):
     permission_classes = [AllowAny]
     http_method_names = ['post', 'get']
     
@@ -57,4 +89,4 @@ class CustomLoginView(APIView):
                 "refresh": str(refresh),
             }, status=HTTP_200_OK)
         else:
-            return Response({"error": "Contraseña incorrecta"}, status=HTTP_400_BAD_REQUEST)
+            return Response({"error": "Contraseña incorrecta"}, status=HTTP_400_BAD_REQUEST)"""

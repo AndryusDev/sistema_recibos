@@ -24,6 +24,12 @@ class pregunta_seguridad(models.Model):
         return self.pregunta[:50] + "..." if len(self.pregunta) > 50 else self.pregunta
 
 class empleado(models.Model):
+    TIPO_IDENTIFICACION = [
+        ('V', 'Venezolano'),
+        ('E', 'Extranjero'),
+        ('P', 'Pasaporte'),
+    ]
+    tipo_identificacion = models.CharField(max_length=1, choices=TIPO_IDENTIFICACION)
     cedula = models.CharField(max_length=20, primary_key=True)
     primer_nombre = models.CharField(max_length=50)
     primer_apellido = models.CharField(max_length=50)

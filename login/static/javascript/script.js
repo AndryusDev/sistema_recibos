@@ -100,11 +100,51 @@ function goToStep(stepNumber) {
 }
 
 // Eventos de botones para avanzar y retroceder
-formulario__boton__autenticacion.addEventListener("click", () => {
-    if (currentStep === 1) {
-        goToStep(2);
+formulario__boton__autenticacion.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const cedula = document.getElementById("formulario_cedula").value;
+    const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+    try {
+        const response = await fetch("/verificar_empleado/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `formulario_cedula=${encodeURIComponent(cedula)}`,
+        });
+
+        if (!response.ok) throw new Error("Error en la petición: " + response.status);
+
+        const data = await response.json();
+
+        if (data.status === "success") {
+            // Mensaje personalizado según si tiene usuario o no
+            const mensaje = data.tiene_usuario 
+                ? "✅ Empleado verificado (ya tiene cuenta)"
+                : "✅ Empleado verificado (no tiene cuenta)";
+            
+            alert(mensaje);
+            
+            // Solo avanzar si NO tiene usuario
+            if (!data.tiene_usuario) {
+                goToStep(2);
+            }
+            
+            // Opcional: puedes guardar esta info para usarla después
+            sessionStorage.setItem('tiene_usuario', data.tiene_usuario);
+            
+        } else {
+            alert("❌ " + (data.message || "Error en la verificación"));
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("⚠ Error al conectar con el servidor");
     }
 });
+
 
 formulario__boton__crearcuenta.addEventListener("click", () => {
     if (currentStep === 2) {
