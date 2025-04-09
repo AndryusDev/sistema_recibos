@@ -130,6 +130,23 @@ formulario__boton__autenticacion.addEventListener("click", async (e) => {
             
             // Solo avanzar si NO tiene usuario
             if (!data.tiene_usuario) {
+                // Llenar los campos de nombres y apellidos
+                const nombres = `${data.empleado.primer_nombre} ${data.empleado.segundo_nombre}`.trim();
+                const apellidos = `${data.empleado.primer_apellido} ${data.empleado.segundo_apellido}`.trim();
+
+                // Asignar los nombres y apellidos a los campos correspondientes
+                document.getElementById("input_nombres").value = data.empleado.primer_nombre;
+                document.getElementById("input_apellidos").value = data.empleado.primer_apellido;
+                document.getElementById('segundo_nombre').value = data.empleado.segundo_nombre;
+                document.getElementById('segundo_apellido').value = data.empleado.segundo_apellido;
+
+                // Deshabilitar los campos
+                document.getElementById("input_nombres").disabled = true;
+                document.getElementById("input_apellidos").disabled = true;
+                document.getElementById("segundo_nombre").disabled = true;
+                document.getElementById("segundo_apellido").disabled = true;
+
+                // Avanzar al segundo panel
                 goToStep(2);
             }
             
@@ -137,6 +154,7 @@ formulario__boton__autenticacion.addEventListener("click", async (e) => {
             sessionStorage.setItem('tiene_usuario', data.tiene_usuario);
             
         } else {
+            // Manejo de errores
             alert("❌ " + (data.message || "Error en la verificación"));
         }
     } catch (error) {

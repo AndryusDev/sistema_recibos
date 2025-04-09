@@ -34,34 +34,56 @@ from .models import empleado  # Asume que tienes un modelo Empleado
 
 
 from .models import empleado  # Asegúrate de importar tu modelo User
-
 from .models import empleado, usuario  # Importa tu modelo usuario actual
+
+
+
+from django.http import JsonResponse
+from .models import empleado, usuario  # Asegúrate de que estos modelos estén importados
 
 def verificar_empleado(request):
     if request.method == 'POST':
-        cedula = request.POST.get('formulario_cedula', None)
+        cedula = request.POST.get('formulario_cedula', '').strip()
 
         try:
-            # Busca al empleado
-            empleado_instance = empleado.objects.get(cedula=cedula)
-            
-            # Verifica si tiene usuario asociado (usando tu modelo actual)
+            empleado_instance = empleado.objects.get(cedula__iexact=cedula)
             tiene_usuario = usuario.objects.filter(empleado=empleado_instance).exists()
-            
-            request.session['empleado_cedula'] = empleado_instance.cedula
+
+            empleado_data = {
+                'primer_nombre': empleado_instance.primer_nombre,
+                'segundo_nombre': empleado_instance.segundo_nombre or '',
+                'primer_apellido': empleado_instance.primer_apellido,
+                'segundo_apellido': empleado_instance.segundo_apellido or '',
+                'tiene_usuario': tiene_usuario
+            }
+
             return JsonResponse({
                 'status': 'success',
                 'tiene_usuario': tiene_usuario,
+                'empleado': empleado_data,
                 'message': 'Empleado verificado correctamente'
             })
-            
+
         except empleado.DoesNotExist:
             return JsonResponse({
-                'status': 'error', 
+                'status': 'error',
                 'message': 'No eres empleado registrado'
-            }, status=400)
-    
-    return JsonResponse({'status': 'error'}, status=400)
+            }, status=404)
+
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Error interno del servidor'
+            }, status=500)
+
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Método no permitido'
+    }, status=405)
+
+def crear_cuenta_empleado(request):
+    if request.method == "POST":
+        print(request.post)
 
 
 """class CustomLoginView(APIView):
