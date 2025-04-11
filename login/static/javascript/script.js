@@ -164,10 +164,62 @@ formulario__boton__autenticacion.addEventListener("click", async (e) => {
 });
 
 
-formulario__boton__crearcuenta.addEventListener("click", () => {
-    if (currentStep === 2) {
-        goToStep(3);
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("form-crear-cuenta");
+    const errorMessageContainer = document.getElementById("error_messages");
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Validar formato de cédula (solo números)
+    function validarCedula(cedula) {
+        return /^\d+$/.test(cedula);
     }
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorMessageContainer.innerHTML = "";
+        
+        const formData = {
+            cedula: document.getElementById("cedula").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            contraseña: document.getElementById("contraseña").value,
+            confirmar_contraseña: document.getElementById("confirmar_contraseña").value
+        };
+
+        // Validación frontend
+        if (!validarCedula(formData.cedula)) {
+            errorMessageContainer.innerHTML = "<p>La cédula debe contener solo números</p>";
+            return;
+        }
+
+        try {
+            const response = await fetch('/crear_cuenta_empleado/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Error en el servidor');
+            }
+
+            if (data.status === 'success') {
+                window.location.href = '/preguntas_seguridad/';
+            } else {
+                errorMessageContainer.innerHTML = `<p>${data.message}</p>`;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            errorMessageContainer.innerHTML = `
+                <p>${error.message || 'Error al procesar la solicitud'}</p>
+                <p>Por favor verifique los datos e intente nuevamente</p>
+            `;
+        }
+    });
 });
 
 boton__anterior.addEventListener("click", () => {
@@ -182,6 +234,7 @@ boton__confirmar.addEventListener("click", () => {
         goToStep(currentStep + 1);
     }
 });
+
 formulario__boton__crearcuenta__anterior.addEventListener("click", () => {
     if (currentStep > 1) {
         currentStep--; // Retrocede un paso
@@ -201,3 +254,6 @@ steps.forEach((step, index) => {
 
 // Inicializa la barra de progreso correctamente
 updateProgressBar();
+
+
+

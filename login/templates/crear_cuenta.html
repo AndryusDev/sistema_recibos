@@ -4,6 +4,7 @@
     {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
     <title>Document</title>
 </head>
@@ -53,7 +54,7 @@
                             <input class="formulario__input" type="text" id="formulario_cedula" name="formulario_cedula" placeholder="Ej: 99.999.999" value="{{ id_number }}" required>
                         </div>
                     </div>
-                    <button id="formulario__boton__autenticacion" class="formulario__boton__autenticacion" type="submit" onclick="nextStep()  ">Siguiente</button>
+                    <button id="formulario__boton__autenticacion" class="formulario__boton__autenticacion" type="submit">Siguiente</button>
                 </form>
     
                 <form class="formulario__contenido">
@@ -86,7 +87,7 @@
                     <!-- Sección de correo -->
                     <div>
                         <label class="formulario__contenido__correo" for="correo">Correo Electronico</label>
-                        <input class="formulario__input" type="email" name="correo" id="correo" required>
+                        <input class="formulario__input" type="email" name="correo" id="email" required>
                     </div>
     
                     <!-- Sección de contraseña -->
@@ -100,11 +101,12 @@
                         <label class="formulario__label" for="confirmar_constraseña"> Confirmar Contraseña</label>
                         <input class="formulario__input" type="password" name="confirmar_contraseña" id="confirmar_contraseña" required>
                     </div>
+                    <div id="error_messages"></div>
     
                     <!-- Botón para crear cuenta -->
                     <div class="formulario__botones__crearcuenta">
                         <button id="formulario__boton__crearcuenta__anterior" class="formulario__boton__crearcuenta__anterior" type="button">Anterior</button>
-                        <button id="formulario__boton__crearcuenta" class="formulario__boton__crearcuenta" type="button">Crear Cuenta</button>
+                        <button id="formulario__boton__crearcuenta" class="formulario__boton__crearcuenta" type="submit">Crear Cuenta</button>
                     </div>
                 </form>
 
