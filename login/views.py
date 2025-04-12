@@ -1,3 +1,4 @@
+from sqlite3 import IntegrityError
 from django.shortcuts import render
 import json
 from rest_framework.views import APIView
@@ -40,6 +41,7 @@ from .models import empleado, usuario, rol, usuario_rol  # Importa tu modelo usu
 from django.utils import timezone
 from django.http import JsonResponse
 from .models import empleado, usuario  # Asegúrate de que estos modelos estén importados
+from datetime import datetime
 
 def verificar_empleado(request):
     if request.method == 'POST':
@@ -54,7 +56,8 @@ def verificar_empleado(request):
                 'segundo_nombre': empleado_instance.segundo_nombre or '',
                 'primer_apellido': empleado_instance.primer_apellido,
                 'segundo_apellido': empleado_instance.segundo_apellido or '',
-                'tiene_usuario': tiene_usuario
+                'tiene_usuario': tiene_usuario,
+                'cedula': cedula
             }
 
             return JsonResponse({
@@ -82,58 +85,52 @@ def verificar_empleado(request):
     }, status=405)
 
 # Solo si estás usando CSRF en AJAX, asegúrate de que esto sea seguro
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+
+@require_POST
 def crear_cuenta_empleado(request):
-    if request.method == 'POST':
-        try:
-            # Asegúrate de recibir los datos correctamente
-            try:
-                data = json.loads(request.body.decode('utf-8'))  # Decodifica el body
-            except json.JSONDecodeError:
-                return JsonResponse({'status': 'error', 'message': 'Formato JSON inválido'}, status=400)
+    try:
+        # Verificar contraseñas (usa los mismos nombres que en el formulario)
+        if request.POST.get('contraseña') != request.POST.get('confirmar_contraseña'):
+            return JsonResponse({'error': 'Las contraseñas no coinciden'}, status=400)
             
-            cedula = data.get('cedula', '').strip()
-            email = data.get('email', '').lower().strip()
-            password = data.get('contraseña', '').strip()
-            confirm_password = data.get('confirmar_contraseña', '').strip()
-
-            print(f"Datos recibidos - Cédula: {cedula}, Email: {email}")  # Debug
-
-            # Validación de campos vacíos
-            if not all([cedula, email, password, confirm_password]):
-                return JsonResponse({'status': 'error', 'message': 'Todos los campos son obligatorios'}, status=400)
-
-            # Verificar empleado
-            try:
-                empleado_existente = empleado.objects.get(cedula=cedula)
-                print(f"Empleado encontrado: {empleado_existente}")  # Debug
-            except empleado.DoesNotExist:
-                print(f"No se encontró empleado con cédula: {cedula}")  # Debug
-                return JsonResponse({'status': 'error', 'message': 'La cédula no está registrada en el sistema. Contacte al administrador.'}, status=400)
-
-            # Validar email único
-            if usuario.objects.filter(email=email).exists():
-                return JsonResponse({'status': 'error', 'message': 'El email ya está registrado'}, status=400)
-
-            # Validar coincidencia de contraseñas
-            if password != confirm_password:
-                return JsonResponse({'status': 'error', 'message': 'Las contraseñas no coinciden'}, status=400)
-
-            # Crear usuario (¡hasheando la contraseña!)
-            nuevo_usuario = usuario(
-                empleado=empleado_existente,
-                email=email,
-                contraseña_hash=password,  # Hashear la contraseña
-                ultimo_login=timezone.now()
-            )
+        # Obtener datos
+        email = request.POST.get('email')
+        contraseña = request.POST.get('contraseña')
+        cedula = request.POST.get('cedula')
+        print(cedula)
+        
+        # Validar empleado
+        empleado_existente = empleado.objects.get(cedula=cedula)
+        
+        # Verificar email único
+        if usuario.objects.filter(email=email).exists():
+            return JsonResponse({'error': 'El email ya está registrado'}, status=400)
+        
+        # Crear usuario
+        nuevo_usuario = usuario(
+            empleado=empleado_existente,
+            email=email,
+            contraseña_hash=contraseña,
+            ultimo_login=timezone.now()
+        )
+        try:
             nuevo_usuario.save()
+        except IntegrityError:
+            return JsonResponse({'success': False, 'message': 'Error de integridad en la base de datos'}, status=500)
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Cuenta creada exitosamente',
+            'user_id': nuevo_usuario.id
+        })
+        
+    except empleado.DoesNotExist:
+        return JsonResponse({'error': 'No existe un empleado con esta cédula'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': f'Error del servidor: {str(e)}'}, status=500)
 
-            return JsonResponse({'status': 'success', 'message': 'Cuenta creada exitosamente'})
-
-        except Exception as e:
-            print(f"Error inesperado: {str(e)}")  # Debug
-            return JsonResponse({'status': 'error', 'message': 'Error interno del servidor'}, status=500)
-
-    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
 
 
 """def crear_cuenta_empleado(request):

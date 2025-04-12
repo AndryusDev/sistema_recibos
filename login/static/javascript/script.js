@@ -121,6 +121,9 @@ formulario__boton__autenticacion.addEventListener("click", async (e) => {
         const data = await response.json();
 
         if (data.status === "success") {
+
+            sessionStorage.setItem('cedula_empleado', data.empleado.cedula);
+
             // Mensaje personalizado según si tiene usuario o no
             const mensaje = data.tiene_usuario 
                 ? "✅ Empleado verificado (ya tiene cuenta)"
@@ -164,63 +167,45 @@ formulario__boton__autenticacion.addEventListener("click", async (e) => {
 });
 
 
-document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("form-crear-cuenta");
-    const errorMessageContainer = document.getElementById("error_messages");
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-    // Validar formato de cédula (solo números)
-    function validarCedula(cedula) {
-        return /^\d+$/.test(cedula);
-    }
-
-    form.addEventListener("submit", async (e) => {
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById("form-crear-cuenta").addEventListener('submit', async function(e) {
         e.preventDefault();
-        errorMessageContainer.innerHTML = "";
-        
-        const formData = {
-            cedula: document.getElementById("cedula").value.trim(),
-            email: document.getElementById("email").value.trim(),
-            contraseña: document.getElementById("contraseña").value,
-            confirmar_contraseña: document.getElementById("confirmar_contraseña").value
-        };
 
-        // Validación frontend
-        if (!validarCedula(formData.cedula)) {
-            errorMessageContainer.innerHTML = "<p>La cédula debe contener solo números</p>";
-            return;
-        }
+        const cedula = sessionStorage.getItem('cedula_empleado');
+        console.log(cedula)
 
-        try {
-            const response = await fetch('/crear_cuenta_empleado/', {
-                method: 'POST',
+        const email = document.getElementById("email").value;
+        const contraseña = document.getElementById("contraseña").value;
+        const confirmar_contraseña = document.getElementById("confirmar_contraseña").value
+        const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+        const datos = `email=${encodeURIComponent(email)}&contraseña=${encodeURIComponent(contraseña)}&confirmar_contraseña=${encodeURIComponent(confirmar_contraseña)}&cedula=${encodeURIComponent(cedula)}`;
+        try{
+            const response = await fetch("/crear_cuenta_empleado/", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
+                    "X-CSRFToken": csrfToken,  // Token de seguridad
+                "Content-Type": "application/x-www-form-urlencoded",
                 },
-                body: JSON.stringify(formData)
+                body: datos
             });
+            const data = await response.json();  // Convertir la respuesta a JSON
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Error en el servidor');
-            }
-
-            if (data.status === 'success') {
-                window.location.href = '/preguntas_seguridad/';
+            if (data.status === "success") {
+                alert("✅ Cuenta creada exitosamente!");
             } else {
-                errorMessageContainer.innerHTML = `<p>${data.message}</p>`;
+                alert(`❌ ${data.error}`);
             }
         } catch (error) {
-            console.error('Error:', error);
-            errorMessageContainer.innerHTML = `
-                <p>${error.message || 'Error al procesar la solicitud'}</p>
-                <p>Por favor verifique los datos e intente nuevamente</p>
-            `;
-        }
-    });
+        console.error("Error en la solicitud:", error);
+        alert("⚠ Error al conectar con el servidor");
+    }
 });
+
+});
+
+
+
+
 
 boton__anterior.addEventListener("click", () => {
     if (currentStep > 1) {

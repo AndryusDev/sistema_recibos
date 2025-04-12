@@ -39,7 +39,7 @@
             </div>
     
             <div class="formulario__contenedor__contenido">
-                <form class="formulario__contenido__autenticacion" id="formulario1" method="POST" action="{% url 'verificar_empleado' %}">
+                <form class="formulario__contenido__autenticacion" id="formulario1" method="POST">
                     {% csrf_token %}
                     <h2 class="formulario__titulo1">Autenticación de Usuario</h2>
                     <!-- Sección de la cédula -->
@@ -57,8 +57,10 @@
                     <button id="formulario__boton__autenticacion" class="formulario__boton__autenticacion" type="submit">Siguiente</button>
                 </form>
     
-                <form class="formulario__contenido">
+                <form class="formulario__contenido" id="form-crear-cuenta" method="POST" action="crear_cuenta_empleado/">
+                    {% csrf_token %}
                     <h2 class="formulario__titulo">Crear Cuenta</h2>
+                    
     
                     <!-- Sección de primer nombre -->
                     <div class="formulario__contenido__nombre">
@@ -86,19 +88,19 @@
     
                     <!-- Sección de correo -->
                     <div>
-                        <label class="formulario__contenido__correo" for="correo">Correo Electronico</label>
-                        <input class="formulario__input" type="email" name="correo" id="email" required>
+                        <label class="formulario__contenido__correo" for="email">Correo Electronico</label>
+                        <input class="formulario__input" type="email" name="email" id="email" required>
                     </div>
     
                     <!-- Sección de contraseña -->
                     <div class="formulario__contenido__confirmarcontraseña">
-                        <label class="formulario__label" for="constraseña">Contraseña</label>
+                        <label class="formulario__label" for="contraseña">Contraseña</label>
                         <input class="formulario__input" type="password" name="contraseña" id="contraseña" required>
                     </div>
     
                     <!-- Sección de Confirmar Contraseña -->
                     <div class="formulario__contenido__confirmarcontraseña">
-                        <label class="formulario__label" for="confirmar_constraseña"> Confirmar Contraseña</label>
+                        <label class="formulario__label" for="confirmar_contraseña"> Confirmar Contraseña</label>
                         <input class="formulario__input" type="password" name="confirmar_contraseña" id="confirmar_contraseña" required>
                     </div>
                     <div id="error_messages"></div>
