@@ -149,7 +149,7 @@ formulario__boton__autenticacion.addEventListener("click", async (e) => {
                 document.getElementById("segundo_nombre").disabled = true;
                 document.getElementById("segundo_apellido").disabled = true;
 
-                // Avanzar al segundo panel
+                // Avanzar al segundo panel, No sume a la barra de proceso
                 goToStep(2);
             }
             
@@ -192,6 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data.status === "success") {
                 alert("✅ Cuenta creada exitosamente!");
+                goToStep(3); /*No seme al contador para la barra de proceso*/
             } else {
                 alert(`❌ ${data.error}`);
             }
@@ -202,9 +203,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 });
-
-
-
 
 
 boton__anterior.addEventListener("click", () => {

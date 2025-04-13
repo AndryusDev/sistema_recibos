@@ -119,11 +119,15 @@
                     <!-- Pregunta 1 -->
                     <div class="formulario__grupo">
                         <label for="pregunta1">01 Pregunta Seguridad *</label>
-                        <select id="pregunta1" class="formulario__select">
+                        <select id="pregunta1" name="pregunta1" class="formulario__select">
                             <option value="" disabled selected>Seleccione una pregunta</option>
-                            <option value="mascota">¿Cuál es el nombre de tu primera mascota?</option>
-                            <option value="escuela">¿En qué escuela primaria estudiaste?</option>
-                            <option value="ciudad">¿En qué ciudad naciste?</option>
+                            {% for pregunta in preguntas %}
+                                {% if forloop.counter <= 3 %}
+                                    <option value="{{ pregunta.id }}">{{ pregunta.pregunta }}</option>
+                                {% endif %}
+                            {% empty %}
+                                <option value="">No hay preguntas disponibles</option>
+                            {% endfor %}
                         </select>
                         <input type="text" id="respuesta1" class="formulario__input" placeholder="Ingrese su respuesta">
                     </div>
@@ -133,9 +137,13 @@
                         <label for="pregunta2">02 Pregunta Seguridad *</label>
                         <select id="pregunta2" class="formulario__select">
                             <option value="" disabled selected>Seleccione una pregunta</option>
-                            <option value="color">¿Cuál es tu color favorito?</option>
-                            <option value="madre">¿Cuál es el segundo nombre de tu madre?</option>
-                            <option value="deporte">¿Cuál es tu deporte favorito?</option>
+                            {% for pregunta in preguntas %}
+                            {% if forloop.counter >= 4 and forloop.counter <= 6 %}
+                                    <option value="{{ pregunta.id }}">{{ pregunta.pregunta }}</option>
+                                {% endif %}
+                            {% empty %}
+                                <option value="">No hay preguntas disponibles</option>
+                            {% endfor %}
                         </select>
                         <input type="text" id="respuesta2" class="formulario__input" placeholder="Ingrese su respuesta">
                     </div>
@@ -145,9 +153,13 @@
                         <label for="pregunta3">03 Pregunta Seguridad *</label>
                         <select id="pregunta3" class="formulario__select">
                             <option value="" disabled selected>Seleccione una pregunta</option>
-                            <option value="pelicula">¿Cuál es tu película favorita?</option>
-                            <option value="amigo">¿Cómo se llama tu mejor amigo de la infancia?</option>
-                            <option value="comida">¿Cuál es tu comida favorita?</option>
+                            {% for pregunta in preguntas %}
+                            {% if forloop.counter >= 7 and forloop.counter <= 9 %}
+                                    <option value="{{ pregunta.id }}">{{ pregunta.pregunta }}</option>
+                                {% endif %}
+                            {% empty %}
+                                <option value="">No hay preguntas disponibles</option>
+                            {% endfor %}
                         </select>
                         <input type="text" id="respuesta3" class="formulario__input" placeholder="Ingrese su respuesta">
                     </div>
