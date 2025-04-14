@@ -191,8 +191,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();  // Convertir la respuesta a JSON
 
             if (data.status === "success") {
-                alert("✅ Cuenta creada exitosamente!");
-                goToStep(3); /*No seme al contador para la barra de proceso*/
+                alert("✅ Información verificada exitosamente!");
+                goToStep(3); /*No sume al contador para la barra de proceso*/
             } else {
                 alert(`❌ ${data.error}`);
             }
