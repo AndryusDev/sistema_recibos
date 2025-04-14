@@ -119,7 +119,7 @@
                     <!-- Pregunta 1 -->
                     <div class="formulario__grupo">
                         <label for="pregunta1">01 Pregunta Seguridad *</label>
-                        <select id="pregunta1" name="pregunta1" class="formulario__select">
+                        <select id="pregunta1" name="pregunta1" class="formulario__select" required>
                             <option value="" disabled selected>Seleccione una pregunta</option>
                             {% for pregunta in preguntas %}
                                 {% if forloop.counter <= 3 %}
@@ -135,7 +135,7 @@
                     <!-- Pregunta 2 -->
                     <div class="formulario__grupo">
                         <label for="pregunta2">02 Pregunta Seguridad *</label>
-                        <select id="pregunta2" class="formulario__select">
+                        <select id="pregunta2" class="formulario__select" required>
                             <option value="" disabled selected>Seleccione una pregunta</option>
                             {% for pregunta in preguntas %}
                             {% if forloop.counter >= 4 and forloop.counter <= 6 %}
@@ -151,7 +151,7 @@
                     <!-- Pregunta 3 -->
                     <div class="formulario__grupo">
                         <label for="pregunta3">03 Pregunta Seguridad *</label>
-                        <select id="pregunta3" class="formulario__select">
+                        <select id="pregunta3" class="formulario__select" required>
                             <option value="" disabled selected>Seleccione una pregunta</option>
                             {% for pregunta in preguntas %}
                             {% if forloop.counter >= 7 and forloop.counter <= 9 %}

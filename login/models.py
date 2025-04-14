@@ -4,7 +4,7 @@ from django.contrib.auth.hashers import make_password, check_password
 
 class rol(models.Model):
 
-    codigo_rol = models.CharField(max_length=5, unique=True, primary_key=True,)
+    codigo_rol = models.IntegerField(unique=True, primary_key=True)
     nombre_rol = models.CharField(max_length=50, unique=True,)
     descripcion = models.TextField(blank=True)
     class Meta:
@@ -85,7 +85,7 @@ class usuario_pregunta(models.Model):
     usuario = models.ForeignKey(
         usuario,
         on_delete=models.CASCADE,
-        db_column='usuario_cedula',
+        db_column='id_usuario',
         to_field='id'
     )
     pregunta = models.ForeignKey(

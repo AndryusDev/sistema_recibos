@@ -166,7 +166,7 @@ formulario__boton__autenticacion.addEventListener("click", async (e) => {
     }
 });
 
-
+//Funcionalidad de boton para crear cuenta
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("form-crear-cuenta").addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -212,9 +212,66 @@ boton__anterior.addEventListener("click", () => {
     }
 });
 
-boton__confirmar.addEventListener("click", () => {
-    if (currentStep < 4) {
-        goToStep(currentStep + 1);
+document.getElementById('boton__confirmar').addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    const token = sessionStorage.getItem('token_registro') || document.cookie.split('; ').find(row => row.startsWith('token_registro='))?.split('=')[1];
+    
+    if (!token) {
+        alert("❌ Sesión expirada. Por favor, comienza el registro nuevamente.");
+        window.location.reload();
+        return;
+    }
+
+    
+    // 1. Obtener datos del formulario (ahora con 3 preguntas)
+    const pregunta1 = document.getElementById("pregunta1").value;
+    const respuesta1 = document.getElementById("respuesta1").value;
+    const pregunta2 = document.getElementById("pregunta2").value;
+    const respuesta2 = document.getElementById("respuesta2").value;
+    const pregunta3 = document.getElementById("pregunta3").value;
+    const respuesta3 = document.getElementById("respuesta3").value;
+    
+    const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+    // 2. Validar campos obligatorios (3 preguntas ahora)
+    if (!pregunta1 || !respuesta1 || !pregunta2 || !respuesta2 || !pregunta3 || !respuesta3) {
+        alert("❌ Todas las preguntas de seguridad son obligatorias");
+        return;
+    }
+
+    try {
+        // 3. Preparar datos para enviar (incluyendo la 3ra pregunta)
+        const formData = new URLSearchParams();
+        formData.append('pregunta1', pregunta1);
+        formData.append('respuesta1', respuesta1);
+        formData.append('pregunta2', pregunta2);
+        formData.append('respuesta2', respuesta2);
+        formData.append('pregunta3', pregunta3);
+        formData.append('respuesta3', respuesta3);
+        formData.append('token', token);
+        formData.append('csrfmiddlewaretoken', csrfToken);
+
+        // 4. Enviar datos al servidor
+        const response = await fetch("/completar_registro/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.status === "success") {
+            alert("✅ Registro completado exitosamente!");
+            window.location.href = "/login"; // Redirigir al dashboard
+        } else {
+            alert(`❌ Error: ${data.error}`);
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("⚠ Error al conectar con el servidor");
     }
 });
 

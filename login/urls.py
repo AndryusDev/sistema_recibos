@@ -10,4 +10,5 @@ urlpatterns = [
     path('recuperar_contraseña', views.recuperar_contraseña),
     path('verificar_empleado/', views.verificar_empleado, name='verificar_empleado'),
     path('crear_cuenta_empleado/', views.crear_cuenta_empleado, name='crear_cuenta_empleado'),
+    path('completar_registro/', views.completar_registro, name='completar_registro'),
 ]

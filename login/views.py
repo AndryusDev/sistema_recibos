@@ -32,14 +32,14 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
-
 from django.shortcuts import render, redirect
 from .models import empleado, usuario, rol, usuario_rol, usuario_pregunta, pregunta_seguridad  # Importa tu modelo usuario actual
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime
+from django.utils.crypto import get_random_string
 
-#Verificar empleado
+#Formulario verificacion empleado
 def verificar_empleado(request):
     if request.method == 'POST':
         cedula = request.POST.get('formulario_cedula', '').strip()
@@ -85,7 +85,7 @@ def verificar_empleado(request):
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
-#Crear Cuenta
+#formnulario crear Cuenta
 @require_POST
 def crear_cuenta_empleado(request):
     try:
@@ -99,31 +99,101 @@ def crear_cuenta_empleado(request):
         cedula = request.POST.get('cedula')
         print(cedula)
         
-        # Validar empleado
-        empleado_existente = empleado.objects.get(cedula=cedula)
-        
         # Verificar email único
         if usuario.objects.filter(email=email).exists():
             return JsonResponse({'error': 'El email ya está registrado'}, status=400)
         
-        # Crear usuario
+        token_registro = get_random_string(50)
+        
+        # Almacenar usuario
         request.session['datos_registro'] = {
+            'token': token_registro,
             'email': email,
             'contraseña': contraseña,
             'cedula': cedula,
             'ultimo_login': str(timezone.now())
         }
+        request.session.modified = True  # ¡Importante!
         request.session.set_expiry(3600)  # 1 hora de validez
         
-        return JsonResponse({
+        response = JsonResponse({
             'status': 'success',
             'message': 'Datos validados correctamente',
+            'token': token_registro,
         })
+        response.set_cookie(
+            'token_registro', 
+            token_registro, 
+            max_age=3600, 
+            httponly=False, 
+            samesite='Lax',
+            path='/',
+        )
+        
+        return response        
         
     except empleado.DoesNotExist:
         return JsonResponse({'error': 'No existe un empleado con esta cédula'}, status=404)
     except Exception as e:
         return JsonResponse({'error': f'Error del servidor: {str(e)}'}, status=500)
+    
+#Completar registros para almacenar en la base de datos
+def completar_registro(request):
+
+    try:
+        # 1. Verificación de token
+        token_frontend = request.POST.get('token')
+        datos_sesion = request.session.get('datos_registro', {})
+        print("Token desde el frontend:", token_frontend)
+        print("Datos de sesión:", datos_sesion)
+        
+        if not datos_sesion or token_frontend != datos_sesion.get('token'):
+            return JsonResponse({'error': 'Sesión inválida o expirada'}, status=400)
+        empleado_instance = empleado.objects.get(cedula=datos_sesion['cedula'])
+
+        # 2. Validar preguntas/respuestas primero
+        preguntas_respuestas = [
+            (request.POST.get('pregunta1'), request.POST.get('respuesta1')),
+            (request.POST.get('pregunta2'), request.POST.get('respuesta2')),
+            (request.POST.get('pregunta3'), request.POST.get('respuesta3'))
+        ]
+        
+        if any(not pr[0] or not pr[1] for pr in preguntas_respuestas):
+            return JsonResponse({'error': 'Todas las preguntas deben tener respuesta'}, status=400)
+
+        # 3. Crear usuario (SIN HASH)
+        nuevo_usuario = usuario.objects.create(
+            email=datos_sesion['email'],
+            contraseña_hash=datos_sesion['contraseña'],  # ← Contraseña en texto plano
+            empleado=empleado_instance,  # Usamos _id para asignación directa
+            ultimo_login=timezone.now()
+        )
+
+        # 4. Preguntas de seguridad (SIN HASH)
+        for pregunta_id, respuesta in preguntas_respuestas:
+            usuario_pregunta.objects.create(
+                usuario_id=nuevo_usuario.id,  # Asignación por ID explícito
+                pregunta_id=pregunta_id,
+                respuesta_hash=respuesta,  # ← Respuesta en texto plano
+            )
+
+        # 5. Asignar rol
+        usuario_rol.objects.create(
+            usuario_id=nuevo_usuario.id,
+            rol_id='1',  # Asume que existe este código
+            fecha_asignacion=timezone.now()
+        )
+
+        # 6. Limpiar sesión
+        del request.session['datos_registro']
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Usuario registrado (modo pruebas sin hashing)!'
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': f'Error: {str(e)}'}, status=500)
 
 
 """class CustomLoginView(APIView):
