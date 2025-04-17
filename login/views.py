@@ -26,6 +26,9 @@ def crear_cuenta(request):
 def recuperar_contraseña(request):
     return render(request, 'recuperar_contraseña.html')
 
+def menu(request):
+    return render(request, 'menu_principal/menu.html')
+
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -84,6 +87,7 @@ def verificar_empleado(request):
 # Solo si estás usando CSRF en AJAX, asegúrate de que esto sea seguro
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.contrib.auth.hashers import make_password, check_password
 
 #formnulario crear Cuenta
 @require_POST
@@ -92,6 +96,10 @@ def crear_cuenta_empleado(request):
         # Verificar contraseñas (usa los mismos nombres que en el formulario)
         if request.POST.get('contraseña') != request.POST.get('confirmar_contraseña'):
             return JsonResponse({'error': 'Las contraseñas no coinciden'}, status=400)
+        
+        #Verificar que la contraseña sea mayour a 8 digitos
+        if len(request.POST.get('contraseña', '')) < 8:
+            return JsonResponse({'error': 'La contraseña debe tener al menos 8 caracteres'}, status=400)
             
         # Obtener datos
         email = request.POST.get('email')
@@ -102,6 +110,7 @@ def crear_cuenta_empleado(request):
         # Verificar email único
         if usuario.objects.filter(email=email).exists():
             return JsonResponse({'error': 'El email ya está registrado'}, status=400)
+        contraseña_hash = make_password(contraseña)
         
         token_registro = get_random_string(50)
         
@@ -109,7 +118,7 @@ def crear_cuenta_empleado(request):
         request.session['datos_registro'] = {
             'token': token_registro,
             'email': email,
-            'contraseña': contraseña,
+            'contraseña': contraseña_hash,
             'cedula': cedula,
             'ultimo_login': str(timezone.now())
         }
@@ -174,7 +183,7 @@ def completar_registro(request):
             usuario_pregunta.objects.create(
                 usuario_id=nuevo_usuario.id,  # Asignación por ID explícito
                 pregunta_id=pregunta_id,
-                respuesta_hash=respuesta,  # ← Respuesta en texto plano
+                respuesta_hash=make_password(respuesta.lower().strip()),  # ← Respuesta en texto plano
             )
 
         # 5. Asignar rol
