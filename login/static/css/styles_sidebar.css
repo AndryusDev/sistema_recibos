@@ -49,19 +49,51 @@
     box-shadow: 1px 0px 10px var(--shadow-border);
     box-sizing: border-box;
     transition: width 0.5s ease;
-    overflow-y: auto;
+}
+.sidebar {
+    background-color: var(--color-surface);
+    z-index: 100; /* Para que se superponga correctamente */
+}
+.sidebar.minimize .menu-link span,
+.sidebar.minimize .user-data,
+.sidebar.minimize .menu-exit span,
+.sidebar.minimize .sub-menu {
+    display: none !important;
 }
 
-.sidebar.minize {
-    width: 4.94rem;
+.sidebar.minimize .menu-link {
+    justify-content: center;
+    padding: 0.75rem 0;
 }
 
-.sidebar.minize .menu-btn{
+/* Ajusta el botón de minimizar */
+.sidebar.minimize .menu-btn {
     right: -1.2rem;
+    background-color: var(--color-surface);
+    box-shadow: 0 0 0 2px var(--color-border);
 }
 
-.sidebar.minize .menu-btn i{
-    transform: rotate(180deg);
+.sidebar.minimize {
+    width: 4.94rem;
+    overflow: hidden; /* Oculta el contenido que sobresale */
+}
+
+.sidebar.minimize .header-menu,
+.sidebar.minimize .menu-container,
+.sidebar.minimize .footer-menu {
+    opacity: 0; /* Hace transparente el contenido */
+    transition: opacity 0.3s ease;
+    pointer-events: none; /* Deshabilita interacciones */
+}
+
+.sidebar.minimize .menu-btn {
+    opacity: 1; /* Mantiene visible solo el botón */
+    pointer-events: auto;
+}
+
+/* Opcional: Añade un borde derecho para mejor visibilidad */
+.sidebar.minimize {
+    border-right: 1px solid var(--color-border);
 }
 
 .menu-btn{
@@ -83,6 +115,10 @@
 
 .menu-btn i{
     font-size: 1.25rem;
+}
+/* Oculta SOLO el botón de toggle */
+.menu-btn {
+    display: none !important; /* Oculta completamente el botón */
 }
 
 /* Header de la Barra de Menu*/
@@ -172,8 +208,30 @@
 .sub-menu {
     height: 0;
     overflow: hidden;
-    transition: height 0.3s ease;
-    padding-left: 0.5rem;
+    transition: height 0.3s ease, padding 0.3s ease;
+    padding-left: 1.5rem;
+}
+
+
+/* Estado abierto */
+.menu-item.sub-menu-toggle .sub-menu {
+    height: auto;
+    padding: 0.2rem 0 0.2rem 1.5rem;
+}
+.menu-item.sub-menu-toggle .menu-link i:last-child {
+    transform: rotate(180deg);
+}
+
+.sub-menu.open {
+    height: auto;
+    padding: 0.2rem 0 0.2rem 1.5rem;
+}
+
+/* Selección de items */
+.menu-item.selected > .menu-link,
+.sub-menu-link.selected {
+    color: var(--color-text-primary) !important;
+    background-color: var(--color-bg) !important;
 }
 
 .sub-menu-link {
@@ -256,4 +314,9 @@
 /* Atributo para ocultar opcion del menu*/
 .hidden {
     display: none;
+}
+
+.sub-menu.open {
+    height: auto;
+    padding: 0.2rem 0 0.2rem 1.5rem;
 }

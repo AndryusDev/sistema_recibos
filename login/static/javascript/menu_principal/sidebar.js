@@ -95,79 +95,48 @@ window.onload = function() {
     const sidebar = document.getElementById("sidebar");
     const menuBtn = document.getElementById("menu-btn");
 
+    // Minimizar sidebar
     menuBtn.addEventListener("click", () => {
         sidebar.classList.toggle("minimize");
+
+        void sidebar.offsetWidth;
     });
 
     menusItems.forEach((menuItem) => {
         const menuLink = menuItem.querySelector(".menu-link");
         const subMenu = menuItem.querySelector(".sub-menu");
+        const isDropdown = menuItem.classList.contains("menu-item-dropdown");
 
         menuLink.addEventListener("click", (event) => {
+            event.preventDefault();
             event.stopPropagation();
-
-            const isDropdown = menuItem.classList.contains("menu-item-dropdown");
-
-            // Cerrar otros submenús y deseleccionar otros elementos
-            menusItems.forEach((item) => {
-                const otherSubmenu = item.querySelector(".sub-menu");
-                if (item !== menuItem) {
-                    item.classList.remove("sub-menu-toggle");
-                    item.classList.remove("selected");
-                    if (otherSubmenu) {
-                        otherSubmenu.style.height = "0";
-                        otherSubmenu.style.padding = "0";
-                    }
-                    const otherMenuLink = item.querySelector(".menu-link");
-                    if (otherMenuLink) {
-                        otherMenuLink.classList.remove("selected");
-                    }
+    
+            // Cerrar otros
+            document.querySelectorAll('.menu-item.selected').forEach(item => {
+                if(item !== menuItem) {
+                    item.classList.remove('selected', 'sub-menu-toggle');
+                    item.querySelector('.sub-menu')?.classList.remove('open');
                 }
             });
 
             // Activar el menú actual y marcarlo como seleccionado
-            menuItem.classList.add("selected");
-            menuLink.classList.add("selected");
-
-            // Si es un menú desplegable, manejar el submenú
-            if (isDropdown) {
-                const isActive = menuItem.classList.contains("sub-menu-toggle");
-                if (!isActive) {
-                    menuItem.classList.add("sub-menu-toggle");
-                    if (subMenu) {
-                        subMenu.style.height = `${subMenu.scrollHeight + 6}px`;
-                        subMenu.style.padding = "0.2rem 0";
-                    }
-                }
+            menuItem.classList.toggle('selected');
+    
+            if(isDropdown) {
+                menuItem.classList.toggle('sub-menu-toggle');
+                subMenu?.classList.toggle('open');
             }
         });
 
         // Aquí es donde debes agregar el evento para los elementos del submenú
         if (subMenu) {
-            const subMenuItems = subMenu.querySelectorAll(".sub-menu-link");
-            subMenuItems.forEach((subMenuItem) => {
+            subMenu.querySelectorAll(".sub-menu-link").forEach(subMenuItem => {
                 subMenuItem.addEventListener("click", (event) => {
                     event.stopPropagation();
-                    
-                    // Desmarcar todos los elementos de todos los submenús
-                    const allSubMenuLinks = document.querySelectorAll(".sub-menu-link");
-                    allSubMenuLinks.forEach((item) => {
-                        item.classList.remove("selected");
+                    document.querySelectorAll('.sub-menu-link.selected').forEach(el => {
+                        el.classList.remove('selected');
                     });
-                    
-                    // Marcar el elemento del submenú como seleccionado
-                    subMenuItem.classList.add("selected");
-
-                    // Eliminar la clase 'selected' de todos los menu-link
-                    menusItems.forEach((item) => {
-                        const otherMenuLink = item.querySelector(".menu-link");
-                        if (otherMenuLink) {
-                            otherMenuLink.classList.remove("selected");
-                        }
-                    });
-
-                    // Agregar la clase 'selected' al menu-link del menu-item-dropdown correspondiente
-                    menuLink.classList.add("selected");
+                    subMenuItem.classList.add('selected');
                 });
             });
         }

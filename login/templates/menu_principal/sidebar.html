@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <div class="sidebar" id="sidebar">
     <div class="header-menu">
@@ -195,6 +196,6 @@
     </div>
 </div>
 <script src="/javascript/common.js?v=1.0" defer></script> 
-<script src="/javascript/sidebar.js?v=1.0" defer></script> 
+<script src="{% static 'javascript/menu_principal/sidebar.js' %}"></script> 
 <link rel="stylesheet" type="text/css" href="/css/styles.css">
 <link rel="stylesheet" type="text/css" href="/css/sidebar.css">
