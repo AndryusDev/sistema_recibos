@@ -21,10 +21,11 @@ body {
     color: white;
     display: flex;
     align-items: center;
-    padding: 10px;
+    padding: 20px;
     box-sizing: border-box;
-    margin-bottom: 50px;
+    /*margin-bottom: 50px;*/
 }
+
 
 .header-text p {
     margin: 0;
@@ -233,8 +234,7 @@ button:disabled {
     border-radius: 20px;
     /*overflow: hidden;*/
     box-shadow: 0 5px 7px rgba(0, 0, 0, 0.2);
-    margin: auto auto;
-    margin-bottom: 50px;
+    margin: 50px auto;
 }
 
   /* Imagen Ajustada */
