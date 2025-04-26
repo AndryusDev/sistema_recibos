@@ -1,0 +1,110 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio - Plataforma Policial</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/noticias.css' %}">
+</head>
+<body>
+    <header class="header">
+        <div class="header__logo">PoliciaApp</div>
+        <div class="header__search">
+            <input type="text" class="header__search-input" placeholder="Buscar noticias, alertas...">
+        </div>
+        <div class="header__avatar">TU</div>
+    </header>
+    
+    <main class="feed" id="mainContent">
+        <!-- Banner de alerta importante -->
+        <div class="alert alert--urgent">
+            <i class="alert__icon fas fa-exclamation-triangle"></i>
+            <div class="alert__message">Alerta: Robos en aumento en zona centro - Extremar precauciones</div>
+        </div>
+        
+        <!-- Publicación 1 -->
+        <article class="post">
+            <header class="post__header">
+                <div class="post__avatar">DG</div>
+                <div class="post__user">Dirección General</div>
+                <div class="post__time">2h</div>
+            </header>
+            <div class="post__content">
+                <p class="post__text">Se informa a todo el personal sobre el nuevo protocolo de actuación en casos de violencia doméstica. Por favor, revisar en la sección de documentos.</p>
+                <img src="{% static 'image/perfil_andryus.jpeg' %}" alt="Nuevo protocolo" class="post__image">
+            </div>
+            <footer class="post__footer">
+                <button class="post__action">
+                    <i class="post__action-icon far fa-thumbs-up"></i>
+                    <span class="post__action-text">Me gusta</span>
+                </button>
+                <button class="post__action">
+                    <i class="post__action-icon far fa-comment"></i>
+                    <span class="post__action-text">Comentar</span>
+                </button>
+                <button class="post__action">
+                    <i class="post__action-icon far fa-share-square"></i>
+                    <span class="post__action-text">Compartir</span>
+                </button>
+            </footer>
+            <div class="post__likes">124 personas les gusta esto</div>
+        </article>
+        
+        <!-- Publicación 2 -->
+        <article class="post">
+            <header class="post__header">
+                <div class="post__avatar">UR</div>
+                <div class="post__user">Unidad de Robos</div>
+                <div class="post__time">5h</div>
+            </header>
+            <div class="post__content">
+                <p class="post__text">Búsqueda de sospechoso relacionado con una serie de robos a comercios en el barrio norte. Cualquier información contactar a la unidad.</p>
+                <img src="{% static 'image/perfil_andryus.jpeg' %}" alt="Sospechoso buscado" class="post__image">
+            </div>
+            <footer class="post__footer">
+                <button class="post__action">
+                    <i class="post__action-icon far fa-thumbs-up"></i>
+                    <span class="post__action-text">Me gusta</span>
+                </button>
+                <button class="post__action">
+                    <i class="post__action-icon far fa-comment"></i>
+                    <span class="post__action-text">Comentar</span>
+                </button>
+                <button class="post__action">
+                    <i class="post__action-icon far fa-share-square"></i>
+                    <span class="post__action-text">Compartir</span>
+                </button>
+            </footer>
+            <div class="post__likes">89 personas les gusta esto</div>
+        </article>
+    </main>
+    
+    <nav class="navigation">
+        <a href="#" class="navigation__link navigation__link--active">
+            <i class="navigation__icon fas fa-home"></i>
+            <span class="navigation__text">Inicio</span>
+        </a>
+        <a href="#" class="navigation__link">
+            <i class="navigation__icon fas fa-search"></i>
+            <span class="navigation__text">Buscar</span>
+        </a>
+        <a href="#" class="navigation__link">
+            <i class="navigation__icon fas fa-bell"></i>
+            <span class="navigation__text">Alertas</span>
+        </a>
+        <a href="#" class="navigation__link">
+            <i class="navigation__icon fas fa-envelope"></i>
+            <span class="navigation__text">Mensajes</span>
+        </a>
+        <a href="#" class="navigation__link">
+            <i class="navigation__icon fas fa-user"></i>
+            <span class="navigation__text">Perfil</span>
+        </a>
+    </nav>
+
+    <script src="{% static 'javascript/menu_principal/subs_menu/noticias.js' %}"></script>
+</body>
+</html>

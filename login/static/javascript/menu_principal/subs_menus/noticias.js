@@ -1,14 +1,14 @@
 document.addEventListener('templateLoaded', function(e) {
-    if (e.detail.template === 'perfil_usuario.html') {
+    if (e.detail.template === 'noticias.html') {
         // Inicializar componentes específicos del perfil
-        console.log('Perfil de usuario cargado');
+        console.log('Panel de noticias cargado');
         // Aquí puedes añadir la lógica específica para el perfil
     }
 });
 
 document.addEventListener('templateUnloading', function(e) {
-    if (e.detail.template === 'perfil_usuario.html') {
+    if (e.detail.template === 'noticias.html') {
         // Limpiar event listeners o recursos
-        console.log('Perfil de usuario descargado');
+        console.log('Panel de noticias descargado');
     }
 });

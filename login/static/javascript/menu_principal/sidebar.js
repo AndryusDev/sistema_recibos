@@ -1,134 +1,158 @@
 // wdp/static/jvs/sidebar.js
 
+let currentTemplate = null;
+
+function loadScript(url) {
+    return new Promise((resolve, reject) => {
+        const existingScript = document.querySelector(`script[src="${url}"]`);
+        if (existingScript) {
+            resolve();
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = url;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`Error cargando script: ${url}`));
+        document.body.appendChild(script);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    const menuLinks = document.querySelectorAll('.sub-menu-link');
+    const menuLinks = document.querySelectorAll('.menu-link[data-template]');
     const mainContentDiv = document.querySelector('.rightweb-section');
-    const initialTemplate = 'plantlaboral.tpl'; // Ajusta si es diferente
-    let currentTemplate = null; // Variable para rastrear la plantilla actual
-
-    // Define la configuración de scripts directamente aquí
-    const templateScripts = {
-        'personas.tpl': ['/jvs/personas.js?v=1.0'],
-        'plantlaboral.tpl': ['/jvs/plantlaboral.js?v=1.0'],
-        // Agrega aquí más plantillas y sus scripts asociados
+    
+    const templatesConfig = {
+        initial: 'noticias.html',
+        scripts: {
+            'noticias.html': ['/static/javascript/menu_principal/subs_menus/noticias.js'],
+            'perfil_usuario.html': ['/static/javascript/menu_principal/subs_menus/perfil_usuario.js']
+        }
     };
-
-    // Función para cargar un script dinámicamente
-    function loadScript(url) {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = url;
-            script.type = 'text/javascript';
-            script.onload = resolve;
-            script.onerror = reject;
-            mainContentDiv.appendChild(script);
-        });
+    
+    // Función loadTemplate ACTUALIZADA
+    async function loadTemplate(templateName) {
+        // Validación adicional
+        if (!templateName || templateName === 'null') {
+            console.error('Se intentó cargar una plantilla nula');
+            return false;
+        }
+    
+        try {
+            // Limpiar plantilla anterior
+            if (currentTemplate) {
+                const event = new CustomEvent('templateUnloading', {
+                    detail: { template: currentTemplate }
+                });
+                document.dispatchEvent(event);
+            }
+    
+            // Cargar nueva plantilla - URL ACTUALIZADA
+            const response = await fetch(`/load_template/${templateName}/`);
+            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+            
+            mainContentDiv.innerHTML = await response.text();
+            currentTemplate = templateName;
+            
+            // Cargar scripts - MANEJO DE ERRORES MEJORADO
+            if (templatesConfig.scripts[templateName]) {
+                try {
+                    await Promise.all(
+                        templatesConfig.scripts[templateName].map(scriptUrl => 
+                            loadScript(scriptUrl).catch(e => {
+                                console.error(`Error cargando script ${scriptUrl}:`, e);
+                                return null; // Continuar aunque falle un script
+                            })
+                        )
+                    );
+                } catch (e) {
+                    console.error('Error cargando scripts:', e);
+                }
+            }
+            
+            return true;
+        } catch (error) {
+            console.error(`Error cargando plantilla ${templateName}:`, error);
+            mainContentDiv.innerHTML = `
+                <div class="error-message">
+                    <h3>Error al cargar la página</h3>
+                    <p>${error.message}</p>
+                    <button onclick="location.reload()">Recargar</button>
+                </div>
+            `;
+            return false;
+        }
     }
 
-    // Cargar la plantilla inicial al cargar la página
+    // Cargar plantilla inicial
     if (mainContentDiv) {
-        fetch(`/load_template?template=${initialTemplate}`)
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Error al cargar la plantilla inicial:', response.status);
-                    return;
-                }
-                return response.text();
-            })
-            .then(html => {
-                mainContentDiv.innerHTML = html;
-                currentTemplate = initialTemplate; // Establecer la plantilla inicial como actual
-                if (templateScripts[initialTemplate]) {
-                    templateScripts[initialTemplate].forEach(scriptUrl => {
-                        loadScript(scriptUrl);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error al cargar la plantilla inicial:', error);
-            });
+        loadTemplate(templatesConfig.initial).then(success => {
+            if (!success) {
+                console.error('No se pudo cargar la plantilla inicial');
+                // Plantilla de fallback
+                mainContentDiv.innerHTML = `
+                    <div class="error-message">
+                        <h2>Error al cargar la página inicial</h2>
+                        <p>Por favor, intente recargar la página o contacte al administrador.</p>
+                    </div>
+                `;
+            }
+        });
     } else {
         console.error('El elemento .rightweb-section no se encontró en el DOM.');
     }
 
+    // Manejadores de eventos para los enlaces del menú
     menuLinks.forEach(link => {
         link.addEventListener('click', function(event) {
             event.preventDefault();
             const template = this.getAttribute('data-template');
-
-            // Disparar evento para que el script del template actual se limpie
-            if (currentTemplate) {
-                const unloadingEvent = new CustomEvent('templateUnloading', { detail: { template: currentTemplate } });
-                mainContentDiv.dispatchEvent(unloadingEvent);
-            }
-
-            fetch(`/load_template?template=${template}`)
-                .then(response => {
-                    if (!response.ok) {
-                        console.error('Error al cargar la plantilla:', response.status);
-                        return;
-                    }
-                    return response.text();
-                })
-                .then(html => {
-                    mainContentDiv.innerHTML = html;
-                    currentTemplate = template; // Actualizar la plantilla actual
-                    if (templateScripts[template]) {
-                        templateScripts[template].forEach(scriptUrl => {
-                            loadScript(scriptUrl);
-                        });
-                    } else {
-                        console.warn(`No se encontraron scripts definidos para la plantilla: ${template}`);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+            loadTemplate(template);
         });
     });
 
-    // ... (El resto de tu código en sidebar.js)
-});
-
-window.onload = function() {
+    // Manejo del sidebar (mismo código que tenías)
     const menusItems = document.querySelectorAll(".menu-item");
     const sidebar = document.getElementById("sidebar");
     const menuBtn = document.getElementById("menu-btn");
 
     // Minimizar sidebar
-    menuBtn.addEventListener("click", () => {
-        sidebar.classList.toggle("minimize");
-
-        void sidebar.offsetWidth;
-    });
+    if (menuBtn && sidebar) {
+        menuBtn.addEventListener("click", () => {
+            sidebar.classList.toggle("minimize");
+            void sidebar.offsetWidth;
+        });
+    }
 
     menusItems.forEach((menuItem) => {
         const menuLink = menuItem.querySelector(".menu-link");
         const subMenu = menuItem.querySelector(".sub-menu");
         const isDropdown = menuItem.classList.contains("menu-item-dropdown");
 
-        menuLink.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-    
-            // Cerrar otros
-            document.querySelectorAll('.menu-item.selected').forEach(item => {
-                if(item !== menuItem) {
-                    item.classList.remove('selected', 'sub-menu-toggle');
-                    item.querySelector('.sub-menu')?.classList.remove('open');
+        if (menuLink) {
+            menuLink.addEventListener("click", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+        
+                // Cerrar otros
+                document.querySelectorAll('.menu-item.selected').forEach(item => {
+                    if(item !== menuItem) {
+                        item.classList.remove('selected', 'sub-menu-toggle');
+                        item.querySelector('.sub-menu')?.classList.remove('open');
+                    }
+                });
+
+                // Activar el menú actual y marcarlo como seleccionado
+                menuItem.classList.toggle('selected');
+        
+                if(isDropdown && subMenu) {
+                    menuItem.classList.toggle('sub-menu-toggle');
+                    subMenu.classList.toggle('open');
                 }
             });
+        }
 
-            // Activar el menú actual y marcarlo como seleccionado
-            menuItem.classList.toggle('selected');
-    
-            if(isDropdown) {
-                menuItem.classList.toggle('sub-menu-toggle');
-                subMenu?.classList.toggle('open');
-            }
-        });
-
-        // Aquí es donde debes agregar el evento para los elementos del submenú
+        // Manejo de submenús
         if (subMenu) {
             subMenu.querySelectorAll(".sub-menu-link").forEach(subMenuItem => {
                 subMenuItem.addEventListener("click", (event) => {
@@ -142,6 +166,7 @@ window.onload = function() {
         }
     });
 
+    // Función de seguridad (mismo código que tenías)
     function SecurityLvl(JsonOpcLvl) {
         const securityString = JsonOpcLvl;
         const options = document.querySelectorAll(".sidebar .OpcMenu");
@@ -154,4 +179,7 @@ window.onload = function() {
             }
         });
     }
-};
+
+    // Si necesitas usar SecurityLvl desde otro lugar, exponela al ámbito global
+    window.SecurityLvl = SecurityLvl;
+});

@@ -7,7 +7,7 @@
         </div>
         <div class="user">
             <div class="user-img">
-                <img src="/static/image/perfil_andryus.jpeg" alt="user">
+                <img src="{% static 'image/perfil_andryus.jpeg' %}" alt="user">
                 <div class="user-data">
                     <span class="firstname">Andryus</span>
                     <span class="firstapell">Guaiquirima</span>
@@ -16,7 +16,7 @@
             </div>
         </div>
         <ul class="menu">
-            <li class="menu-item menu-item-static">
+            <li class="menu-link menu-item-dropdown OpcMenu" data-template="noticias.html">
                 <a href="#" class="menu-link">
                     <i class="fa-solid house-chimney-window">&#xE00D</i>
                     <span>Noticias</span>
@@ -32,8 +32,8 @@
     </div>
     <div class="menu-container">
         <ul class="menu">
-            <li class="menu-item menu-item-dropdown OpcMenu">
-                <a href="#" class="menu-link">
+            <li class="menu-link menu-item-dropdown OpcMenu" data-template="perfil_usuario.html">
+                <a href="#" class="menu-link OpcMenu">
                     <i class="fa-solid user-large">&#xF406</i>
                     <span>Perfil Usuario</span>
                 </a>
@@ -190,7 +190,7 @@
         </div>
     </div>
 </div>
-<script src="/javascript/common.js?v=1.0" defer></script> 
-<script src="{% static 'javascript/menu_principal/sidebar.js' %}"></script> 
-<link rel="stylesheet" type="text/css" href="/css/styles.css">
-<link rel="stylesheet" type="text/css" href="/css/sidebar.css">
+<script src="{% static 'javascript/menu_principal/sidebar.js' %}"></script>
+<script src="{% static 'javascript/menu_principal/subs_menus/perfil_usuario.js' %}"></script> 
+<link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/styles_sidebar.css' %}">

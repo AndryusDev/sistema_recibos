@@ -12,4 +12,11 @@ urlpatterns = [
     path('verificar_empleado/', views.verificar_empleado, name='verificar_empleado'),
     path('crear_cuenta_empleado/', views.crear_cuenta_empleado, name='crear_cuenta_empleado'),
     path('completar_registro/', views.completar_registro, name='completar_registro'),
+    path('perfil_usuario/', views.perfil_usuario, name= 'perfil_usuario'),
+    path('noticias/', views.noticias, name= 'noticias'),
+
+    path('load_template/<str:template_name>/', views.load_template, name='load_template'),
+    
+    # URLs para servir archivos estáticos en desarrollo (solo para DEBUG=True)
+    path('static/javascript/menu_principal/subs_menus/<str:script_name>', views.serve_js, name='serve_js'),
 ]

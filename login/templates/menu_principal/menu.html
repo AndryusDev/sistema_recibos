@@ -1,24 +1,28 @@
-
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="/static/jvs/sidebar.js?v=1.0" defer></script>
     <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
-    <link rel="stylesheet" href="/static/css/styles_sidebar.css">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styles_sidebar.css' %}">
     <title>Document</title>
 </head>
 <body>
     <header>
         {% include 'header.html' %}
     </header>
+    <div class="bodyweb">
 
-    <div class="leftweb-section">
-        {% include 'menu_principal/sidebar.html' %}
-    </div>
+        <div class="leftweb-section">
+            {% include 'menu_principal/sidebar.html' %}
+        </div>
     
+        <div id="contenido-dinamico" class="rightweb-section">
+            {% include "menu_principal/subs_menus/noticias.html" %}
+        </div>
+    </div>
 
     <footer class="FooterWeb">
         {% include 'footer.html' %}

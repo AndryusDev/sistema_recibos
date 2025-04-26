@@ -633,3 +633,18 @@ button:disabled {
         opacity: 1;
     }
 }
+
+/*.leftweb-section {
+    position: relative;
+    background-color: rgb(250, 255, 220);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.rightweb-section {
+    flex:auto;
+    background-color: rgb(150, 245, 255);
+    margin-left: 0.5rem;
+    padding: 0.5rem 0.75rem;
+}*/

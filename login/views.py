@@ -6,6 +6,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.http import HttpResponse, HttpResponseNotFound
+import os
+from django.conf import settings
 
 from login.models import usuario
 
@@ -26,8 +29,41 @@ def crear_cuenta(request):
 def recuperar_contraseña(request):
     return render(request, 'recuperar_contraseña.html')
 
+# <-----Estrucutra del menu ------->
+
 def menu(request):
     return render(request, 'menu_principal/menu.html')
+
+def load_template(request, template_name):
+    allowed_templates = ['noticias.html', 'perfil_usuario.html']  # Añade todos tus templates
+    
+    if template_name not in allowed_templates:
+        return HttpResponseNotFound('Plantilla no permitida')
+    
+    try:
+        return render(request, f'menu_principal/subs_menus/{template_name}')
+    except:
+        return HttpResponseNotFound('Plantilla no encontrada')
+
+def serve_js(request, script_name):
+    # Lista blanca de scripts permitidos
+    allowed_scripts = ['noticias.js', 'perfil_usuario.js']  # Añade todos tus scripts aquí
+    
+    if script_name not in allowed_scripts:
+        return HttpResponseNotFound('Script no permitido')
+    
+    js_path = os.path.join(settings.STATIC_ROOT, 'javascript', 'menu_principal', 'subs_menus', script_name)
+    
+    if os.path.exists(js_path):
+        with open(js_path, 'r') as f:
+            return HttpResponse(f.read(), content_type='application/javascript')
+    return HttpResponseNotFound('Script no encontrado')
+
+def perfil_usuario(request):
+    return render(request, 'menu_principal/subs_menus/perfil_usuario.html')
+
+def noticias(request):
+    return render(request, 'menu_principal/subs_menus/noticias.html')
 
 
 from rest_framework.views import APIView

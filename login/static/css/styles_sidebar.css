@@ -42,8 +42,7 @@ body {
 .sidebar {
     /* font-family: "Poppins", sans-serif; */
     font-family: Arial, sans-serif; 
-    position:sticky;
-    left: 0;
+    position:relative;
     display:flex;
     flex-direction: column;
     align-items: center;
@@ -324,4 +323,23 @@ body {
 .sub-menu.open {
     height: auto;
     padding: 0.2rem 0 0.2rem 1.5rem;
+}
+
+.bodyweb {
+    display: flex;
+    min-height: calc(100vh - 60px); /* ajusta si tu header/footer tiene altura */
+}
+
+.leftweb-section {
+    position: relative;
+    background-color: rgb(250, 255, 220);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.rightweb-section {
+    flex:auto;
+    background-color: rgb(150, 245, 255);
+    padding: 0.5rem 0.75rem;
 }
