@@ -35,7 +35,7 @@ def menu(request):
     return render(request, 'menu_principal/menu.html')
 
 def load_template(request, template_name):
-    allowed_templates = ['noticias.html', 'perfil_usuario.html']  # Añade todos tus templates
+    allowed_templates = ['noticias.html', 'perfil_usuario.html', 'recibo_pago.html']  # Añade todos tus templates
     
     if template_name not in allowed_templates:
         return HttpResponseNotFound('Plantilla no permitida')
@@ -47,7 +47,7 @@ def load_template(request, template_name):
 
 def serve_js(request, script_name):
     # Lista blanca de scripts permitidos
-    allowed_scripts = ['noticias.js', 'perfil_usuario.js']  # Añade todos tus scripts aquí
+    allowed_scripts = ['noticias.js', 'perfil_usuario.js','recibo_pago.js']  # Añade todos tus scripts aquí
     
     if script_name not in allowed_scripts:
         return HttpResponseNotFound('Script no permitido')
@@ -64,6 +64,12 @@ def perfil_usuario(request):
 
 def noticias(request):
     return render(request, 'menu_principal/subs_menus/noticias.html')
+
+def noticias(request):
+    return render(request, 'menu_principal/subs_menus/noticias.html')
+
+def recibo_pago(request):
+    return render(request, 'menu_principal/subs_menus/recibo_pago.html')
 
 
 from rest_framework.views import APIView

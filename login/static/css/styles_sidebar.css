@@ -286,6 +286,37 @@ body {
     flex-direction: column;
 }
 
+:root {
+    --admin-bg-color: #e0f0ff;
+    --employee-bg-color: #e6ffe6;
+    --consultor-bg-color: #fff9db;
+    --guest-bg-color: #f2f2f2;
+
+    --admin-border-color: #036cb8;
+    --employee-border-color: #2ebd38;
+    --consultor-border-color: #d6a914;
+    --guest-border-color: #cccccc;
+}
+
+.user.admin {
+    background-color: var(--admin-bg-color);
+    border-color: var(--admin-border-color);
+}
+
+.user.funcionario {
+    background-color: var(--employee-bg-color);
+    border-color: var(--employee-border-color);
+}
+
+.user.consultor {
+    background-color: var(--consultor-bg-color);
+    border-color: var(--consultor-border-color);
+}
+
+.user.guest {
+    background-color: var(--guest-bg-color);
+    border-color: var(--guest-border-color);
+}
 .firstname,
 .firstapell {
     font-size: 1rem;
@@ -340,6 +371,6 @@ body {
 
 .rightweb-section {
     flex:auto;
-    background-color: rgb(150, 245, 255);
+    background-color: rgb(255, 255, 255);
     padding: 0.5rem 0.75rem;
 }

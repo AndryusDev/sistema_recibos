@@ -1,0 +1,145 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        {% load static %}
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Recibos de Pago</title>
+        <link rel="stylesheet" href="estilos.css">
+        <link rel="stylesheet" href="{% static 'css/recibo_pago.css' %}">
+    </head>
+    <body>
+        <h1>Listado de Recibos de Pago</h1>
+        <table class="tabla-recibos">
+            <thead class="tabla-recibos__thead">
+                <tr class="tabla-recibos__fila">
+                    <th class="tabla-recibos__columna">Fecha</th>
+                    <th class="tabla-recibos__columna">Nombre</th>
+                    <th class="tabla-recibos__columna">Cargo</th>
+                    <th class="tabla-recibos__columna">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="tabla-recibos__tbody">
+                <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                    <td class="tabla-recibos__celda">30/Mar/2025</td>
+                    <td class="tabla-recibos__celda">Diana Estefania</td>
+                    <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                    <td class="tabla-recibos__celda">
+                        <button class="tabla-recibos__boton">Ver Recibo</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Modal del recibo -->
+        
+        <div class="recibo-modal" id="reciboModal">
+            <div class="recibo-modal__contenido" id="contenidoRecibo">
+
+            </div>
+            <div class="recibo-modal__acciones">
+                <button class="recibo-modal__boton" onclick="window.print()">Imprimir</button>
+                <button class="recibo-modal__boton" onclick="reciboModal__cerrar()">Cerrar</button>
+            </div>
+        </div>
+        <script>
+        function reciboModal__abrir(nombre) {
+            const modal = document.getElementById('reciboModal');
+            const contenido = document.getElementById('contenidoRecibo');
+            contenido.innerHTML = `
+            <h2 class="recibo-modal__titulo">Recibo de Pago</h2>
+            <p><strong>Nombre:</strong> ${nombre}</p>
+            <p><strong>Fecha de Ingreso:</strong> 15-mar-21</p>
+            <p><strong>Cargo:</strong> Asistente Administrativo I</p>
+            <p><strong>Periodo:</strong> 16/Mar/2025 al 30/Mar/2025</p>
+            <table class="recibo-modal__tabla">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Asignación</th>
+                        <th>Deducción</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1001</td>
+                            <td>Sueldo al personal empleado</td>
+                            <td>67,50</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>1103</td>
+                            <td>PRM por antigüedad</td>
+                            <td>2,87</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>1301</td>
+                            <td>Compensación por años de servicio</td>
+                            <td>3,56</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>1101</td>
+                            <td>PRM por hijo</td>
+                            <td>6,25</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>20001</td>
+                            <td>Deducción del IVSS</td>
+                            <td>-</td>
+                            <td>3,00</td>
+                        </tr>
+                        <tr>
+                            <td>20003</td>
+                            <td>Deducción del FAOV</td>
+                            <td>-</td>
+                            <td>0,84</td>
+                        </tr>
+                        <tr>
+                            <td>20004</td>
+                            <td>Deducción del FPJ</td>
+                            <td>-</td>
+                            <td>2,53</td>
+                        </tr>
+                        <tr>
+                            <td>20002</td>
+                            <td>Deducción del Fondo Contributivo RPE</td>
+                            <td>-</td>
+                            <td>0,38</td>
+                        </tr>
+                        <tr>
+                            <td>1401</td>
+                            <td>Bono Vacacional</td>
+                            <td>1.325,39</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>8003</td>
+                            <td>Cestaticket para alimentación</td>
+                            <td>2.579,00</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>1105</td>
+                            <td>PRM por mérito (evaluación)</td>
+                            <td>4,22</td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+            </table>
+            <p><strong>Total Nómina:</strong> 3.982,04</p>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    function reciboModal__cerrar() {
+        document.getElementById('reciboModal').style.display = 'none';
+    }
+    </script>
+    <script src="{% static 'javascript/menu_principal/subs_menu/recibo_pago.js' %}"></script>
+    </body>
+</html>

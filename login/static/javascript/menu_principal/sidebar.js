@@ -19,14 +19,15 @@ function loadScript(url) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const menuLinks = document.querySelectorAll('.menu-link[data-template]');
+    const menuLinks = document.querySelectorAll('[data-template]');
     const mainContentDiv = document.querySelector('.rightweb-section');
     
     const templatesConfig = {
         initial: 'noticias.html',
         scripts: {
             'noticias.html': ['/static/javascript/menu_principal/subs_menus/noticias.js'],
-            'perfil_usuario.html': ['/static/javascript/menu_principal/subs_menus/perfil_usuario.js']
+            'perfil_usuario.html': ['/static/javascript/menu_principal/subs_menus/perfil_usuario.js'],
+            'recibo_pago.html': ['/static/javascript/menu_principal/subs_menus/recibo_pago.js']
         }
     };
     
