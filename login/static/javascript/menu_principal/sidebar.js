@@ -27,7 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
         scripts: {
             'noticias.html': ['/static/javascript/menu_principal/subs_menus/noticias.js'],
             'perfil_usuario.html': ['/static/javascript/menu_principal/subs_menus/perfil_usuario.js'],
-            'recibo_pago.html': ['/static/javascript/menu_principal/subs_menus/recibo_pago.js']
+            'recibo_pago.html': ['/static/javascript/menu_principal/subs_menus/recibo_pago.js'],
+            'constancia_trabajo.html': ['/static/javascript/menu_principal/subs_menus/constancia_trabajo.js']
         }
     };
     

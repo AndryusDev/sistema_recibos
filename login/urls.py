@@ -15,6 +15,7 @@ urlpatterns = [
     path('perfil_usuario/', views.perfil_usuario, name= 'perfil_usuario'),
     path('noticias/', views.noticias, name= 'noticias'),
     path('recibo_pago/', views.recibo_pago, name= 'recibo_pago'),
+    path('constancia_trabajo/', views.constancia_trabajo, name= 'constancia_trabajo'),
 
     path('load_template/<str:template_name>/', views.load_template, name='load_template'),
     

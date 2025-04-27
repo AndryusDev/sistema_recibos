@@ -18,7 +18,7 @@
 
 .tabla-recibos__boton {
     padding: 0.5rem 1rem;
-    background-color: #006666;
+    background-color: #003366;
     color: white;
     border: none;
     border-radius: 0.25rem;
@@ -138,6 +138,7 @@
     text-align: center;
     padding: 0 20px; /* Espacio entre logos y texto */
 }
+
 .logo-derecho {
     order: 3; /* Posiciona a la derecha */
 }
@@ -152,6 +153,7 @@
 .textos-centro {
     flex: 1; /* Ocupa todo el espacio disponible */
     text-align: center;
+    line-height: 1.5;
 }
 
 .logo-izquierdo img, .logo-derecho img {

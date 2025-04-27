@@ -23,7 +23,7 @@ function reciboModal__abrir(nombre) {
         </div>
         <div class="textos-centro">
             <h3 class="Encabezado_recibo">República Bolicariana de Venezuela</h3>
-            <h3 class="Encabezado_recibo">Ministerio del Poder Popular para la Educación</h3>
+            <h3 class="Encabezado_recibo">Ministerio del Poder Popular Para las Relaciones Interiores, Justicia y Paz</h3>
             <h3 class="Encabezado_recibo">Viceministerio del Sistema Integrado de Policía</h3>
             <h3 class="Encabezado_recibo">Policía Estadal Bolivariana de Anzoátegui</h3>
             <h3 class="Encabezado_recibo">DIRECCIÓN DE RECURSOS HUMANOS</h3>
@@ -189,7 +189,7 @@ function ImprimirRecibo() {
                     @media print {
                         /* Ejemplo adicional si deseas ajustes en la impresión dentro del bloque */
                         body {
-                            font-size: 0.8rem; /* Reducir tamaño de fuente al imprimir */
+                            font-size: 0.7rem; /* Reducir tamaño de fuente al imprimir */
                         }
                     }
                 </style>

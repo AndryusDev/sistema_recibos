@@ -286,14 +286,14 @@ body {
 }
 
 :root {
-    --admin-bg-color: #e0f0ff;
-    --employee-bg-color: #e6ffe6;
-    --consultor-bg-color: #fff9db;
+    --admin-bg-color: #fff9db;
+    --employee-bg-color: #e0f0ff;
+    --consultor-bg-color: #e6ffe6;
     --guest-bg-color: #f2f2f2;
 
-    --admin-border-color: #036cb8;
-    --employee-border-color: #2ebd38;
-    --consultor-border-color: #d6a914;
+    --admin-border-color: #d6a914;;
+    --employee-border-color: #036cb8;
+    --consultor-border-color: #2ebd38;
     --guest-border-color: #cccccc;
 }
 
