@@ -167,6 +167,15 @@
 /*imprimir mas pequeño*/
 
 @media print {
+    .recibo-modal__tabla th, 
+    .recibo-modal__tablaencabezado th, 
+    .recibo-modal__tablatotales th,
+    .tabla-recibos th {
+        background-color: #006666 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
     .recibo-modal__contenido {
         padding: 1rem;
         width: 100%;
