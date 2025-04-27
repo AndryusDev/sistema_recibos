@@ -1,4 +1,8 @@
 /* Estilos para la tabla de recibos */
+.contenedor-tabla-recibos {
+    background-color: rgb(204, 203, 203);
+    padding: 20px;
+}
 .tabla-recibos {
     width: 100%;
     border-collapse: collapse;
@@ -46,17 +50,60 @@
     margin-bottom: 1rem;
 }
 
-.recibo-modal__tabla {
+.recibo-modal__tabla, 
+.recibo-modal__tablaencabezado,
+.recibo-modal__tablatotales {
+    table-layout: fixed; /* Fuerza anchos fijos */
     width: 100%;
     border-collapse: collapse;
     margin-top: 1rem;
+    font-size: 0.9rem;
+    margin-bottom: 40px;
 }
 
 .recibo-modal__tabla th, 
-.recibo-modal__tabla td {
+.recibo-modal__tabla td, 
+.recibo-modal__tablaencabezado th, 
+.recibo-modal__tablaencabezado td,
+.recibo-modal__tablatotales th,
+.recibo-modal__tablatotales td,
+.tabla-recibos th,
+.tabla-recibos td {
     border: 1px solid #ddd;
-    padding: 0.5rem;
+    padding: 0.75rem; /* Aumenté el padding para mejor legibilidad */
     text-align: center;
+}
+
+.recibo-modal__tabla th,
+.recibo-modal__tablaencabezado th,
+.recibo-modal__tablatotales th,
+.tabla-recibos th {
+    background-color: #006666; /* Mismo color que tus botones */
+    color: white;
+    font-weight: normal;
+}
+
+.recibo-modal__tabla tr:nth-child(even) {
+    background-color: #f2f2f2; /* Filas alternas para mejor lectura */
+}
+
+.recibo-modal__tabla tr:hover {
+    background-color: #e6f7f7; /* Efecto hover sutil */
+}
+.recibo-modal__tabla td:nth-child(3) {
+    color: #009900; /* Verde para asignaciones */
+    font-weight: bold;
+}
+
+.recibo-modal__tabla td:nth-child(4) {
+    color: #cc0000; /* Rojo para deducciones */
+    font-weight: bold;
+}
+
+/* Estilo para el total */
+.recibo-modal__contenido p strong {
+    font-size: 1.1rem;
+    color: #003366; /* Color que combina con tus botones */
 }
 
 .recibo-modal__acciones {
@@ -72,4 +119,81 @@
     border: none;
     border-radius: 0.25rem;
     cursor: pointer;
+}
+
+.contenedor-encabezados {
+    display: flex;
+    padding: 2rem;            /* Espacio interno */
+    align-items: center;
+    text-align: center;
+}
+
+.logo-izquierdo {
+    order: 1; /* Posiciona a la izquierda (valor por defecto) */
+}
+
+.textos-centro {
+    order: 2; /* Posiciona en el centro */
+    flex: 1; /* Ocupa el espacio disponible */
+    text-align: center;
+    padding: 0 20px; /* Espacio entre logos y texto */
+}
+.logo-derecho {
+    order: 3; /* Posiciona a la derecha */
+}
+
+.logo-izquierdo, .logo-derecho {
+    flex: 0 0 auto; /* No crece, no encoge, tamaño automático */
+    display: flex;
+    align-items: center; /* Centra la imagen verticalmente dentro de su contenedor */
+    height: 100%; /* Ocupa toda la altura del contenedor padre */
+}
+
+.textos-centro {
+    flex: 1; /* Ocupa todo el espacio disponible */
+    text-align: center;
+}
+
+.logo-izquierdo img, .logo-derecho img {
+    max-height: 120px; /* Ajusta según necesidad */
+    width: auto;
+    object-fit: contain;
+}
+
+.Encabezado_recibo {
+    margin: 5px 0;
+    line-height: 1.3;
+}
+/*imprimir mas pequeño*/
+
+@media print {
+    .recibo-modal__contenido {
+        padding: 1rem;
+        width: 100%;
+        max-height: none;
+    }
+
+    .recibo-modal__tabla,
+    .recibo-modal__tablaencabezado,
+    .recibo-modal__tablatotales {
+        font-size: 0.7rem; /* Reducir tamaño de texto en la impresión */
+    }
+
+    .recibo-modal__tabla th,
+    .recibo-modal__tabla td,
+    .recibo-modal__tablaencabezado th,
+    .recibo-modal__tablaencabezado td,
+    .recibo-modal__tablatotales th,
+    .recibo-modal__tablatotales td {
+        padding: 0.4rem; /* Reducir padding para ocupar menos espacio */
+    }
+
+    .logo-izquierdo img,
+    .logo-derecho img {
+        max-height: 80px; /* Hacer logos más pequeños al imprimir */
+    }
+
+    .recibo-modal__acciones {
+        display: none; /* Ocultar botones de imprimir/cerrar en la impresión */
+    }
 }
