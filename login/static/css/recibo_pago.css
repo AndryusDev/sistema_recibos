@@ -1,12 +1,20 @@
 /* Estilos para la tabla de recibos */
 .contenedor-tabla-recibos {
-    background-color: rgb(204, 203, 203);
+    background-color: rgb(235, 235, 235);
     padding: 20px;
+    border-radius: 15px;
+    /*transition: all 0.3s ease;*/
+    animation: modalFade 0.4s ease;
 }
+
 .tabla-recibos {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 2rem;
+    min-width: 600px; /* Mínimo para que no se deforme */
+}
+@keyframes modalFade {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .tabla-recibos__columna, 
@@ -14,6 +22,8 @@
     border: 1px solid #ccc;
     padding: 0.75rem;
     text-align: center;
+    word-break: break-word; /* ¡Muy importante! */
+    max-width: 200px; /* Controlamos el ancho de cada celda */
 }
 
 .tabla-recibos__boton {
@@ -23,6 +33,94 @@
     border: none;
     border-radius: 0.25rem;
     cursor: pointer;
+}
+
+/* INPUT BUSQUEDA*/
+.panel-busqueda {
+    width: 100%;
+    padding: 10px;
+    background-color: #f1f1f1; /* Opcional: color de fondo suave */
+    border: 0.5rem solid #acacacd2;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow-x: auto; /* Muy importante para pantallas pequeñas */
+}
+
+.busqueda-input {
+    padding: 10px 16px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 250px;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.busqueda-input:focus {
+    border-color: #006666; /* Mismo color que el botón */
+    box-shadow: 0 0 5px rgba(0, 102, 102, 0.5);
+}
+
+/* ESTILOS PARA BOTONES Buscar y Limpiar */
+.busqueda-boton {
+    padding: 10px 18px;
+    background-color: #006666;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.busqueda-boton:hover {
+    background-color: #004d4d;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.busqueda-boton:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.busqueda-boton.secundario {
+    background-color: #6c757d;
+}
+
+.busqueda-boton.secundario:hover {
+    background-color: #5a6268;
+}
+
+.tabla-recibos__boton {
+    padding: 8px 16px;
+    background-color: #003366;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.busqueda-boton i {
+    color: white;
+}
+.tabla-recibos__boton:hover {
+    background-color: #002244;
+    transform: scale(1.05);
+}
+
+.tabla-recibo-linea {
+    overflow-x: auto; /* Scroll solo si hace falta horizontalmente */
+    width: 100%;
+    max-height: 400px; /*  Altura máxima visible */
+    overflow-y: auto; /* Scroll vertical si sobrepasa */
+    height: 400px; /*  Ahora es height FIJO, no max-height */
+    overflow-x: auto; /*  Scroll horizontal si es necesario */
 }
 
 /* Estilos para el modal */

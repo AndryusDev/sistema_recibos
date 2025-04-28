@@ -1,1 +1,27 @@
-<h1>Probando</h1>
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Constancia de Trabajo</title>
+        <link rel="stylesheet" href="{% static 'css/constancia_trabajo.css' %}">
+    </head>
+    <body>
+        <div class="contenedor">
+            <h1>Generar Constancia de Trabajo</h1>
+
+            <div class="boton-generar">
+                <button id="generarConstancia">Generar Constancia</button>
+            </div>
+
+            <div id="vistaPrevia"></div>
+
+            <div class="botones-acciones" style="display: none;">
+                <button id="imprimirConstancia">Imprimir Constancia</button>
+            </div>
+        </div>
+
+    <script src="{% static 'javascript/menu_principal/subs_menus/constancia_trabajo.js' %}"></script>
+    </body>
+</html>

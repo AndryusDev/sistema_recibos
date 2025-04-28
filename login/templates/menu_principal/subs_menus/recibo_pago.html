@@ -6,32 +6,155 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Recibos de Pago</title>
-        <link rel="stylesheet" href="estilos.css">
         <link rel="stylesheet" href="{% static 'css/recibo_pago.css' %}">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     </head>
     <body>
         <h1>Listado de Recibos de Pago</h1>
         <div class="contenedor-tabla-recibos">
-            <table class="tabla-recibos">
-                <thead class="tabla-recibos__thead">
-                    <tr class="tabla-recibos__fila">
-                        <th class="tabla-recibos__columna">Fecha</th>
-                        <th class="tabla-recibos__columna">Nombre</th>
-                        <th class="tabla-recibos__columna">Cargo</th>
-                        <th class="tabla-recibos__columna">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="tabla-recibos__tbody">
-                    <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
-                        <td class="tabla-recibos__celda">30/Mar/2025</td>
-                        <td class="tabla-recibos__celda">Diana Estefania</td>
-                        <td class="tabla-recibos__celda">Asistente Administrativo I</td>
-                        <td class="tabla-recibos__celda">
-                            <button class="tabla-recibos__boton">Ver Recibo</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="panel-busqueda">
+                <div class="busqueda-grupo">
+                    <input type="text" id="buscarFecha" class="busqueda-input" placeholder="Buscar por fecha (ej: Mar/2025)">
+                    <button onclick="buscarPorFecha()" class="busqueda-boton">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                    <button onclick="limpiarBusqueda()" class="busqueda-boton secundario">
+                        <i class="fa-solid fa-broom"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="tabla-recibo-linea">
+                <table class="tabla-recibos">
+                    <thead class="tabla-recibos__thead">
+                        <tr class="tabla-recibos__fila">
+                            <th class="tabla-recibos__columna">ID</th>
+                            <th class="tabla-recibos__columna">Fecha</th>
+                            <th class="tabla-recibos__columna">Nombre</th>
+                            <th class="tabla-recibos__columna">Cargo</th>
+                            <th class="tabla-recibos__columna">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="tabla-recibos__tbody">
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
+                            <td class="tabla-recibos__celda">1</td>
+                            <td class="tabla-recibos__celda">30/Mar/2025</td>
+                            <td class="tabla-recibos__celda">Diana Estefania</td>
+                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                            <td class="tabla-recibos__celda">
+                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             </div>
 
         <!-- Modal del recibo -->
@@ -45,6 +168,6 @@
                 <button class="recibo-modal__boton" onclick="reciboModal__cerrar()">Cerrar</button>
             </div>
         </div>
-    <script src="{% static 'javascript/menu_principal/subs_menu/recibo_pago.js' %}"></script>
+    <script src="{% static 'javascript/menu_principal/subs_menus/recibo_pago.js' %}"></script>
     </body>
 </html>
