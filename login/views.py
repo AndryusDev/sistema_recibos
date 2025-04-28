@@ -288,6 +288,9 @@ def login_empleado(request):
         request.session['empleado_id'] = usuario_instance.empleado_id
         request.session.set_expiry(3600)  # 1 hora
 
+        usuario_instance.ultimo_login = timezone.now()  # Guarda la fecha/hora actual
+        usuario_instance.save()  # ¡No olvides guardar!
+
         return JsonResponse({
             'status': 'success',
             'message': 'Inicio de sesión exitoso.',
