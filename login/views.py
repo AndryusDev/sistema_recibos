@@ -32,6 +32,8 @@ def recuperar_contraseña(request):
 # <-----Estrucutra del menu ------->
 
 def menu(request):
+    if 'usuario_id' not in request.session:
+        return redirect('/login/')  # Redirigir si no hay sesión
     return render(request, 'menu_principal/menu.html')
 
 def load_template(request, template_name):
@@ -257,6 +259,44 @@ def completar_registro(request):
 
 #          <-------LOGIN------->
 
+@require_POST
+def login_empleado(request):
+    try:
+        email = request.POST.get('email')
+        contraseña = request.POST.get('password')
+
+        # Validaciones de campos
+        if not email:
+            return JsonResponse({'status': 'error', 'error': 'El correo electrónico es obligatorio.'}, status=400)
+        
+        if not contraseña:
+            return JsonResponse({'status': 'error', 'error': 'La contraseña es obligatoria.'}, status=400)
+
+        # Buscar el usuario por email
+        try:
+            usuario_instance = usuario.objects.get(email=email)
+        except usuario.DoesNotExist:
+            return JsonResponse({'status': 'error', 'error': 'Correo electrónico no registrado.'}, status=401)
+
+        # Verificar contraseña
+        if not check_password(contraseña, usuario_instance.contraseña_hash):
+            return JsonResponse({'status': 'error', 'error': 'Contraseña incorrecta.'}, status=401)
+
+        # Guardar datos de sesión
+        request.session['usuario_id'] = usuario_instance.id
+        request.session['email'] = usuario_instance.email
+        request.session['empleado_id'] = usuario_instance.empleado_id
+        request.session.set_expiry(3600)  # 1 hora
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Inicio de sesión exitoso.',
+            'redirect_url': '/menu/'  # Agregar URL de redirección
+        })
+
+    except Exception as e:
+        # Para producción no deberías mandar detalles de error, solo para debug
+        return JsonResponse({'status': 'error', 'error': 'Error interno del servidor.'}, status=500)
 
 """class CustomLoginView(APIView):
     permission_classes = [AllowAny]

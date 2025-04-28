@@ -1,32 +1,35 @@
-function AutenticarUsuario(event) {
-    event.preventDefault();
-    
-    const formData = {
-        email: document.getElementById('username').value,  // Asegúrate que coincida con tu HTML
-        password: document.getElementById('password').value
-    };
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('loginForm');
 
-    console.log("Enviando:", formData);  // Verifica en consola del navegador (F12)
-    console.log("Datos enviados al backend:", formData);  // Verificación antes del fetch()
-    
-    fetch('/login/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.access) {
-            // Guarda el token en Local Storage
-            localStorage.setItem('access_token', data.access);
-            localStorage.setItem('refresh_token', data.refresh);  // Opcional
-            console.log("Token guardado:", data.access);  // Verifica en consola
-            window.location.href = '/crear_cuenta/';
-        } else {
-            console.error("El servidor no devolvió un token");
-        }
-    })
-    .catch(error => console.error("Error:", error));
-}
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+
+        fetch("/login_empleado/", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.message);  // Muestra el mensaje de éxito
+                window.location.href = data.redirect_url;  // Redirige usando la URL del backend
+            } else {
+                alert(data.error || '❌ Error desconocido.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('⚠ Error del servidor. Intenta más tarde.');
+        });
+    });
+});

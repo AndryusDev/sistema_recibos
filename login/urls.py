@@ -11,11 +11,13 @@ urlpatterns = [
     path('recuperar_contraseña', views.recuperar_contraseña),
     path('verificar_empleado/', views.verificar_empleado, name='verificar_empleado'),
     path('crear_cuenta_empleado/', views.crear_cuenta_empleado, name='crear_cuenta_empleado'),
+    path('login_empleado/', views.login_empleado, name='login_empleado'),
     path('completar_registro/', views.completar_registro, name='completar_registro'),
     path('perfil_usuario/', views.perfil_usuario, name= 'perfil_usuario'),
     path('noticias/', views.noticias, name= 'noticias'),
     path('recibo_pago/', views.recibo_pago, name= 'recibo_pago'),
     path('constancia_trabajo/', views.constancia_trabajo, name= 'constancia_trabajo'),
+
 
     path('load_template/<str:template_name>/', views.load_template, name='load_template'),
     

@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="es">
   <head>
@@ -22,7 +21,7 @@
       <div class="left-section">
         <div class="form-container">
           <h2>Iniciar Sesión</h2>
-          <form id="loginForm" method="POST" action="{% url 'login' %}">
+          <form id="loginForm" method="POST" action="/login_empleado/">
             {% csrf_token %}
             <div class="form-group">
               <label id="LblUsername" for="username">Correo Electronico:</label>
@@ -35,7 +34,7 @@
               </div>
             </div>
             <div class="form-group">
-              <button type="submit" id="loginButton" onclick="AutenticarUsuario()" >Ingresar al sistema</button>
+              <button type="submit" id="loginButton"()" >Ingresar al sistema</button>
             </div>
             <div id="error-message" style="color: red;"></div>
           </form>
@@ -48,6 +47,7 @@
         <img src="{% static 'image/fondo_login.jpg' %}" alt="Imagen de fondo">
       </div>
     </main>
+    <script src="{% static 'javascript/login2.js' %}"></script>
     <footer class="FooterWeb">
       {% include "footer.html" %}
     </footer>
