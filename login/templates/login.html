@@ -6,10 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión</title>
-    <script src="{% static 'javascript/common.js' %}" defer></script>
-    <script src="{% static 'javascript/login.js' %}" defer></script> 
     <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}">
     <!-- <link rel="stylesheet" href="/css/all.min.css"> -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
   </head>
@@ -47,7 +44,7 @@
         <img src="{% static 'image/fondo_login.jpg' %}" alt="Imagen de fondo">
       </div>
     </main>
-    <script src="{% static 'javascript/login2.js' %}"></script>
+    <script src="{% static 'javascript/login2.js' %}" defer></script>
     <footer class="FooterWeb">
       {% include "footer.html" %}
     </footer>

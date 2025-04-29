@@ -291,10 +291,20 @@ def login_empleado(request):
         usuario_instance.ultimo_login = timezone.now()  # Guarda la fecha/hora actual
         usuario_instance.save()  # ¡No olvides guardar!
 
+        usuario_roles = usuario_rol.objects.filter(usuario=usuario_instance)
+        rol_nombres = [usuario_rol_instance.rol.nombre_rol for usuario_rol_instance in usuario_roles]
+
+        # Información del usuario para enviar al frontend
+        usuario_info = {
+            'nombre': usuario_instance.empleado.primer_nombre,
+            'apellido': usuario_instance.empleado.primer_apellido,
+            'roles': rol_nombres,  # Lista de nombres de roles
+        }
         return JsonResponse({
             'status': 'success',
             'message': 'Inicio de sesión exitoso.',
-            'redirect_url': '/menu/'  # Agregar URL de redirección
+            'redirect_url': '/menu/',  # Agregar URL de redirección
+            'usuario_info': usuario_info,  # Información del usuario
         })
 
     except Exception as e:

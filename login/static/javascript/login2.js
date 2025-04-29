@@ -1,6 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('loginForm');
 
+    if (!form) {
+        console.error("❌ Formulario 'loginForm' no encontrado.");
+        return;
+    }
+
     form.addEventListener('submit', function(event) {
         event.preventDefault();
 
@@ -10,26 +15,35 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
             }
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Error en la respuesta del servidor');
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
             return response.json();
         })
         .then(data => {
             if (data.status === 'success') {
-                alert(data.message);  // Muestra el mensaje de éxito
-                window.location.href = data.redirect_url;  // Redirige usando la URL del backend
+                alert(data.message);
+
+                // 1. Guardar la información del usuario
+                sessionStorage.setItem('usuario_info', JSON.stringify(data.usuario_info));
+
+                // 2. Redirigir a la página del menú
+                setTimeout(() => {
+                    window.location.href = data.redirect_url; // ejemplo: '/menu/'
+                }, 500); // medio segundo de espera para que el usuario vea el mensaje
             } else {
-                alert(data.error || '❌ Error desconocido.');
+                console.error("❌ Error en login:", data.message);
+                alert('⚠ Falló el inicio de sesión. Revisa tus credenciales.');
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('⚠ Error en la solicitud:', error);
             alert('⚠ Error del servidor. Intenta más tarde.');
         });
     });
 });
+

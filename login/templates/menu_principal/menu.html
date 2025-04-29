@@ -7,6 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/styles_sidebar.css' %}">
+    <script src="{% static 'javascript/login2.js' %}" defer></script>
+    <script src="{% static 'javascript/login.js' %}"></script>
+    <script src="{% static 'javascript/menu_principal/sidebar.js' %}" defer></script>
     <title>Document</title>
 </head>
 <body>
@@ -23,7 +26,6 @@
             {% include "menu_principal/subs_menus/noticias.html" %}
         </div>
     </div>
-
     <footer class="FooterWeb">
         {% include 'footer.html' %}
     </footer>

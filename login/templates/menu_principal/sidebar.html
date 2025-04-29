@@ -1,17 +1,18 @@
 {% load static %}
 <!DOCTYPE html>
+<script src="{% static 'javascript/login2.js' %}" defer></script>
 <div class="sidebar" id="sidebar">
     <div class="header-menu">
         <div class="menu-btn" id="menu-btn">
             <i class="fa-solid chevron-left">&#x2329</i>
         </div>
-        <div class="user admin">
+        <div class="user" id="user-type">
             <div class="user-img">
                 <img src="{% static 'image/perfil_andryus.jpeg' %}" alt="user">
                 <div class="user-data">
-                    <span class="firstname">Andryus</span>
-                    <span class="firstapell">Guaiquirima</span>
-                    <span class="lvlsecurity">Funcionario</span>
+                    <span class="firstname" id="user-name"></span>  <!-- Agregado ID 'user-name' -->
+                    <span class="firstapell" id="user-lastname"></span>  <!-- Agregado ID 'user-lastname' -->
+                    <span class="lvlsecurity" id="roles"></span>  <!-- Agregado ID 'roles' -->
                 </div>
             </div>
         </div>
@@ -193,6 +194,6 @@
 <script src="{% static 'javascript/menu_principal/sidebar.js' %}"></script>
 <script src="{% static 'javascript/menu_principal/subs_menus/perfil_usuario.js' %}"></script>
 <script src="{% static 'javascript/menu_principal/subs_menus/recibo_pago.js' %}"></script>
-<script src="{% static 'javascript/menu_principal/subs_menus/constancia_trabajo.js' %}"></script>  
+<script src="{% static 'javascript/menu_principal/subs_menus/constancia_trabajo.js' %}"></script> 
 <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
 <link rel="stylesheet" type="text/css" href="{% static 'css/styles_sidebar.css' %}">
