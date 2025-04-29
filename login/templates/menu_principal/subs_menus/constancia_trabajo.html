@@ -6,6 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Constancia de Trabajo</title>
         <link rel="stylesheet" href="{% static 'css/constancia_trabajo.css' %}">
+        <link rel="stylesheet" href="{% static 'javascript/menu_principal/subs_menus/constancia_trabajo.js' %}">
     </head>
     <body>
         <div class="contenedor">
@@ -14,11 +15,17 @@
             <div class="boton-generar">
                 <button id="generarConstancia">Generar Constancia</button>
             </div>
+            <div id="vistaPrevia">
+            <div id="constanciaModal" style="display: none;">
+                <div id="contenidoConstancia"></div>
+                
+            </div>
 
-            <div id="vistaPrevia"></div>
+            </div>
 
             <div class="botones-acciones" style="display: none;">
                 <button id="imprimirConstancia">Imprimir Constancia</button>
+                <button onclick="constanciaModal__cerrar()">Cerrar</button>
             </div>
         </div>
 
