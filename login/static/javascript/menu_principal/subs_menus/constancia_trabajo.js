@@ -90,10 +90,10 @@ function generarConstancia() {
         </div>
         <h3 class="sub_titulo">Constancia de Trabajo</h3>
         <div class="cuerpo-constancia">
-            <p>Se hace constar por medio de la presente que el/la ciudadano(a) <strong>${datos.nombre}</strong>, 
-            titular de la cédula de identidad N° <strong>${datos.cedula}</strong>, labora en esta institución como 
-            <strong>${datos.cargo}</strong>, desde el <strong>${datos.fechaIngreso}</strong>.</p>
-            
+            <div class="primer_texto">
+                <p>Quien suscribre, Director(a) de Recursos Humanos de la Policía Estadal Bolivariana de Anzoátegui, hace constar que los datos que se suministran a continuación, corresponden a un funcionario que labora en esta Institución:</p>
+            </div>
+
             <p>La presente constancia se expide a solicitud del interesado(a) en Lechería, 
             a los <strong>${datos.fechaActual.getDate()}</strong> días del mes de 
             <strong>${datos.fechaActual.toLocaleString('es-ES', { month: 'long' })}</strong> de 
@@ -170,3 +170,8 @@ if (typeof Turbolinks !== 'undefined') {
 // 17. Hacer funciones disponibles globalmente
 window.constanciaModal__cerrar = constanciaModal__cerrar;
 window.generarConstancia = generarConstancia;
+
+
+/*<strong>${datos.nombre}</strong>, 
+            titular de la cédula de identidad N° <strong>${datos.cedula}</strong>, labora en esta institución como 
+            <strong>${datos.cargo}</strong>, desde el <strong>${datos.fechaIngreso}</strong>.*/

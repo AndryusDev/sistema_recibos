@@ -171,3 +171,11 @@
     align-items: center;
     text-align: center;
 }
+
+.primer_texto p {
+    text-align: justify;  /* Alinea el texto a ambos lados */
+    text-align-last: left; /* Opcional: alinea la última línea a la izquierda */
+    margin: 0;            /* Elimina márgenes predeterminados del <p> */
+    line-height: 1.5;     /* Espaciado entre líneas para mejor legibilidad */
+    margin-bottom: 10px;
+}
