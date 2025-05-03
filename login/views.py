@@ -38,7 +38,7 @@ def menu(request):
 
 def load_template(request, template_name):
     allowed_templates = ['noticias.html', 'perfil_usuario.html', 'recibo_pago.html',
-                        'constancia_trabajo.html']  # Añade todos tus templates
+                        'constancia_trabajo.html', 'arc.html']  # Añade todos tus templates
     
     if template_name not in allowed_templates:
         return HttpResponseNotFound('Plantilla no permitida')
@@ -51,7 +51,7 @@ def load_template(request, template_name):
 def serve_js(request, script_name):
     # Lista blanca de scripts permitidos
     allowed_scripts = ['noticias.js', 'perfil_usuario.js','recibo_pago.js',
-                        'constancia_trabajo.js']  # Añade todos tus scripts aquí
+                        'constancia_trabajo.js, arc.js']  # Añade todos tus scripts aquí
     
     if script_name not in allowed_scripts:
         return HttpResponseNotFound('Script no permitido')
@@ -77,6 +77,9 @@ def recibo_pago(request):
 
 def constancia_trabajo(request):
     return render(request, 'menu_principal/subs_menus/constancia_trabajo.html')
+
+def arc(request):
+    return render(request, 'menu_principal/subs_menus/arc.html')
 
 
 from rest_framework.views import APIView
