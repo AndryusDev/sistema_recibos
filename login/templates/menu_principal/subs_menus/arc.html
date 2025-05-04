@@ -3,95 +3,48 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ARC</title>
-    <link rel="stylesheet" href="{% static 'css/arc.css' %}">
+    <title>Panel de ARC</title>
+    <link rel="stylesheet" href="/static/css/arc.css">
 </head>
 <body>
 
     <div class="panel-arc">
-        <h2>Documentos ARC por Año</h2>
-        <table id="tablaARC" class="tabla-arc">
+        <h2>Historial de ARC</h2>
+        <table class="tabla-arc">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Año</th>
                     <th>Fecha de Emisión</th>
-                    <th>Acción</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- Ejemplo de fila (esto normalmente se carga dinámicamente) -->
+                <!-- Puedes duplicar esta fila para cada ARC -->
                 <tr>
-                    <td>1</td>
-                    <td>2023</td>
-                    <td>15/04/2024</td>
-                    <td>
-                        <button class="btn-ver" onclick="abrirARC(2023)">Ver</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>2</td>
                     <td>2024</td>
                     <td>15/04/2025</td>
-                    <td>
-                        <button class="btn-ver" onclick="abrirARC(2024)">Ver</button>
-                    </td>
+                    <td><button onclick="arcModal__abrir(2024)">Ver ARC</button></td>
+                </tr>
+                <tr>
+                    <td>2023</td>
+                    <td>15/04/2024</td>
+                    <td><button onclick="arcModal__abrir(2023)">Ver ARC</button></td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-        <!-- Modal ARC -->
-        <div id="modalARC" class="modal-arc">
-            <div class="modal-contenido">
-                <span class="cerrar-modal" onclick="cerrarModalARC()">&times;</span>
-                <div id="contenidoARC">
-                    <!-- Aquí se carga dinámicamente el contenido del ARC según el año -->
-                </div>
-                <button onclick="imprimirARC()">Imprimir</button>
-            </div>
+    <!-- Modal ARC -->
+    <div class="arc-modal" id="arcModal">
+        <div class="arc-modal__contenido" id="contenidoArc">
+
         </div>
+        <div class="arc-modal__acciones">
+            <button class="arc-modal__boton" onclick="arcRecibo()">Imprimir</button>
+            <button class="arc-modal__boton" onclick="arcModal__cerrar()">Cerrar</button>
+        </div>
+    </div>
+    <script src="{% static 'javascript/menu_principal/subs_menus/arc.js' %}"></script>
 
-        <script>
-            function abrirModalARC(anio) {
-                const modal = document.getElementById("modalARC");
-                const contenido = document.getElementById("contenidoARC");
-
-                contenido.innerHTML = `
-                    <h3>Constancia de ARC - ${anio}</h3>
-                    <p><strong>Nombre:</strong> Juan Pérez</p>
-                    <p><strong>Cédula:</strong> V-25.123.456</p>
-                    <p><strong>Ingreso Anual:</strong> Bs. 15.000,00</p>
-                    <p><strong>Retención ISLR:</strong> Bs. 2.500,00</p>
-                    <p><strong>Fecha de emisión:</strong> 15/04/${parseInt(anio)+1}</p>
-                    <p><em>Dirección de Recursos Humanos</em></p>
-                `;
-
-                modal.style.display = "flex";
-            }
-
-            function cerrarModalARC() {
-                document.getElementById("modalARC").style.display = "none";
-            }
-
-            function imprimirARC() {
-                const contenido = document.getElementById("contenidoARC").innerHTML;
-                const ventana = window.open('', '_blank');
-                ventana.document.write(`
-                    <html>
-                        <head>
-                            <title>Imprimir ARC</title>
-                            <link rel="stylesheet" href="/static/css/arc.css">
-                        </head>
-                        <body>${contenido}</body>
-                    </html>
-                `);
-                ventana.document.close();
-                ventana.focus();
-                ventana.print();
-                ventana.close();
-            }
-        </script>
-
-    </body>
+</body>
 </html>

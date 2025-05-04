@@ -42,33 +42,315 @@ button:hover {
 }
 
 /* Modal */
-.modal-arc {
+/* Estilos para el contenedor del modal (fondo oscuro) */
+.arc-modal {
     display: none;
     position: fixed;
-    z-index: 999;
-    left: 0;
     top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.6);
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    justify-content: center;
+    align-items: flex-start; /* Cambiado a flex-start para mejor scroll */
+    padding: 20px 0;
+    overflow-y: auto;
+}
+
+/* Estilos para el contenedor principal del modal */
+.arc-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(3px);
+}
+
+/* Contenedor del contenido y botones */
+.arc-modal__contenido {
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    width: 85%;
+    max-width: 900px;
+    max-height: 85vh;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+/* Estilo principal del modal (igual que recibo-modal) */
+.arc-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: flex-start; /* Cambiado a flex-start para mejor scroll */
+    align-items: center;
+    z-index: 9999;
+    overflow-y: auto;
+
+}
+
+.arc-modal__contenido {
+    background: white;
+    width: 95%;
+    max-width: 900px;
+    padding: 2rem;
+    width: 80%;
+    max-height: 90%;
+    overflow-y: auto;
+    border-radius: 0.5rem;
+}
+
+/* Contenido del ARC con los estilos del recibo */
+.arc-container {
+    font-family: Arial;
+    font-size: 0.9rem;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.arc-header {
+    text-align: center;
+    /*margin-bottom: 1rem;*/
+    color: #003366;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /*padding: 1rem 0;*/
+    /*margin-bottom: 10px;*/
+}
+
+.sub_titulo {
+    display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.modal-contenido {
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 10px;
-    width: 80%;
-    max-width: 600px;
+.logo-izquierdo {
+    order: 1; /* Posiciona a la izquierda (valor por defecto) */
+}
+
+.textos-centro__titulo {
+    flex: 1;
+    order: 2; /* Posiciona en el centro */
+    text-align: center;
+    padding: 0 20px;
+}
+.textos-centro__titulo h2{
+    text-decoration: underline;
+}
+
+.logo-derecho {
+    order: 3; /* Posiciona a la derecha */
+}
+
+.logo-izquierdo, 
+.logo-derecho {
+    margin: 10px 0;
+}
+
+.arc-header span {
+    text-decoration: underline;
+}
+
+/* Tablas con el mismo estilo que recibo-modal */
+.tabla-modal-arc,
+.tabla-arc-detalle,
+.tabla-arc-resumen {
+    min-width: 800px; /* Ancho mínimo para mantener estructura */
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabla-modal-arc th,
+.tabla-modal-arc td,
+.tabla-arc-detalle th,
+.tabla-arc-detalle td,
+.tabla-arc-resumen th,
+.tabla-arc-resumen td {
+    border: 1px solid #ddd;
+    padding: 0.75rem;
+    text-align: center;
+}
+
+/* Encabezados de tabla con el color #006666 como en recibo */
+.tabla-arc-detalle th,
+.tabla-arc-resumen th {
+    background-color: #006666;
+    color: white;
+    font-weight: normal;
+}
+
+/* Filas alternas como en recibo */
+/*.tabla-arc-detalle tr:nth-child(even) {
+    background-color: #f2f2f2;
+}*/
+
+.tabla-arc-detalle tr:hover {
+    background-color: #e6f7f7;
+}
+
+/* Total con el mismo estilo */
+.total-declarar {
+    text-align: right;
+    font-weight: bold;
+    margin: 1rem 0;
+    font-size: 1.1rem;
+    color: #003366;
+}
+
+/* Botones idénticos a recibo-modal */
+.arc-modal__acciones {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.arc-modal__boton {
+    padding: 0.5rem 1rem;
+    margin: 0 0.5rem;
+    background-color: #003366;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+.arc-modal__boton:hover {
+    background-color: #004080;
+}
+
+/* Nota final */
+.nota-final {
+    margin-top: 1.5rem;
+    font-size: 0.8rem;
+    font-style: italic;
+    text-align: center;
+    color: #666;
+}
+
+/* Estilos para impresión (igual que recibo) */
+@media print {
+    .arc-modal__contenido {
+        padding: 1rem;
+        width: 100%;
+        max-height: none;
+    }
+    
+    .tabla-arc-detalle th,
+    .tabla-arc-resumen th {
+        background-color: #006666 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .tabla-modal-arc,
+    .tabla-arc-detalle,
+    .tabla-arc-resumen {
+        font-size: 0.7rem;
+    }
+    
+    .tabla-modal-arc th,
+    .tabla-modal-arc td,
+    .tabla-arc-detalle th,
+    .tabla-arc-detalle td,
+    .tabla-arc-resumen th,
+    .tabla-arc-resumen td {
+        padding: 0.4rem;
+    }
+    
+    .arc-modal__acciones {
+        display: none;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .arc-modal__contenido {
+        width: 95%;
+        padding: 1rem;
+    }
+    
+    .tabla-modal-arc th,
+    .tabla-modal-arc td,
+    .tabla-arc-detalle th,
+    .tabla-arc-detalle td,
+    .tabla-arc-resumen th,
+    .tabla-arc-resumen td {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+/*celdas anidadas*/
+
+/* Estilo base para todas las celdas anidadas */
+.porcentaje-celda, 
+.eps-celda, 
+.montobruto-celda,
+.montoneto-celda {
+    padding: 0 !important;
+    min-width: 80px;
+    height: 100%; /* Asegura que ocupe toda la altura disponible */
+    box-sizing: border-box;
     position: relative;
 }
 
-.cerrar-modal {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 24px;
-    cursor: pointer;
+/* Estilo común para tablas anidadas */
+.porcentaje-tabla, 
+.eps-tabla, 
+.montobruto-tabla,
+.montoneto-tabla {
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse;
+    border: 0;
+    table-layout: fixed;
+}
+
+/* Estilo común para celdas superiores e inferiores */
+.porcentaje-superior, 
+.porcentaje-inferior, 
+.eps-superior, 
+.eps-inferior, 
+.montobruto-superior, 
+.montobruto-inferior,
+.montoneto-superior,
+.montoneto-inferior{
+    text-align: center;
+    padding: 6px 4px;
+    border: 0;
+    height: 50%; /* Cada parte ocupa la mitad del espacio */
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    word-break: break-word;
+}
+
+/* Bordes y estilos específicos */
+.porcentaje-superior, 
+.eps-superior, 
+.montobruto-superior,
+.montoneto-superior {
+    border-bottom: 1px solid #000;
+    font-size: 0.85rem;
+}
+
+.porcentaje-superior {
+    background-color: #f0f0f0;
+}
+.montobruto-inferior:empty::after, .montobruto-superior::after,
+.esp-inferior:empty::after, .esp-superior::after,
+.porcentaje-inferior:empty::after, .porcentaje-superior::after,
+.montoneto-inferior:empty::after, .montoneto-superior::after {
+    content: "\00a0"; /* Espacio invisible (no rompe el diseño) */
 }
