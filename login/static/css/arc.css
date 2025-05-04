@@ -136,6 +136,10 @@ button:hover {
     align-items: center;
 }
 
+.sub {
+    margin-bottom: 10px;
+}
+
 .logo-izquierdo {
     order: 1; /* Posiciona a la izquierda (valor por defecto) */
 }
@@ -160,7 +164,71 @@ button:hover {
 }
 
 .arc-header span {
-    text-decoration: underline;
+    text-decoration: underline;;
+}
+
+/* Contenedor principal (Flexbox) */
+.contenedor-tablas, .contenedor-tablas2 {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    margin-bottom: 10px;
+}
+
+/* Estilos para tus tablas específicas */
+.tabla-modal-arc__agente,
+.tabla-modal-arc__sujeto,
+.tabla-modal-arc__agente__direccion,
+.tabla-modal-arc__sujeto__cedula {
+    width: 48%;
+    border-collapse: collapse;
+    border: 1px solid #ddd;
+    word-break: break-word;
+}
+
+/* Estilos para celdas */
+.tabla-modal-arc__agente th,
+.tabla-modal-arc__agente td,
+.tabla-modal-arc__sujeto th,
+.tabla-modal-arc__sujeto td,
+.tabla-modal-arc__agente__direccion th,
+.tabla-modal-arc__agente__direccion td,
+.tabla-modal-arc__sujeto__cedula th,
+.tabla-modal-arc__sujeto__cedula td {
+    padding: 12px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+/* Encabezados */
+.tabla-modal-arc__agente th,
+.tabla-modal-arc__sujeto th,
+.tabla-modal-arc__agente__direccion th,
+.tabla-modal-arc__sujeto__cedula th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+/* Responsive: móviles */
+@media (max-width: 768px) {
+    .contenedor-tablas, .contenedor-tablas2 {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .tabla-modal-arc__agente,
+    .tabla-modal-arc__sujeto,
+    .tabla-modal-arc__agente__direccion,
+    .tabla-modal-arc__sujeto__cedula {
+        width: 100%;
+    }
+}
+
+.minimizar {
+    font-size: 0.65rem;  /* Tamaño reducido (85% del tamaño base) */
+    line-height: 1.3;    /* Espaciado entre líneas ajustado */
 }
 
 /* Tablas con el mismo estilo que recibo-modal */
@@ -191,11 +259,6 @@ button:hover {
     font-weight: normal;
 }
 
-/* Filas alternas como en recibo */
-/*.tabla-arc-detalle tr:nth-child(even) {
-    background-color: #f2f2f2;
-}*/
-
 .tabla-arc-detalle tr:hover {
     background-color: #e6f7f7;
 }
@@ -209,6 +272,20 @@ button:hover {
     color: #003366;
 }
 
+.fila-total {
+    background-color: #f2f2f2; /* Fondo gris claro */
+    font-weight: bold;        /* Texto en negrita */
+}
+
+.total-texto {
+    text-align: right;       /* Alinea el texto a la derecha */
+    padding-right: 20px;     /* Espacio antes del monto */
+}
+
+.total-monto {
+    text-align: center;      /* Centra el número */
+    border-left: 1px solid #ddd; /* Línea divisoria opcional */
+}
 /* Botones idénticos a recibo-modal */
 .arc-modal__acciones {
     margin-top: 1rem;
@@ -353,4 +430,45 @@ button:hover {
 .porcentaje-inferior:empty::after, .porcentaje-superior::after,
 .montoneto-inferior:empty::after, .montoneto-superior::after {
     content: "\00a0"; /* Espacio invisible (no rompe el diseño) */
+}
+
+.tabla-arc-resumen {
+    display: flex;                  /* Habilita el diseño flexible */
+    justify-content: space-between; /* Distribuye el espacio entre elementos */
+    align-items: center;           /* Centra verticalmente */
+    gap: 20px;                     /* Espacio entre tablas */
+    width: 100%;
+    padding: 10px 0;
+}
+
+.tabla-arc-resumen table {
+    border-collapse: collapse;
+    border: 1px solid #ddd;        /* Borde opcional */
+    width: auto;                  /* Ancho según contenido */
+    min-width: 120px;             /* Ancho mínimo */
+    text-align: center;           /* Centra el texto */
+    background-color: #f8f8f8;    /* Fondo claro */
+}
+
+.tabla-arc-resumen td {
+    padding: 10px 15px;
+}
+
+.tabla-arc-resumen strong {
+    display: block;
+    margin-bottom: 5px;
+}
+.tabla-arc-resumen__vacaciones {
+    order: 1;
+}
+
+.tabla-arc-resumen__aguinaldos {
+    order: 2;
+}
+.tabla-arc-resumen__evaluacion {
+    order: 3;
+}
+
+.tabla-arc-resumen__salarios {
+    order: 4;
 }
