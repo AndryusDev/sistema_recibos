@@ -434,6 +434,7 @@ button:hover {
 
 .tabla-arc-resumen {
     display: flex;                  /* Habilita el diseño flexible */
+    flex-direction: row;            /* Alinea los elementos en fila */
     justify-content: space-between; /* Distribuye el espacio entre elementos */
     align-items: center;           /* Centra verticalmente */
     gap: 20px;                     /* Espacio entre tablas */
