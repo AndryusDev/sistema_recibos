@@ -29,7 +29,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'perfil_usuario.html': ['/static/javascript/menu_principal/subs_menus/perfil_usuario.js'],
             'recibo_pago.html': ['/static/javascript/menu_principal/subs_menus/recibo_pago.js'],
             'constancia_trabajo.html': ['/static/javascript/menu_principal/subs_menus/constancia_trabajo.js'],
-            'arc.html': ['/static/javascript/menu_principal/subs_menus/arc.js']
+            'arc.html': ['/static/javascript/menu_principal/subs_menus/arc.js'],
+            'importar_nomina.html': ['/static/javascript/menu_principal/subs_menus/importar_nomina.js']
         }
     };
     

@@ -38,7 +38,7 @@ def menu(request):
 
 def load_template(request, template_name):
     allowed_templates = ['noticias.html', 'perfil_usuario.html', 'recibo_pago.html',
-                        'constancia_trabajo.html', 'arc.html']  # Añade todos tus templates
+                        'constancia_trabajo.html', 'arc.html','importar_nomina.html']  # Añade todos tus templates
     
     if template_name not in allowed_templates:
         return HttpResponseNotFound('Plantilla no permitida')
@@ -51,7 +51,7 @@ def load_template(request, template_name):
 def serve_js(request, script_name):
     # Lista blanca de scripts permitidos
     allowed_scripts = ['noticias.js', 'perfil_usuario.js','recibo_pago.js',
-                        'constancia_trabajo.js, arc.js']  # Añade todos tus scripts aquí
+                        'constancia_trabajo.js, arc.js', 'importar_nomina.js']  # Añade todos tus scripts aquí
     
     if script_name not in allowed_scripts:
         return HttpResponseNotFound('Script no permitido')
@@ -80,6 +80,9 @@ def constancia_trabajo(request):
 
 def arc(request):
     return render(request, 'menu_principal/subs_menus/arc.html')
+
+def importar_nomina(request):
+    return render(request, 'menu_principal/subs_menus/importar_nomina.html')
 
 
 from rest_framework.views import APIView
@@ -142,6 +145,7 @@ def verificar_empleado(request):
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.hashers import make_password, check_password
+
 
 #formnulario crear Cuenta
 @require_POST
@@ -313,6 +317,10 @@ def login_empleado(request):
     except Exception as e:
         # Para producción no deberías mandar detalles de error, solo para debug
         return JsonResponse({'status': 'error', 'error': 'Error interno del servidor.'}, status=500)
+    
+#          <-------LOGIN_TERMINADO------->
+
+#          <-------RECUPERAR_CONTRASEÑA------->
 
 """class CustomLoginView(APIView):
     permission_classes = [AllowAny]
