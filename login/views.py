@@ -51,7 +51,7 @@ def load_template(request, template_name):
 def serve_js(request, script_name):
     # Lista blanca de scripts permitidos
     allowed_scripts = ['noticias.js', 'perfil_usuario.js','recibo_pago.js',
-                        'constancia_trabajo.js, arc.js', 'importar_nomina.js']  # Añade todos tus scripts aquí
+                        'constancia_trabajo.js', 'arc.js', 'importar_nomina.js']  # Añade todos tus scripts aquí
     
     if script_name not in allowed_scripts:
         return HttpResponseNotFound('Script no permitido')
