@@ -102,7 +102,7 @@ body {
 
 .right-section {
     flex: 1;
-    background: url('/static/image/fondo_login.jpg') no-repeat center center;
+    /*background: url('/static/image/fondo_login.jpg') no-repeat center center;*/
     background-size: cover;
     overflow: hidden; /* Asegura que la imagen no se desborde */
     height: 100vh;
