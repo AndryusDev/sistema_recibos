@@ -1,73 +1,219 @@
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM completamente cargado y script iniciado");
+// Función global para abrir el modal
+// Función global para abrir el modal
+function importarnominaModal__abrir() {
+    const modal = document.getElementById("importarnominaModal");
+    const contenido = document.getElementById("contenidoImportarnomina");
 
-    // Elementos del DOM
-    const modal = document.getElementById('modal-importacion');
-    const btnAbrirModal = document.getElementById('btn-abrir-modal');
-    const btnCerrarModal = document.querySelector('.btn-cerrar');
-    const btnCancelar = document.getElementById('btn-cancelar');
-    const pasos = document.querySelectorAll('.paso-importacion');
-    const indicadoresPasos = document.querySelectorAll('.indicador-pasos .paso');
-    const btnAnterior = document.getElementById('btn-anterior');
-    const btnSiguiente = document.getElementById('btn-siguiente');
-    const btnImportar = document.getElementById('btn-importar');
-    const dropzone = document.getElementById('dropzone-area');
-    const inputArchivo = document.getElementById('archivo-nomina-modal');
-    const nombreArchivo = document.getElementById('nombre-archivo');
-    const btnSeleccionarArchivo = document.getElementById('btn-seleccionar-archivo');
+    contenido.innerHTML = `
+        <div class="recibo-modal__contenido">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-import"></i> Importar Nómina</h3>
+                <button class="btn-cerrar">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Paso 1: Selección de tipo de nómina -->
+                <div class="paso-importacion activo" data-paso="1">
+                    <div class="form-group">
+                        <label for="modal-tipo-nomina"><i class="fas fa-list-check"></i> Tipo de Nómina:</label>
+                        <select id="modal-tipo-nomina" class="busqueda-input" required>
+                            <option value="">Seleccione un tipo</option>
+                            <option value="Administrativo">Administrativo</option>
+                            <option value="Obrero">Obrero</option>
+                            <option value="Uniformado">Uniformado</option>
+                            <option value="Directivo">Directivo</option>
+                        </select>
+                    </div>
+                    
+                    <div class="info-ayuda">
+                        <i class="fas fa-info-circle"></i> Seleccione el tipo de nómina que desea importar
+                    </div>
+                </div>
+                
+                <!-- Paso 2: Período y secuencia -->
+                <div class="paso-importacion" data-paso="2">
+                    <div class="form-group">
+                        <label for="modal-mes"><i class="fas fa-calendar"></i> Mes:</label>
+                        <select id="modal-mes" class="busqueda-input" required>
+                            <option value="">Seleccione un mes</option>
+                            <option value="1">Enero</option>
+                            <option value="2">Febrero</option>
+                            <option value="3">Marzo</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Mayo</option>
+                            <option value="6">Junio</option>
+                            <option value="7">Julio</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Septiembre</option>
+                            <option value="10">Octubre</option>
+                            <option value="11">Noviembre</option>
+                            <option value="12">Diciembre</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="modal-anio"><i class="fas fa-calendar-alt"></i> Año:</label>
+                        <input type="number" id="modal-anio" class="busqueda-input" min="2020" max="2030" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="modal-secuencia"><i class="fas fa-sort-numeric-up"></i> Secuencia:</label>
+                        <select id="modal-secuencia" class="busqueda-input" required>
+                            <option value="Primera">Primera del mes</option>
+                            <option value="Segunda">Segunda del mes</option>
+                            <option value="Especial">Especial</option>
+                        </select>
+                    </div>
+                    
+                    <div class="info-ayuda">
+                        <i class="fas fa-info-circle"></i> Especifique el período y secuencia de la nómina
+                    </div>
+                </div>
+                
+                <!-- Paso 3: Carga de archivo -->
+                <div class="paso-importacion" data-paso="3">
+                    <div class="dropzone-modal" id="dropzone-area">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Arrastra tu archivo Excel o CSV aquí</p>
+                        <p class="nombre-archivo" id="nombre-archivo"></p>
+                        <input type="file" id="archivo-nomina-modal" accept=".xlsx,.xls,.csv" required>
+                        <button class="busqueda-boton" id="btn-seleccionar-archivo">
+                            <i class="fas fa-folder-open"></i> Seleccionar archivo
+                        </button>
+                        
+                        <div class="info-archivo">
+                            <span>Formatos soportados: .xlsx, .xls, .csv (Máx. 5MB)</span>
+                            <a href="#" class="descargar-plantilla" id="descargar-plantilla">
+                                <i class="fas fa-file-download"></i> Descargar plantilla
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="previsualizacion-datos" id="previsualizacion-datos">
+                        <!-- Aquí se mostrará una vista previa de los datos -->
+                    </div>
+                </div>
+                
+                <!-- Paso 4: Confirmación -->
+                <div class="paso-importacion" data-paso="4">
+                    <div class="resumen-importacion">
+                        <h4><i class="fas fa-check-circle"></i> Resumen de Importación</h4>
+                        
+                        <div class="resumen-item">
+                            <span>Tipo de Nómina:</span>
+                            <strong id="resumen-tipo">Administrativo</strong>
+                        </div>
+                        
+                        <div class="resumen-item">
+                            <span>Período:</span>
+                            <strong id="resumen-periodo">Marzo 2024 - Primera</strong>
+                        </div>
+                        
+                        <div class="resumen-item">
+                            <span>Archivo:</span>
+                            <strong id="resumen-archivo">nomina_administrativa_marzo.xlsx</strong>
+                        </div>
+                        
+                        <div class="resumen-item">
+                            <span>Registros detectados:</span>
+                            <strong id="resumen-registros">125</strong>
+                        </div>
+                        
+                        <div class="advertencia-importacion">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Revise cuidadosamente la información antes de confirmar. Esta acción no se puede deshacer.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="recibo-modal__acciones">
+                <div class="indicador-pasos">
+                    <span class="paso" data-paso="1">1</span>
+                    <span class="paso" data-paso="2">2</span>
+                    <span class="paso" data-paso="3">3</span>
+                    <span class="paso" data-paso="4">4</span>
+                </div>
+                
+                <div class="botones-navegacion">
+                    <button id="btn-anterior" class="recibo-modal__boton btn-anterior" disabled>
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    <button id="btn-siguiente" class="recibo-modal__boton btn-siguiente" style="background-color: #006666;">
+                        Siguiente <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button id="btn-importar" class="recibo-modal__boton btn-importar" style="background-color: #003366;">
+                        <i class="fas fa-check"></i> Confirmar Importación
+                    </button>
+                    <button id="btn-cancelar" class="recibo-modal__boton btn-cancelar" style="background-color: #6c757d;">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.style.display = 'flex';
+    
+    // Inicializar los eventos del modal
+    inicializarModalImportacion();
+}
+
+// Función para inicializar todos los eventos del modal
+function inicializarModalImportacion() {
+    const modal = document.getElementById("importarnominaModal");
+    if (!modal) return;
+
+    // Elementos del modal
+    const btnCerrar = modal.querySelector('.btn-cerrar');
+    const btnCancelar = modal.querySelector('#btn-cancelar');
+    const pasos = modal.querySelectorAll('.paso-importacion');
+    const indicadoresPasos = modal.querySelectorAll('.indicador-pasos .paso');
+    const btnAnterior = modal.querySelector('#btn-anterior');
+    const btnSiguiente = modal.querySelector('#btn-siguiente');
+    const btnImportar = modal.querySelector('#btn-importar');
+    const dropzone = modal.querySelector('#dropzone-area');
+    const inputArchivo = modal.querySelector('#archivo-nomina-modal');
+    const nombreArchivo = modal.querySelector('#nombre-archivo');
+    const btnSeleccionarArchivo = modal.querySelector('#btn-seleccionar-archivo');
+    const descargarPlantilla = modal.querySelector('#descargar-plantilla');
     
     let pasoActual = 1;
     const totalPasos = 4;
     
-    // Verificación de elementos
-    if (!modal || !btnAbrirModal || !btnCerrarModal || !btnCancelar || 
-        !btnAnterior || !btnSiguiente || !btnImportar) {
-        console.error("Error: Elementos esenciales no encontrados");
-        return;
-    }
-
-    // Abrir modal
-    btnAbrirModal.addEventListener('click', function() {
-        console.log("Abriendo modal de importación");
-        modal.style.display = 'flex';
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        pasoActual = 1;
-        console.log("Estilo del modal:", modal.style.display); // Debería decir "flex"
-        actualizarPasos();
-    });
-    
-    // Cerrar modal
-    btnCerrarModal.addEventListener('click', cerrarModal);
-    btnCancelar.addEventListener('click', cerrarModal);
-    
+    // Función para cerrar el modal
     function cerrarModal() {
         modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-        console.log("Modal cerrado");
+        /*document.body.style.overflow = 'auto'*/
     }
     
-    // Navegación entre pasos
-    btnSiguiente.addEventListener('click', function() {
-        if (validarPasoActual()) {
-            pasoActual++;
-            actualizarPasos();
-        }
-    });
+    // Asignar eventos de cierre
+    if (btnCerrar) btnCerrar.addEventListener('click', cerrarModal);
+    if (btnCancelar) btnCancelar.addEventListener('click', cerrarModal);
     
-    btnAnterior.addEventListener('click', function() {
-        pasoActual--;
-        actualizarPasos();
-    });
+    // Navegación entre pasos
+    if (btnSiguiente) {
+        btnSiguiente.addEventListener('click', function() {
+            if (validarPasoActual()) {
+                pasoActual++;
+                actualizarPasos();
+            }
+        });
+    }
+    
+    if (btnAnterior) {
+        btnAnterior.addEventListener('click', function() {
+            pasoActual--;
+            actualizarPasos();
+        });
+    }
     
     function actualizarPasos() {
-        console.log(`Actualizando a paso ${pasoActual}`);
-        
         // Ocultar todos los pasos
         pasos.forEach(paso => paso.classList.remove('activo'));
         
         // Mostrar paso actual
-        const pasoActivo = document.querySelector(`.paso-importacion[data-paso="${pasoActual}"]`);
+        const pasoActivo = modal.querySelector(`.paso-importacion[data-paso="${pasoActual}"]`);
         if (pasoActivo) pasoActivo.classList.add('activo');
         
         // Actualizar indicadores
@@ -77,17 +223,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Actualizar botones
-        btnAnterior.disabled = pasoActual === 1;
-        btnSiguiente.style.display = pasoActual < totalPasos ? 'flex' : 'none';
-        
-        // Manejar visibilidad y estado del botón de importar
-        if (pasoActual === totalPasos) {
-            btnImportar.style.display = 'flex';
-            // Validar si todos los campos están completos para habilitar el botón
-            btnImportar.disabled = !validarPasoActual();
-            actualizarResumen();
-        } else {
-            btnImportar.style.display = 'none';
+        if (btnAnterior) btnAnterior.disabled = pasoActual === 1;
+        if (btnSiguiente) btnSiguiente.style.display = pasoActual < totalPasos ? 'flex' : 'none';
+        if (btnImportar) {
+            btnImportar.style.display = pasoActual === totalPasos ? 'flex' : 'none';
+            if (pasoActual === totalPasos) {
+                btnImportar.disabled = !validarPasoActual();
+                actualizarResumen();
+            }
         }
     }
     
@@ -95,12 +238,12 @@ document.addEventListener('DOMContentLoaded', function() {
         let valido = true;
         
         if (pasoActual === 1) {
-            const tipoNomina = document.getElementById('modal-tipo-nomina');
-            if (!tipoNomina.value) {
-                tipoNomina.classList.add('invalido');
+            const tipoNomina = modal.querySelector('#modal-tipo-nomina');
+            if (!tipoNomina?.value) {
+                tipoNomina?.classList.add('invalido');
                 valido = false;
             } else {
-                tipoNomina.classList.remove('invalido');
+                tipoNomina?.classList.remove('invalido');
             }
         } else if (pasoActual === 2) {
             const campos = [
@@ -110,20 +253,22 @@ document.addEventListener('DOMContentLoaded', function() {
             ];
             
             campos.forEach(campo => {
-                const element = document.getElementById(campo.id);
-                if (!campo.valid(element.value)) {
-                    element.classList.add('invalido');
-                    valido = false;
-                } else {
-                    element.classList.remove('invalido');
+                const element = modal.querySelector(`#${campo.id}`);
+                if (element) {
+                    if (!campo.valid(element.value)) {
+                        element.classList.add('invalido');
+                        valido = false;
+                    } else {
+                        element.classList.remove('invalido');
+                    }
                 }
             });
         } else if (pasoActual === 3) {
-            if (!inputArchivo.files?.length) {
-                dropzone.style.borderColor = 'var(--color-error)';
+            if (!inputArchivo?.files?.length) {
+                dropzone?.style.setProperty('border-color', 'var(--color-error)', 'important');
                 valido = false;
             } else {
-                dropzone.style.borderColor = 'var(--color-secundario)';
+                dropzone?.style.setProperty('border-color', 'var(--color-secundario)', 'important');
             }
         }
         
@@ -132,20 +277,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function actualizarResumen() {
         const elementosResumen = {
-            'resumen-tipo': () => document.getElementById('modal-tipo-nomina').value,
+            'resumen-tipo': () => modal.querySelector('#modal-tipo-nomina')?.value || 'No seleccionado',
             'resumen-periodo': () => {
-                const mes = document.getElementById('modal-mes');
+                const mes = modal.querySelector('#modal-mes');
                 const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
                             'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                const nombreMes = meses[parseInt(mes.value) - 1] || '';
-                return `${nombreMes} ${document.getElementById('modal-anio').value} - ${document.getElementById('modal-secuencia').value}`;
+                const nombreMes = meses[parseInt(mes?.value) - 1] || '';
+                return `${nombreMes} ${modal.querySelector('#modal-anio')?.value || ''} - ${modal.querySelector('#modal-secuencia')?.value || ''}`;
             },
-            'resumen-archivo': () => inputArchivo.files[0]?.name || 'No seleccionado',
+            'resumen-archivo': () => inputArchivo?.files[0]?.name || 'No seleccionado',
             'resumen-registros': () => '125' // Esto debería calcularse del archivo
         };
         
         Object.entries(elementosResumen).forEach(([id, fn]) => {
-            const elemento = document.getElementById(id);
+            const elemento = modal.querySelector(`#${id}`);
             if (elemento) elemento.textContent = fn();
         });
     }
@@ -165,35 +310,39 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         dropzone.addEventListener('drop', handleDrop, false);
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        function highlight() {
+            dropzone?.classList.add('highlight');
+        }
+        
+        function unhighlight() {
+            dropzone?.classList.remove('highlight');
+        }
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (inputArchivo) inputArchivo.files = files;
+            handleFiles(files);
+        }
     }
     
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
+    if (inputArchivo) {
+        inputArchivo.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
     }
     
-    function highlight() {
-        dropzone?.classList.add('highlight');
+    if (btnSeleccionarArchivo && inputArchivo) {
+        btnSeleccionarArchivo.addEventListener('click', function() {
+            inputArchivo.click();
+        });
     }
-    
-    function unhighlight() {
-        dropzone?.classList.remove('highlight');
-    }
-    
-    function handleDrop(e) {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        inputArchivo.files = files;
-        handleFiles(files);
-    }
-    
-    inputArchivo?.addEventListener('change', function() {
-        handleFiles(this.files);
-    });
-    
-    btnSeleccionarArchivo?.addEventListener('click', function() {
-        inputArchivo.click();
-    });
     
     function handleFiles(files) {
         if (files?.length && nombreArchivo) {
@@ -223,86 +372,78 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function mostrarError(mensaje) {
         console.error(mensaje);
-        alert(mensaje); // Reemplazar con tu sistema de notificaciones
+        alert(mensaje);
     }
     
     function previsualizarArchivo(file) {
         console.log('Previsualizando archivo:', file.name);
-        // Implementar lógica de previsualización aquí
     }
     
     // Descargar plantilla
-    document.getElementById('descargar-plantilla')?.addEventListener('click', function(e) {
-        e.preventDefault();
-        console.log('Descargando plantilla...');
-        // Implementar descarga real aquí
-    });
-    
-    // Importar nómina - SINGLE EVENT LISTENER
-    btnImportar.addEventListener('click', function() {
-        console.log("Intento de importación");
-        
-        if (!validarPasoActual()) {
-            mostrarError("Por favor complete todos los campos requeridos");
-            return;
-        }
-        
-        const formData = new FormData();
-        formData.append('tipo_nomina', document.getElementById('modal-tipo-nomina').value);
-        formData.append('mes', document.getElementById('modal-mes').value);
-        formData.append('anio', document.getElementById('modal-anio').value);
-        formData.append('secuencia', document.getElementById('modal-secuencia').value);
-        
-        if (inputArchivo.files[0]) {
-            formData.append('archivo', inputArchivo.files[0]);
-        }
-        
-        console.log("Datos preparados para importación:", Object.fromEntries(formData));
-        
-        // SIMULACIÓN - reemplazar con llamada real a tu API
-        setTimeout(() => {
-            console.log("Importación simulada con éxito");
-            alert('Nómina importada correctamente (simulación)');
-            cerrarModal();
-        }, 1000);
-        
-        /*
-        // EJEMPLO DE LLAMADA REAL:
-        fetch('/api/importar-nomina', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Importación exitosa');
-                cerrarModal();
-            } else {
-                mostrarError(data.message || "Error al importar");
-            }
-        })
-        .catch(error => {
-            mostrarError("Error de conexión: " + error.message);
+    if (descargarPlantilla) {
+        descargarPlantilla.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Descargando plantilla...');
         });
-        */
-    });
+    }
     
-    // Función auxiliar para CSRF (Django)
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
+    // Importar nómina
+    if (btnImportar) {
+        btnImportar.addEventListener('click', function() {
+            console.log("Intento de importación");
+            
+            if (!validarPasoActual()) {
+                mostrarError("Por favor complete todos los campos requeridos");
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('tipo_nomina', modal.querySelector('#modal-tipo-nomina')?.value || '');
+            formData.append('mes', modal.querySelector('#modal-mes')?.value || '');
+            formData.append('anio', modal.querySelector('#modal-anio')?.value || '');
+            formData.append('secuencia', modal.querySelector('#modal-secuencia')?.value || '');
+            
+            if (inputArchivo?.files[0]) {
+                formData.append('archivo', inputArchivo.files[0]);
+            }
+            
+            console.log("Datos preparados para importación:", Object.fromEntries(formData));
+            
+            // SIMULACIÓN - reemplazar con llamada real a tu API
+            setTimeout(() => {
+                console.log("Importación simulada con éxito");
+                alert('Nómina importada correctamente (simulación)');
+                cerrarModal();
+            }, 1000);
+        });
+    }
+}
+
+// Función global para cerrar el modal
+function importarnominaModal__cerrar() {
+    const modal = document.getElementById("importarnominaModal");
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Función auxiliar para CSRF (Django)
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
             }
         }
-        return cookieValue;
     }
+    return cookieValue;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM completamente cargado y script iniciado");
 });
