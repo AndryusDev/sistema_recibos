@@ -1,0 +1,249 @@
+/* Estilos para Gestionar Nóminas */
+.titulo-pagina {
+    background-color: #1E2A39;
+    color: white;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+.titulo-pagina h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.contenedor-principal {
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+/* Panel de Filtros */
+.panel-filtros {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.filtros-grupo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.form-group {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #1E2A39;
+}
+
+.form-input {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+}
+
+/* Tabla de Nóminas */
+.contenedor-tabla {
+    overflow-x: auto;
+}
+
+.tabla-nominas {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.tabla-nominas th {
+    background-color: #1E2A39;
+    color: white;
+    padding: 12px 15px;
+    text-align: left;
+}
+
+.tabla-nominas td {
+    padding: 10px 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.tabla-nominas tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Badges para estados */
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.badge-procesada {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.badge-pendiente {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.badge-error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Botones de acción */
+.acciones {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-accion {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.btn-ver {
+    color: #1E2A39;
+}
+
+.btn-ver:hover {
+    background-color: rgba(30, 42, 57, 0.1);
+}
+
+.btn-descargar {
+    color: #28a745;
+}
+
+.btn-descargar:hover {
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.btn-editar {
+    color: #ffc107;
+}
+
+.btn-editar:hover {
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+.btn-eliminar {
+    color: #dc3545;
+}
+
+.btn-eliminar:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Paginación */
+.paginacion {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-top: 20px;
+}
+
+.btn-paginacion {
+    border: 1px solid #dee2e6;
+    background-color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-paginacion:hover:not(:disabled) {
+    background-color: #1E2A39;
+    color: white;
+    border-color: #1E2A39;
+}
+
+.btn-paginacion:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagina-actual {
+    padding: 5px 10px;
+    font-weight: bold;
+}
+
+/* Modal de confirmación */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-contenido {
+    background-color: white;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+}
+
+.modal-header {
+    background-color: #1E2A39;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-cerrar-modal {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
