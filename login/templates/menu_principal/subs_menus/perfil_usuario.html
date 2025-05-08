@@ -1,12 +1,234 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil deL Usuario</title>
+    <title>Perfil de Usuario - Sistema de Nóminas</title>
+    <link rel="stylesheet" href="{% static 'css/perfil_usuario.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <h1>Por fin lo lograste</h1>
-    
+    <div class="contenedor-principal">
+        <!-- Encabezado -->
+        <div class="encabezado-perfil">
+            <h1><i class="fa-solid fa-user"></i> Perfil de Usuario</h1>
+            <button class="btn-secundario btn-editar-perfil">
+                <i class="fa-solid fa-pen-to-square"></i> Editar Perfil
+            </button>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="contenido-perfil">
+            <!-- Sección izquierda - Información básica -->
+            <div class="seccion-izquierda">
+                <div class="tarjeta-perfil">
+                    <div class="foto-perfil">
+                        <img src="img/avatar_usuario.jpg" alt="Foto de perfil">
+                        <button class="btn-cambiar-foto">
+                            <i class="fa-solid fa-camera"></i> Cambiar foto
+                        </button>
+                    </div>
+                    
+                    <div class="info-basica">
+                        <h2>María González</h2>
+                        <p class="cargo">Administradora de Nóminas</p>
+                        <p class="departamento">Recursos Humanos</p>
+                        
+                        <div class="estado-perfil">
+                            <span class="badge badge-activo">Activo</span>
+                            <span>Miembro desde: 15/03/2020</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tarjeta-datos">
+                    <h3><i class="fa-solid fa-id-card"></i> Datos Personales</h3>
+                    <div class="datos-grid">
+                        <div class="dato-item">
+                            <span class="dato-label">Cédula:</span>
+                            <span class="dato-valor">V-12.345.678</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Fecha Nacimiento:</span>
+                            <span class="dato-valor">15/08/1985</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Género:</span>
+                            <span class="dato-valor">Femenino</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Estado Civil:</span>
+                            <span class="dato-valor">Casada</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Teléfono:</span>
+                            <span class="dato-valor">+58 412 5551234</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Correo:</span>
+                            <span class="dato-valor">maria.gonzalez@empresa.com</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tarjeta-datos">
+                    <h3><i class="fa-solid fa-location-dot"></i> Dirección</h3>
+                    <div class="datos-grid">
+                        <div class="dato-item">
+                            <span class="dato-label">Estado:</span>
+                            <span class="dato-valor">Distrito Capital</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Ciudad:</span>
+                            <span class="dato-valor">Caracas</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Dirección:</span>
+                            <span class="dato-valor">Av. Principal, Edif. Centro, Piso 5, Apt. 5A</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección derecha - Información laboral y seguridad -->
+            <div class="seccion-derecha">
+                <div class="tarjeta-datos">
+                    <h3><i class="fa-solid fa-briefcase"></i> Información Laboral</h3>
+                    <div class="datos-grid">
+                        <div class="dato-item">
+                            <span class="dato-label">Código Empleado:</span>
+                            <span class="dato-valor">EMP-2458</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Fecha Ingreso:</span>
+                            <span class="dato-valor">15/03/2020</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Tipo de Contrato:</span>
+                            <span class="dato-valor">Fijo</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Cargo:</span>
+                            <span class="dato-valor">Administradora de Nóminas</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Departamento:</span>
+                            <span class="dato-valor">Recursos Humanos</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Supervisor:</span>
+                            <span class="dato-valor">Carlos Pérez</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Salario Base:</span>
+                            <span class="dato-valor">$ 2,500.00</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Banco:</span>
+                            <span class="dato-valor">Banco Nacional</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Cuenta Bancaria:</span>
+                            <span class="dato-valor">0123-4567-8910-1234</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tarjeta-datos">
+                    <h3><i class="fa-solid fa-shield-halved"></i> Seguridad y Acceso</h3>
+                    <div class="datos-grid">
+                        <div class="dato-item">
+                            <span class="dato-label">Nombre de Usuario:</span>
+                            <span class="dato-valor">mgonzalez</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Rol del Sistema:</span>
+                            <span class="dato-valor">Administrador</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">Último Acceso:</span>
+                            <span class="dato-valor">Hoy, 10:45 AM</span>
+                        </div>
+                        <div class="dato-item">
+                            <span class="dato-label">IP de Acceso:</span>
+                            <span class="dato-valor">192.168.1.105</span>
+                        </div>
+                    </div>
+                    
+                    <div class="acciones-seguridad">
+                        <button class="btn-primario btn-cambiar-clave">
+                            <i class="fa-solid fa-key"></i> Cambiar Contraseña
+                        </button>
+                        <button class="btn-secundario btn-ver-registros">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Ver Historial de Accesos
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tarjeta-datos">
+                    <h3><i class="fa-solid fa-file-invoice-dollar"></i> Nómina Reciente</h3>
+                    <div class="resumen-nomina">
+                        <div class="nomina-item">
+                            <span class="nomina-periodo">Marzo 2024 - Primera</span>
+                            <span class="nomina-monto">$ 2,745.50</span>
+                        </div>
+                        <div class="nomina-item">
+                            <span class="nomina-periodo">Febrero 2024 - Segunda</span>
+                            <span class="nomina-monto">$ 2,650.00</span>
+                        </div>
+                        <div class="nomina-item">
+                            <span class="nomina-periodo">Febrero 2024 - Primera</span>
+                            <span class="nomina-monto">$ 2,650.00</span>
+                        </div>
+                    </div>
+                    <button class="btn-secundario btn-ver-todas">
+                        <i class="fa-solid fa-list"></i> Ver Todas las Nóminas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para cambiar contraseña -->
+    <div id="modal-clave" class="modal">
+        <div class="modal-contenido">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-key"></i> Cambiar Contraseña</h3>
+                <button class="btn-cerrar-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form class="form-cambiar-clave">
+                    <div class="form-group">
+                        <label for="clave-actual">Contraseña Actual:</label>
+                        <input type="password" id="clave-actual" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="clave-nueva">Nueva Contraseña:</label>
+                        <input type="password" id="clave-nueva" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="clave-confirmar">Confirmar Nueva Contraseña:</label>
+                        <input type="password" id="clave-confirmar" class="form-input" required>
+                    </div>
+                    <div class="requisitos-clave">
+                        <p><i class="fa-solid fa-circle-info"></i> La contraseña debe contener:</p>
+                        <ul>
+                            <li>Mínimo 8 caracteres</li>
+                            <li>Al menos una mayúscula</li>
+                            <li>Al menos un número</li>
+                            <li>Al menos un carácter especial</li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secundario">Cancelar</button>
+                <button class="btn-primario">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/perfil_usuario.js"></script>
 </body>
 </html>
