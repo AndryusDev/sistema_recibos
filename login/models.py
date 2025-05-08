@@ -90,7 +90,7 @@ class usuario_pregunta(models.Model):
     )
     pregunta = models.ForeignKey(
         pregunta_seguridad,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         db_column='pregunta_id'
     )
     respuesta_hash = models.CharField(max_length=128)

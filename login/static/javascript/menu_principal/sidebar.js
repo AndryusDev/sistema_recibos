@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'constancia_trabajo.html': ['/static/javascript/menu_principal/subs_menus/constancia_trabajo.js'],
             'arc.html': ['/static/javascript/menu_principal/subs_menus/arc.js'],
             'importar_nomina.html': ['/static/javascript/menu_principal/subs_menus/importar_nomina.js'],
-            'gestionar_nomina.html': ['/static/javascript/menu_principal/subs_menus/gestionar_nomina.js']
+            'gestion_nomina.html': ['/static/javascript/menu_principal/subs_menus/gestion_nomina.js']
         }
     };
     

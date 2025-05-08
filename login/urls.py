@@ -19,7 +19,7 @@ urlpatterns = [
     path('constancia_trabajo/', views.constancia_trabajo, name= 'constancia_trabajo'),
     path('arc/', views.arc, name= 'arc'),
     path('importar_nomina/', views.importar_nomina, name= 'importar_nomina'),
-    path('gestionar_nomina/', views.gestionar_nomina, name= 'gestionar_nomina'),
+    path('gestion_nomina/', views.gestion_nomina, name= 'gestion_nomina'),
 
     path('load_template/<str:template_name>/', views.load_template, name='load_template'),
     
