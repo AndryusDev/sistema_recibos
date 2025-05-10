@@ -20,6 +20,7 @@ urlpatterns = [
     path('arc/', views.arc, name= 'arc'),
     path('importar_nomina/', views.importar_nomina, name= 'importar_nomina'),
     path('gestion_nomina/', views.gestion_nomina, name= 'gestion_nomina'),
+    path('prenomina/', views.prenomina, name= 'prenomina'),
 
     path('load_template/<str:template_name>/', views.load_template, name='load_template'),
     

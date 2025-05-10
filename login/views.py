@@ -38,7 +38,7 @@ def menu(request):
 
 def load_template(request, template_name):
     allowed_templates = ['noticias.html', 'perfil_usuario.html', 'recibo_pago.html',
-                        'constancia_trabajo.html', 'arc.html','importar_nomina.html', 'gestion_nomina.html']  # Añade todos tus templates
+                        'constancia_trabajo.html', 'arc.html','importar_nomina.html', 'gestion_nomina.html', 'prenomina.html']  # Añade todos tus templates
     
     if template_name not in allowed_templates:
         return HttpResponseNotFound('Plantilla no permitida')
@@ -51,7 +51,8 @@ def load_template(request, template_name):
 def serve_js(request, script_name):
     # Lista blanca de scripts permitidos
     allowed_scripts = ['noticias.js', 'perfil_usuario.js','recibo_pago.js',
-                        'constancia_trabajo.js', 'arc.js', 'importar_nomina.js', 'gestion_nomina.js']  # Añade todos tus scripts aquí
+                        'constancia_trabajo.js', 'arc.js', 'importar_nomina.js', 'gestion_nomina.js',
+                        'prenomina.js']  # Añade todos tus scripts aquí
     
     if script_name not in allowed_scripts:
         return HttpResponseNotFound('Script no permitido')
@@ -87,6 +88,8 @@ def importar_nomina(request):
 def gestion_nomina(request):
     return render(request, 'menu_principal/subs_menus/gestion_nomina.html')
 
+def prenomina(request):
+    return render(request, 'menu_principal/subs_menus/prenomina.html')
 
 from rest_framework.views import APIView
 from rest_framework.response import Response

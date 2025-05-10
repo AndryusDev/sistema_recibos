@@ -1,0 +1,339 @@
+.prenomina-contenedor {
+    background-color: rgb(235, 235, 235);
+    padding: 20px;
+    border-radius: 15px;
+    /*transition: all 0.3s ease;*/
+    animation: modalFade 0.4s ease;
+    margin-top: 50px;
+}
+
+.prenomina-titulo {
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Para centrar verticalmente */
+    width: 100%;
+    height: 100px;
+    border-bottom: 1px solid #acacacd2;
+    margin: 0 auto 15px; /* 15px de espacio bajo la línea */
+}
+
+.prenomina-tabla, .prenomina-tabla__modal, .prenomina-tabla__modaltotales{
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px; /* Mínimo para que no se deforme */
+}
+@keyframes modalFade {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.prenomina-tabla__columna, 
+.prenomina-tabla__celda {
+    border: 1px solid #ccc;
+    padding: 0.75rem;
+    text-align: center;
+    word-break: break-word; /* ¡Muy importante! */
+    max-width: 200px; /* Controlamos el ancho de cada celda */
+}
+
+.prenomina-tabla__boton {
+    padding: 0.5rem 1rem;
+    background-color: #003366;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+/* INPUT BUSQUEDA*/
+.prenomina-busqueda {
+    width: 100%;
+    padding: 10px;
+    background-color: #f1f1f1; /* Opcional: color de fondo suave */
+    border: 0.5rem solid #acacacd2;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow-x: auto; /* Muy importante para pantallas pequeñas */
+}
+
+.prenomina-busqueda__input {
+    padding: 10px 16px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 250px;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.prenomina-busqueda__input:focus {
+    border-color: #006666; /* Mismo color que el botón */
+    box-shadow: 0 0 5px rgba(0, 102, 102, 0.5);
+}
+
+/* ESTILOS PARA BOTONES Buscar y Limpiar */
+.prenomina-busqueda__boton {
+    padding: 10px 18px;
+    background-color: #006666;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.prenomina-busqueda__boton:hover {
+    background-color: #004d4d;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.prenomina-busqueda__boton:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.prenomina-busqueda__boton.secundario {
+    background-color: #6c757d;
+}
+
+.prenomina-busqueda__boton.secundario:hover {
+    background-color: #5a6268;
+}
+
+.prenomina-tabla__boton {
+    padding: 8px 16px;
+    background-color: #003366;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.prenomina-busqueda__boton i {
+    color: white;
+}
+.prenomina-tabla__boton:hover {
+    background-color: #002244;
+    transform: scale(1.05);
+}
+
+.prenomina-tabla__contenedor {
+    overflow-x: auto; /* Scroll solo si hace falta horizontalmente */
+    width: 100%;
+    max-height: 400px; /*  Altura máxima visible */
+    overflow-y: auto; /* Scroll vertical si sobrepasa */
+    height: 300px; /*  Ahora es height FIJO, no max-height */
+    overflow-x: auto; /*  Scroll horizontal si es necesario */
+}
+
+/* ESTILOS PARA EL MODAL DE PRE-NÓMINA */
+.prenomina-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.prenomina-modal__contenido {
+    background-color: white;
+    width: 90%;
+    max-width: 900px;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    padding: 25px;
+    overflow-y: auto;
+}
+
+/* Encabezado */
+.prenomina-encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #006666;
+    padding-bottom: 15px;
+}
+
+.prenomina-logo-izquierdo, 
+.prenomina-logo-derecho {
+    flex: 0 0 auto;
+}
+
+.prenomina-logo-izquierdo img, 
+.prenomina-logo-derecho img {
+    max-height: 80px;
+    width: auto;
+}
+
+.prenomina-texto-centro {
+    flex: 1;
+    text-align: center;
+    padding: 0 20px;
+}
+
+.prenomina-titulo {
+    margin: 5px 0;
+    font-size: 1.1rem;
+    color: #333;
+    line-height: 1.3;
+}
+
+/* Período */
+.prenomina-info-periodo {
+    display: flex;
+    justify-content: space-around;
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+}
+
+.prenomina-fila-periodo {
+    display: flex;
+    align-items: center;
+}
+
+.prenomina-etiqueta {
+    font-weight: bold;
+    margin-right: 8px;
+    color: #006666;
+}
+
+.prenomina-valor {
+    color: #333;
+}
+
+/* Tipo de nómina */
+.prenomina-tipo-nomina {
+    text-align: center;
+    margin: 20px 0;
+    padding: 10px;
+    background-color: #006666;
+    color: white;
+    border-radius: 5px;
+}
+
+/* Tabla */
+.prenomina-tabla, .prenomina-tabla__modal, .prenomina-tabla__modaltotales {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.9rem;
+    table-layout: fixed; /* ¡Esto es esencial! */
+}
+
+.prenomina-tabla th, 
+.prenomina-tabla td,
+.prenomina-tabla__modal th,
+.prenomina-tabla__modal td,
+.prenomina-tabla__modaltotales th,
+.prenomina-tabla__modaltotales td  {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+}
+
+.prenomina-tabla th,
+.prenomina-tabla__modal th,
+.prenomina-tabla__modaltotales th {
+    background-color: #006666;
+    color: white;
+    font-weight: normal;
+}
+
+.prenomina-tabla tr:nth-child(even),
+.prenomina-tabla__modal tr:nth-child(even),
+.prenomina-tabla__modaltotales tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.prenomina-fila-total {
+    font-weight: bold;
+    background-color: #e6f7f7 !important;
+}
+
+/* Total */
+.prenomina-total {
+    text-align: right;
+    margin-top: 20px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #003366;
+    padding: 10px;
+    border-top: 2px solid #006666;
+}
+
+/* Botones del modal */
+.prenomina-modal__acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.prenomina-modal__boton {
+    padding: 0.5rem 1rem;
+    margin: 0 0.5rem;
+    background-color: #003366;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+.prenomina-modal__boton i {
+    color: white;
+}
+.prenomina-modal__boton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.prenomina-tabla__modal td:nth-child(3) {
+    color: #009900; /* Verde para asignaciones */
+    font-weight: bold;
+}
+
+.prenomina-tabla__modal td:nth-child(4) {
+    color: #cc0000; /* Rojo para deducciones */
+    font-weight: bold;
+}
+
+.prenomina-tabla__modaltotales {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    margin-bottom: 40px;
+}
+
+/* Anchos de columna idénticos */
+.prenomina-tabla__modal th:nth-child(1),
+.prenomina-tabla__modaltotales td:nth-child(1) { width: 15%; }
+
+.prenomina-tabla__modal th:nth-child(2),
+.prenomina-tabla__modaltotales td:nth-child(2) { width: 35%; }
+
+.prenomina-tabla__modal th:nth-child(3),
+.prenomina-tabla__modal th:nth-child(4),
+.prenomina-tabla__modaltotales td:nth-child(3),
+.prenomina-tabla__modaltotales td:nth-child(4) { width: 15%; }
+
+.prenomina-tabla__modal th:nth-child(5) ,
+.prenomina-tabla__modaltotales td:nth-child(5) { width: 20%; } 
