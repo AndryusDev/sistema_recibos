@@ -83,7 +83,13 @@ def arc(request):
     return render(request, 'menu_principal/subs_menus/arc.html')
 
 def importar_nomina(request):
-    return render(request, 'menu_principal/subs_menus/importar_nomina.html')
+    tipos_nomina = tipo_nomina.objects.values_list('tipo_nomina', flat=True).distinct()
+    mesess = meses.objects.values_list('nombre_mes', flat=True).distinct()
+    print("Tipos de nómina encontrados:", list(tipos_nomina))  # Debug
+    return render(request, 'menu_principal/subs_menus/importar_nomina.html', {
+        'tipos_nomina': tipos_nomina, 'mesess': mesess
+    })
+
 
 def gestion_nomina(request):
     return render(request, 'menu_principal/subs_menus/gestion_nomina.html')
@@ -354,3 +360,8 @@ def login_empleado(request):
             }, status=HTTP_200_OK)
         else:
             return Response({"error": "Contraseña incorrecta"}, status=HTTP_400_BAD_REQUEST)"""
+
+#       <-------filtrar informaciona importar nomina------->
+
+from .models import tipo_nomina,meses
+

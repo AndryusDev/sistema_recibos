@@ -112,3 +112,27 @@ class usuario_pregunta(models.Model):
     
     def __str__(self):
         return f"{self.usuario} - {self.pregunta}"
+    
+
+    #carga nomina
+
+class tipo_nomina(models.Model):
+    codigo_tiponomina = models.IntegerField(unique=True, primary_key=True)
+    tipo_nomina = models.CharField(max_length=50, unique=True)
+
+    class Meta:
+        db_table = 'tipo_nomina'  # puedes personalizarlo o eliminar esta línea
+
+    def __str__(self):
+        return self.tipo_nomina
+
+class meses(models.Model):
+    id_mes = models.IntegerField(primary_key=True)
+    nombre_mes = models.CharField(max_length=20, unique=True)
+
+    class Meta:
+        db_table = 'meses'
+        ordering = ['id_mes']
+
+    def __str__(self):
+        return self.nombre_mes
