@@ -85,9 +85,10 @@ def arc(request):
 def importar_nomina(request):
     tipos_nomina = tipo_nomina.objects.values_list('tipo_nomina', flat=True).distinct()
     mesess = meses.objects.values_list('nombre_mes', flat=True).distinct()
+    secuencia_mes = secuencia.objects.values_list('nombre_secuencia', flat=True).distinct()
     print("Tipos de nómina encontrados:", list(tipos_nomina))  # Debug
     return render(request, 'menu_principal/subs_menus/importar_nomina.html', {
-        'tipos_nomina': tipos_nomina, 'mesess': mesess
+        'tipos_nomina': tipos_nomina, 'mesess': mesess, 'secuencia_mes': secuencia_mes
     })
 
 
@@ -103,7 +104,7 @@ from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 from django.shortcuts import render, redirect
-from .models import empleado, usuario, rol, usuario_rol, usuario_pregunta, pregunta_seguridad  # Importa tu modelo usuario actual
+from .models import empleado, usuario, rol, usuario_rol, usuario_pregunta, pregunta_seguridad, tipo_nomina ,meses, secuencia  # Importa tu modelo usuario actual
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime
@@ -363,5 +364,4 @@ def login_empleado(request):
 
 #       <-------filtrar informaciona importar nomina------->
 
-from .models import tipo_nomina,meses
 

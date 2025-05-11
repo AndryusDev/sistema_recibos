@@ -136,3 +136,14 @@ class meses(models.Model):
 
     def __str__(self):
         return self.nombre_mes
+
+class secuencia(models.Model):
+    id_secuencia = models.IntegerField(primary_key=True)
+    nombre_secuencia =models.CharField(max_length=20, unique=True)
+
+    class Meta:
+        db_table = 'secuencia'
+        ordering = ['id_secuencia']
+
+    def __str__(self):
+        return self.nombre_secuencia

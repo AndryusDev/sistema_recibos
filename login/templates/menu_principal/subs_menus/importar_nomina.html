@@ -141,9 +141,12 @@
                     <div class="form-group">
                         <label for="modal-secuencia"><i class="fas fa-sort-numeric-up"></i> Secuencia:</label>
                         <select id="modal-secuencia" class="busqueda-input" required>
-                            <option value="Primera">Primera del mes</option>
-                            <option value="Segunda">Segunda del mes</option>
-                            <option value="Especial">Especial</option>
+                            <option value="">Seleccione la secuencia</option>
+                            {% for secuencia in secuencia_mes %}
+                            <option value="{{ secuencia }}">{{ secuencia }}</option>
+                            {% empty %}
+                            <option value="">No hay secuencias disponibles</option>
+                            {% endfor %}
                         </select>
                     </div>
                     
