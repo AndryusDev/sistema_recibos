@@ -220,3 +220,136 @@ function importarnominaModal__cerrar() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DOM completamente cargado");
 });
+
+// Función para enviar los datos al servidor
+/*async function enviarDatosImportacion(formData) {
+    try {
+        const response = await fetch('/api/nominas/importar/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+            },
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error en la importación');
+        }
+        
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error al importar nómina:', error);
+        throw error;
+    }
+}
+
+// Modificar el evento click del botón de importar
+if (btnImportar) {
+    btnImportar.addEventListener('click', async function() {
+        if (!validarPasoActual()) {
+            mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+            return;
+        }
+        
+        btnImportar.disabled = true;
+        btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        
+        const formData = new FormData();
+        formData.append('tipo_nomina', modal.querySelector('#modal-tipo-nomina')?.value || '');
+        formData.append('mes', modal.querySelector('#modal-mes')?.value || '');
+        formData.append('anio', modal.querySelector('#modal-anio')?.value || '');
+        formData.append('secuencia', modal.querySelector('#modal-secuencia')?.value || '');
+        formData.append('fecha_cierre', modal.querySelector('#modal-fecha-cierre')?.value || '');
+        
+        if (inputArchivo?.files[0]) {
+            formData.append('archivo', inputArchivo.files[0]);
+        }
+        
+        try {
+            const resultado = await enviarDatosImportacion(formData);
+            
+            mostrarNotificacion(
+                `Nómina importada correctamente. ${resultado.message}`,
+                'success'
+            );
+            
+            // Actualizar la tabla de nóminas
+            actualizarTablaNominas();
+            
+            cerrarModal();
+        } catch (error) {
+            mostrarNotificacion(
+                `Error al importar nómina: ${error.message}`,
+                'error'
+            );
+        } finally {
+            btnImportar.disabled = false;
+            btnImportar.innerHTML = '<i class="fas fa-check"></i> Confirmar Importación';
+        }
+    });
+}
+
+// Función para actualizar la tabla después de importar
+function actualizarTablaNominas() {
+    fetch('/api/nominas/')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.querySelector('.tabla-recibos__tbody');
+            if (tbody) {
+                tbody.innerHTML = data.map(nomina => `
+                    <tr class="tabla-recibos__fila">
+                        <td class="tabla-recibos__celda">${nomina.tipo}</td>
+                        <td class="tabla-recibos__celda">${obtenerNombreMes(nomina.mes)} ${nomina.año}</td>
+                        <td class="tabla-recibos__celda">${nomina.secuencia}</td>
+                        <td class="tabla-recibos__celda">${nomina.registros}</td>
+                        <td class="tabla-recibos__celda">
+                            <div class="fecha-cierre-container">
+                                <span class="fecha-cierre">${formatearFecha(nomina.fecha_cierre)}</span>
+                            </div>
+                        </td>
+                        <td class="tabla-recibos__celda">${formatearFechaHora(nomina.fecha_carga)}</td>
+                        <td class="tabla-recibos__celda">
+                            <button class="tabla-recibos__boton" onclick="verNomina(${nomina.id})">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                            <button class="tabla-recibos__boton" onclick="descargarNomina(${nomina.id})">
+                                <i class="fas fa-download"></i> Descargar
+                            </button>
+                            <button class="tabla-recibos__boton" style="background-color: #dc3545;" onclick="eliminarNomina(${nomina.id})">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        })
+        .catch(error => console.error('Error al actualizar tabla:', error));
+}
+
+// Funciones auxiliares
+function obtenerNombreMes(numeroMes) {
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return meses[numeroMes - 1] || '';
+}
+
+function formatearFecha(fechaStr) {
+    const fecha = new Date(fechaStr);
+    return fecha.toLocaleDateString('es-ES');
+}
+
+function formatearFechaHora(fechaStr) {
+    const fecha = new Date(fechaStr);
+    return fecha.toLocaleString('es-ES');
+}
+
+function mostrarNotificacion(mensaje, tipo) {
+    // Implementar lógica para mostrar notificación al usuario
+    alert(`${tipo.toUpperCase()}: ${mensaje}`);
+}
+
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+}*/

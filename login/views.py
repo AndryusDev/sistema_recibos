@@ -362,6 +362,121 @@ def login_empleado(request):
         else:
             return Response({"error": "Contraseña incorrecta"}, status=HTTP_400_BAD_REQUEST)"""
 
-#       <-------filtrar informaciona importar nomina------->
+#   <----------codigo importar documento -------------------->
+"""import pandas as pd
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import ConceptoNomina, Nomina, ReciboPago, LineaRecibo
+from datetime import datetime
+import os
+from django.conf import settings
+
+@csrf_exempt
+def importar_nomina(request):
+    if request.method == 'POST':
+        try:
+            # Obtener datos del formulario
+            tipo_nomina = request.POST.get('tipo_nomina')
+            mes = request.POST.get('mes')
+            anio = request.POST.get('anio')
+            secuencia = request.POST.get('secuencia')
+            fecha_cierre = request.POST.get('fecha_cierre')
+            archivo = request.FILES.get('archivo')
+            
+            # Validar archivo
+            if not archivo:
+                return JsonResponse({'error': 'No se proporcionó archivo'}, status=400)
+                
+            # Procesar archivo CSV/Excel
+            if archivo.name.endswith('.csv'):
+                df = pd.read_csv(archivo)
+            elif archivo.name.endswith(('.xls', '.xlsx')):
+                df = pd.read_excel(archivo)
+            else:
+                return JsonResponse({'error': 'Formato de archivo no soportado'}, status=400)
+            
+            # Validar estructura del archivo
+            required_columns = ['COD', 'DESCRIPCIÓN DEL CONCEPTO', 'TIPO DE PAGO', 'TpoNomina', 'Status']
+            if not all(col in df.columns for col in required_columns):
+                return JsonResponse({'error': 'El archivo no tiene la estructura esperada'}, status=400)
+            
+            # Crear registro de nómina
+            nomina = Nomina.objects.create(
+                tipo=tipo_nomina,
+                mes=int(mes),
+                año=int(anio),
+                secuencia=secuencia,
+                fecha_cierre=datetime.strptime(fecha_cierre, '%Y-%m-%d').date(),
+                registros=len(df),
+                archivo_original=archivo
+            )
+            
+            # Procesar cada concepto
+            for _, row in df.iterrows():
+                ConceptoNomina.objects.update_or_create(
+                    codigo=row['COD'],
+                    defaults={
+                        'descripcion': row['DESCRIPCIÓN DEL CONCEPTO'],
+                        'tipo_pago': row['TIPO DE PAGO'],
+                        'tipo_nomina': row['TpoNomina'],
+                        'status': row['Status'],
+                        'nombre_nomina': row.get('NombNomina', '')
+                    }
+                )
+            
+            # Generar recibos (esto sería un proceso aparte)
+            # generar_recibos(nomina)
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Nómina importada correctamente con {len(df)} registros',
+                'nomina_id': nomina.id
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+def generar_recibos(nomina):
+    # Aquí implementarías la lógica para generar los recibos
+    # basado en los conceptos de la nómina y los empleados
+    
+    # Ejemplo simplificado:
+    empleados = [...]  # Obtener lista de empleados según tipo de nómina
+    
+    for empleado in empleados:
+        recibo = ReciboPago.objects.create(
+            nomina=nomina,
+            empleado_id=empleado['id'],
+            total_bruto=0,
+            total_deducciones=0,
+            total_neto=0
+        )
+        
+        # Procesar conceptos para este empleado
+        for concepto in ConceptoNomina.objects.filter(tipo_nomina__contains=nomina.tipo):
+            valor = calcular_valor_concepto(concepto, empleado)
+            
+            LineaRecibo.objects.create(
+                recibo=recibo,
+                concepto=concepto,
+                cantidad=1,  # O calcular según concepto
+                valor=valor,
+                tipo='I' if not concepto.codigo.startswith(('2', '21', '24')) else 'D'
+            )
+            
+            # Actualizar totales
+            if concepto.codigo.startswith(('2', '21', '24')):
+                recibo.total_deducciones += valor
+            else:
+                recibo.total_bruto += valor
+        
+        recibo.total_neto = recibo.total_bruto - recibo.total_deducciones
+        recibo.save()
+        
+        # Generar PDF del recibo"""
+
+
 
 

@@ -147,3 +147,85 @@ class secuencia(models.Model):
 
     def __str__(self):
         return self.nombre_secuencia
+    
+class tipo_trabajador(models.Model):
+    codigo_trabajador = models.IntegerField(primary_key=True)
+    descripcion = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.descripcion
+
+class tipo_pago(models.Model):
+    codigo_tipopago = models.IntegerField(primary_key=True)
+    nombre_tipopago= models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nombre_tipopago
+    
+class concepto_pago(models.Model):
+    id_conceptopago = models.IntegerField(primary_key=True)
+    codigo = models.CharField(max_length=10, unique=True)
+    descripcion = models.CharField(max_length=255)
+    tipo_pago = models.ForeignKey(tipo_pago, on_delete=models.CASCADE)
+    status = models.CharField(max_length=50)
+    nombre_nomina = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.codigo} - {self.descripcion}"
+    
+class concepto_tipotrabajador(models.Model):
+    id_conceptopago = models.ForeignKey(concepto_pago, on_delete=models.CASCADE)
+    tipo_trabajador = models.ForeignKey(tipo_trabajador, on_delete=models.CASCADE)
+
+class mes_aplicacionconcepto(models.Model):
+    id_conceptopago = models.ForeignKey(concepto_pago, on_delete=models.CASCADE)
+    meses = models.ForeignKey(meses, on_delete=models.CASCADE)
+
+#   <----------codigo importar documento -------------------->
+
+from django.db import models
+
+"""class concepto_nomina(models.Model):
+    codigo_concepto = models.CharField(max_length=20, unique=True)
+    descripcion = models.TextField()
+    tipo_pago = models.CharField(max_length=50)
+    tipo_nomina = models.CharField(max_length=50)
+    status = models.CharField(max_length=20)
+    nombre_nomina = models.CharField(max_length=100, blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Concepto de Nómina"
+        verbose_name_plural = "Conceptos de Nómina"
+
+class Nomina(models.Model):
+    tipo = models.CharField(max_length=50)
+    mes = models.IntegerField()
+    año = models.IntegerField()
+    secuencia = models.CharField(max_length=20)
+    fecha_cierre = models.DateField()
+    fecha_carga = models.DateTimeField(auto_now_add=True)
+    registros = models.IntegerField(default=0)
+    archivo_original = models.FileField(upload_to='nominas/originales/')
+    
+    class Meta:
+        unique_together = ('tipo', 'mes', 'año', 'secuencia')
+
+class ReciboPago(models.Model):
+    nomina = models.ForeignKey(Nomina, on_delete=models.CASCADE)
+    cedula = models.CharField(max_length=20)
+    fecha_generacion = models.DateTimeField(auto_now_add=True)
+    total_bruto = models.DecimalField(max_digits=12, decimal_places=2)
+    total_deducciones = models.DecimalField(max_digits=12, decimal_places=2)
+    total_neto = models.DecimalField(max_digits=12, decimal_places=2)
+    pdf = models.FileField(upload_to='recibos/')
+    
+    class Meta:
+        verbose_name = "Recibo de Pago"
+        verbose_name_plural = "Recibos de Pago"
+
+class LineaRecibo(models.Model):
+    recibo = models.ForeignKey(ReciboPago, on_delete=models.CASCADE, related_name='lineas')
+    concepto = models.ForeignKey(ConceptoNomina, on_delete=models.PROTECT)
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    valor = models.DecimalField(max_digits=12, decimal_places=2)
+    tipo = models.CharField(max_length=1, choices=[('I', 'Ingreso'), ('D', 'Deducción')])"""
