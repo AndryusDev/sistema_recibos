@@ -363,10 +363,10 @@ def login_empleado(request):
             return Response({"error": "Contraseña incorrecta"}, status=HTTP_400_BAD_REQUEST)"""
 
 #   <----------codigo importar documento -------------------->
-"""import pandas as pd
+import pandas as pd
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import ConceptoNomina, Nomina, ReciboPago, LineaRecibo
+from .models import concepto_pago, nomina #ReciboPago, LineaRecibo
 from datetime import datetime
 import os
 from django.conf import settings
@@ -376,7 +376,7 @@ def importar_nomina(request):
     if request.method == 'POST':
         try:
             # Obtener datos del formulario
-            tipo_nomina = request.POST.get('tipo_nomina')
+            tipo_nomina_id = request.POST.get('tipo_nomina')
             mes = request.POST.get('mes')
             anio = request.POST.get('anio')
             secuencia = request.POST.get('secuencia')
@@ -386,7 +386,12 @@ def importar_nomina(request):
             # Validar archivo
             if not archivo:
                 return JsonResponse({'error': 'No se proporcionó archivo'}, status=400)
-                
+            
+            try:
+                tipo_nomina_obj = tipo_nomina.objects.get(id=tipo_nomina_id)
+            except tipo_nomina.DoesNotExist:
+                return JsonResponse ({'error': 'Tipo de nómina no válido'}, status=400)
+
             # Procesar archivo CSV/Excel
             if archivo.name.endswith('.csv'):
                 df = pd.read_csv(archivo)
@@ -401,19 +406,18 @@ def importar_nomina(request):
                 return JsonResponse({'error': 'El archivo no tiene la estructura esperada'}, status=400)
             
             # Crear registro de nómina
-            nomina = Nomina.objects.create(
+            nomina = nomina.objects.create(
                 tipo=tipo_nomina,
                 mes=int(mes),
                 año=int(anio),
                 secuencia=secuencia,
                 fecha_cierre=datetime.strptime(fecha_cierre, '%Y-%m-%d').date(),
-                registros=len(df),
                 archivo_original=archivo
             )
             
             # Procesar cada concepto
             for _, row in df.iterrows():
-                ConceptoNomina.objects.update_or_create(
+                concepto_pago.objects.update_or_create(
                     codigo=row['COD'],
                     defaults={
                         'descripcion': row['DESCRIPCIÓN DEL CONCEPTO'],
@@ -438,7 +442,7 @@ def importar_nomina(request):
     
     return JsonResponse({'error': 'Método no permitido'}, status=405)
 
-def generar_recibos(nomina):
+"""def generar_recibos(nomina):
     # Aquí implementarías la lógica para generar los recibos
     # basado en los conceptos de la nómina y los empleados
     
