@@ -128,7 +128,6 @@ function inicializarModalImportacion() {
                 return `${nombreMes} ${modal.querySelector('#modal-anio')?.value || ''} - ${modal.querySelector('#modal-secuencia')?.value || ''}`;
             },
             'resumen-archivo': () => inputArchivo?.files[0]?.name || 'No seleccionado',
-            'resumen-registros': () => '125',
             'resumen-fecha-cierre': () => modal.querySelector('#modal-fecha-cierre')?.value || 'No definida'
         };
         
@@ -180,34 +179,50 @@ function inicializarModalImportacion() {
         });
     }
     
-    // Importar nómina (con el nuevo campo)
     if (btnImportar) {
-        btnImportar.addEventListener('click', function() {
-            if (!validarPasoActual()) {
-                alert("Por favor complete todos los campos requeridos");
-                return;
-            }
-            
-            const formData = new FormData();
-            formData.append('tipo_nomina', modal.querySelector('#modal-tipo-nomina')?.value || '');
-            formData.append('mes', modal.querySelector('#modal-mes')?.value || '');
-            formData.append('anio', modal.querySelector('#modal-anio')?.value || '');
-            formData.append('secuencia', modal.querySelector('#modal-secuencia')?.value || '');
-            formData.append('fecha_cierre', modal.querySelector('#modal-fecha-cierre')?.value || ''); // Nuevo campo
-            
-            if (inputArchivo?.files[0]) {
-                formData.append('archivo', inputArchivo.files[0]);
-            }
-            
-            console.log("Datos para importar:", Object.fromEntries(formData));
-            
-            // Simulación de envío (reemplazar con tu API real)
-            setTimeout(() => {
-                alert('Nómina importada correctamente (simulación)');
-                cerrarModal();
-            }, 1000);
-        });
-    }
+    btnImportar.addEventListener('click', async function() {
+        if (!validarPasoActual()) {
+            mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+            return;
+        }
+
+        btnImportar.disabled = true;
+        btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+        const formData = new FormData();
+        formData.append('tipo_nomina', modal.querySelector('#modal-tipo-nomina')?.value || '');
+        formData.append('mes', modal.querySelector('#modal-mes')?.value || '');
+        formData.append('anio', modal.querySelector('#modal-anio')?.value || '');
+        formData.append('secuencia', modal.querySelector('#modal-secuencia')?.value || '');
+        formData.append('fecha_cierre', modal.querySelector('#modal-fecha-cierre')?.value || '');
+
+        if (inputArchivo?.files[0]) {
+            formData.append('archivo', inputArchivo.files[0]);
+        }
+
+        try {
+            const resultado = await enviarDatosImportacion(formData);
+
+            mostrarNotificacion(
+                `Nómina importada correctamente. ${resultado.message}`,
+                'success'
+            );
+
+            actualizarTablaNominas(); // Asegúrate de que esta función esté definida
+            cerrarModal();
+        } catch (error) {
+            mostrarNotificacion(
+                `Error al importar nómina: ${error.message}`,
+                'error'
+            );
+        } finally {
+            btnImportar.disabled = false;
+            btnImportar.innerHTML = '<i class="fas fa-check"></i> Confirmar Importación';
+        }
+    });
+}
+
+
 }
 
 // Función global para cerrar el modal (sin cambios)
@@ -222,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Función para enviar los datos al servidor
-/*async function enviarDatosImportacion(formData) {
+async function enviarDatosImportacion(formData) {
     try {
         const response = await fetch('/api/nominas/importar/', {
             method: 'POST',
@@ -243,52 +258,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Error al importar nómina:', error);
         throw error;
     }
-}
-
-// Modificar el evento click del botón de importar
-if (btnImportar) {
-    btnImportar.addEventListener('click', async function() {
-        if (!validarPasoActual()) {
-            mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
-            return;
-        }
-        
-        btnImportar.disabled = true;
-        btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-        
-        const formData = new FormData();
-        formData.append('tipo_nomina', modal.querySelector('#modal-tipo-nomina')?.value || '');
-        formData.append('mes', modal.querySelector('#modal-mes')?.value || '');
-        formData.append('anio', modal.querySelector('#modal-anio')?.value || '');
-        formData.append('secuencia', modal.querySelector('#modal-secuencia')?.value || '');
-        formData.append('fecha_cierre', modal.querySelector('#modal-fecha-cierre')?.value || '');
-        
-        if (inputArchivo?.files[0]) {
-            formData.append('archivo', inputArchivo.files[0]);
-        }
-        
-        try {
-            const resultado = await enviarDatosImportacion(formData);
-            
-            mostrarNotificacion(
-                `Nómina importada correctamente. ${resultado.message}`,
-                'success'
-            );
-            
-            // Actualizar la tabla de nóminas
-            actualizarTablaNominas();
-            
-            cerrarModal();
-        } catch (error) {
-            mostrarNotificacion(
-                `Error al importar nómina: ${error.message}`,
-                'error'
-            );
-        } finally {
-            btnImportar.disabled = false;
-            btnImportar.innerHTML = '<i class="fas fa-check"></i> Confirmar Importación';
-        }
-    });
 }
 
 // Función para actualizar la tabla después de importar
@@ -352,4 +321,4 @@ function mostrarNotificacion(mensaje, tipo) {
 
 function getCSRFToken() {
     return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-}*/
+}

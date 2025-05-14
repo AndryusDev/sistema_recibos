@@ -212,20 +212,20 @@ class nomina(models.Model):
     class Meta:
         db_table = 'nomina'
 
-"""class ReciboPago(models.Model):
-    nomina = models.ForeignKey(Nomina, on_delete=models.CASCADE)
+class recibo_pago(models.Model):
+    nomina = models.ForeignKey(nomina, on_delete=models.CASCADE)
     cedula = models.CharField(max_length=20)
     fecha_generacion = models.DateTimeField(auto_now_add=True)
-    total_bruto = models.DecimalField(max_digits=12, decimal_places=2)
-    total_deducciones = models.DecimalField(max_digits=12, decimal_places=2)
-    total_neto = models.DecimalField(max_digits=12, decimal_places=2)
+    id_conceptopago = models.ForeignKey(concepto_pago, on_delete=models.CASCADE)
+    monto = models.DecimalField(max_digits=12, decimal_places=2)
     pdf = models.FileField(upload_to='recibos/')
     
     class Meta:
         verbose_name = "Recibo de Pago"
         verbose_name_plural = "Recibos de Pago"
+        db_table = "recibo_pago"
 
-class LineaRecibo(models.Model):
+"""class LineaRecibo(models.Model):
     recibo = models.ForeignKey(ReciboPago, on_delete=models.CASCADE, related_name='lineas')
     concepto = models.ForeignKey(ConceptoNomina, on_delete=models.PROTECT)
     cantidad = models.DecimalField(max_digits=10, decimal_places=2)

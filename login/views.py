@@ -372,7 +372,7 @@ import os
 from django.conf import settings
 
 @csrf_exempt
-def importar_nomina(request):
+def importar_nominas(request):
     if request.method == 'POST':
         try:
             # Obtener datos del formulario
@@ -388,7 +388,7 @@ def importar_nomina(request):
                 return JsonResponse({'error': 'No se proporcionó archivo'}, status=400)
             
             try:
-                tipo_nomina_obj = tipo_nomina.objects.get(id=tipo_nomina_id)
+                tipo_nomina_obj = tipo_nomina.objects.get( tipo_nomina=tipo_nomina_id)
             except tipo_nomina.DoesNotExist:
                 return JsonResponse ({'error': 'Tipo de nómina no válido'}, status=400)
 
@@ -400,13 +400,16 @@ def importar_nomina(request):
             else:
                 return JsonResponse({'error': 'Formato de archivo no soportado'}, status=400)
             
+            print(archivo.head())
+            
             # Validar estructura del archivo
             required_columns = ['COD', 'DESCRIPCIÓN DEL CONCEPTO', 'TIPO DE PAGO', 'TpoNomina', 'Status']
             if not all(col in df.columns for col in required_columns):
                 return JsonResponse({'error': 'El archivo no tiene la estructura esperada'}, status=400)
             
+
             # Crear registro de nómina
-            nomina = nomina.objects.create(
+            nomino = nomina.objects.create(
                 tipo=tipo_nomina,
                 mes=int(mes),
                 año=int(anio),
