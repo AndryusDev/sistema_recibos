@@ -169,11 +169,14 @@ class tipo_pago(models.Model):
         return self.nombre_tipopago
     
 class concepto_pago(models.Model):
-    id_conceptopago = models.IntegerField(primary_key=True, unique=True)
-    codigo = models.CharField(max_length=10, unique=True)
+    codigo = models.CharField(primary_key=True, unique=True)
     descripcion = models.CharField(max_length=255)
     tipo_pago = models.ForeignKey(tipo_pago, on_delete=models.CASCADE)
     status = models.CharField(max_length=50)
+    tipo_concepto_choices = [
+        ('ASIGNACION', 'Asignación'),
+        ('DEDUCCION', 'Deducción'),
+    ]
     nombre_nomina = models.CharField(max_length=255)
 
     class Meta:
@@ -183,14 +186,14 @@ class concepto_pago(models.Model):
         return f"{self.codigo} - {self.descripcion}"
     
 class concepto_tipotrabajador(models.Model):
-    id_conceptopago = models.ForeignKey(concepto_pago, on_delete=models.CASCADE)
+    codigo = models.ForeignKey(concepto_pago, on_delete=models.CASCADE)
     tipo_trabajador = models.ForeignKey(tipo_trabajador, on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'concepto_tipotrabajador'
 
 class mes_aplicacionconcepto(models.Model):
-    id_conceptopago = models.ForeignKey(concepto_pago, on_delete=models.CASCADE)
+    codigo = models.ForeignKey(concepto_pago, on_delete=models.CASCADE)
     meses = models.ForeignKey(meses, on_delete=models.CASCADE)
 
     class Meta:
@@ -205,25 +208,74 @@ class nomina(models.Model):
     id_nomina =  models.AutoField(primary_key=True, unique=True)
     tipo_nomina = models.ForeignKey(tipo_nomina, on_delete=models.CASCADE)
     periodo = models.CharField(max_length=255)
-    secuencia = models.CharField(max_length=20)
+    secuencia = models.ForeignKey(secuencia, on_delete=models.PROTECT)
     fecha_cierre = models.DateField()
     fecha_carga = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         db_table = 'nomina'
 
-class recibo_pago(models.Model):
-    nomina = models.ForeignKey(nomina, on_delete=models.CASCADE)
-    cedula = models.CharField(max_length=20)
-    fecha_generacion = models.DateTimeField(auto_now_add=True)
-    id_conceptopago = models.ForeignKey(concepto_pago, on_delete=models.CASCADE)
+class detalle_nomina(models.Model):
+    nomina = models.ForeignKey(nomina, on_delete=models.PROTECT)
+    cedula = models.ForeignKey(empleado, on_delete=models.PROTECT)
+    codigo = models.ForeignKey(concepto_pago, on_delete=models.PROTECT)
     monto = models.DecimalField(max_digits=12, decimal_places=2)
     pdf = models.FileField(upload_to='recibos/')
     
     class Meta:
-        verbose_name = "Recibo de Pago"
-        verbose_name_plural = "Recibos de Pago"
-        db_table = "recibo_pago"
+        verbose_name = "Detalle de Nomina"
+        verbose_name_plural = "Detalles de Nomina"
+        db_table = "detalle_nomina"
+
+class recibo_pago(models.Model):
+    nomina = models.ForeignKey(nomina, on_delete=models.PROTECT)
+    cedula = models.ForeignKey(empleado, on_delete=models.PROTECT)
+    fecha_generacion = models.DateTimeField(auto_now_add=True)
+    pdf = models.FileField(upload_to='recibos/%Y/%m/')
+# Relación a los conceptos
+    
+    class Meta:
+        db_table = 'recibo_pago'
+    
+    def get_detalles(self):
+        """Obtiene todos los detalles agrupados por tipo"""
+        detalles = self.detalle_recibo_set.all().select_related('detalle_nomina__codigo__tipo_pago')
+
+        asignaciones = [
+            d.detalle_nomina for d in detalles
+            if d.detalle_nomina.codigo.tipo_pago.nombre_tipopago.upper() == 'ASIGNACION'
+        ]
+        deducciones = [
+            d.detalle_nomina for d in detalles
+            if d.detalle_nomina.codigo.tipo_pago.nombre_tipopago.upper() == 'DEDUCCION'
+        ]
+
+        total_asignaciones = sum(d.monto for d in asignaciones)
+        total_deducciones = sum(d.monto for d in deducciones)
+
+        return {
+            'asignaciones': asignaciones,
+            'deducciones': deducciones,
+            'totales': {
+                'asignaciones': total_asignaciones,
+                'deducciones': total_deducciones,
+                'neto': total_asignaciones - total_deducciones
+            }
+        }
+
+    def __str__(self):
+        return f"Recibo {self.nomina} - {self.cedula}"
+
+class detalle_recibo(models.Model):
+    recibo = models.ForeignKey(recibo_pago, on_delete=models.CASCADE)
+    detalle_nomina = models.OneToOneField(detalle_nomina, on_delete=models.PROTECT)
+    
+    class Meta:
+        db_table = 'detalle_recibo'
+    
+    def __str__(self):
+        return f"Detalle {self.detalle_nomina} en {self.recibo}"
+
 
 """class LineaRecibo(models.Model):
     recibo = models.ForeignKey(ReciboPago, on_delete=models.CASCADE, related_name='lineas')

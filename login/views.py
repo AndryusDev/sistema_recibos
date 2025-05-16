@@ -400,7 +400,7 @@ def importar_nominas(request):
             else:
                 return JsonResponse({'error': 'Formato de archivo no soportado'}, status=400)
             
-            print(archivo.head())
+            print(df.head())
             
             # Validar estructura del archivo
             required_columns = ['COD', 'DESCRIPCIÓN DEL CONCEPTO', 'TIPO DE PAGO', 'TpoNomina', 'Status']
@@ -409,7 +409,7 @@ def importar_nominas(request):
             
 
             # Crear registro de nómina
-            nomino = nomina.objects.create(
+            nomina = nomina.objects.create(
                 tipo=tipo_nomina,
                 mes=int(mes),
                 año=int(anio),
