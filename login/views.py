@@ -101,7 +101,7 @@ from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 from django.shortcuts import render, redirect
-from .models import empleado, usuario, rol, usuario_rol, usuario_pregunta, pregunta_seguridad, tipo_nomina ,meses, secuencia  # Importa tu modelo usuario actual
+from .models import empleado, usuario, rol, usuario_rol, usuario_pregunta, pregunta_seguridad, tipo_nomina ,meses, secuencia, tipo_trabajador, detalle_nomina  # Importa tu modelo usuario actual
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime
@@ -367,80 +367,179 @@ from .models import concepto_pago, nomina #ReciboPago, LineaRecibo
 from datetime import datetime
 import os
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
+from decimal import Decimal
+import logging
+from django.db import transaction
+import pandas as pd
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+logger = logging.getLogger(__name__)
+
+import pandas as pd
+from decimal import Decimal
+from datetime import datetime
+import logging
+from django.db import transaction
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
+
+logger = logging.getLogger(__name__)
 
 @csrf_exempt
+@transaction.atomic
 def importar_nominas(request):
     if request.method == 'POST':
         try:
-            # Obtener datos del formulario
-            tipo_nomina_id = request.POST.get('tipo_nomina')
-            mes = request.POST.get('mes')
+            # 1. Validación y obtención de parámetros básicos
+            tipo_nomina_nombre = request.POST.get('tipo_nomina')
+            mes_nombre = request.POST.get('mes')
             anio = request.POST.get('anio')
-            secuencia = request.POST.get('secuencia')
+            secuencia_nombre = request.POST.get('secuencia')
             fecha_cierre = request.POST.get('fecha_cierre')
             archivo = request.FILES.get('archivo')
             
-            # Validar archivo
-            if not archivo:
-                return JsonResponse({'error': 'No se proporcionó archivo'}, status=400)
+            # Validaciones básicas
+            if not all([tipo_nomina_nombre, mes_nombre, anio, secuencia_nombre, fecha_cierre, archivo]):
+                return JsonResponse({'error': 'Todos los campos son requeridos'}, status=400)
             
-            try:
-                tipo_nomina_obj = tipo_nomina.objects.get( tipo_nomina=tipo_nomina_id)
-            except tipo_nomina.DoesNotExist:
-                return JsonResponse ({'error': 'Tipo de nómina no válido'}, status=400)
+            if archivo.size > 10 * 1024 * 1024:  # 10MB máximo
+                return JsonResponse({'error': 'El archivo excede el tamaño máximo permitido (10MB)'}, status=400)
 
-            # Procesar archivo CSV/Excel
-            if archivo.name.endswith('.csv'):
-                df = pd.read_csv(archivo)
-            elif archivo.name.endswith(('.xls', '.xlsx')):
-                df = pd.read_excel(archivo)
-            else:
-                return JsonResponse({'error': 'Formato de archivo no soportado'}, status=400)
+            # 2. Validar referencias a tablas maestras
+            try:
+                tipo_nomina_obj = tipo_nomina.objects.get(tipo_nomina=tipo_nomina_nombre)
+                meses_obj = meses.objects.get(nombre_mes=mes_nombre)
+                secuencia_obj = secuencia.objects.get(nombre_secuencia=secuencia_nombre)
+            except ObjectDoesNotExist as e:
+                return JsonResponse({'error': f'Referencia inválida: {str(e)}'}, status=400)
+
+            # 3. Procesamiento del archivo
+            try:
+                if archivo.name.endswith('.csv'):
+                    df = pd.read_csv(archivo, dtype={'COD': str, 'CEDULA': str})
+                elif archivo.name.endswith(('.xls', '.xlsx')):
+                    df = pd.read_excel(archivo, dtype={'COD': str, 'CEDULA': str})
+                else:
+                    return JsonResponse({'error': 'Formato de archivo no soportado. Use CSV o Excel'}, status=400)
+            except Exception as e:
+                return JsonResponse({'error': f'Error al leer el archivo: {str(e)}'}, status=400)
             
             print(df.head())
-            
-            # Validar estructura del archivo
-            required_columns = ['COD', 'DESCRIPCIÓN DEL CONCEPTO', 'TIPO DE PAGO', 'TpoNomina', 'Status']
-            if not all(col in df.columns for col in required_columns):
-                return JsonResponse({'error': 'El archivo no tiene la estructura esperada'}, status=400)
-            
 
-            # Crear registro de nómina
-            nomina = nomina.objects.create(
-                tipo=tipo_nomina,
-                mes=int(mes),
-                año=int(anio),
-                secuencia=secuencia,
-                fecha_cierre=datetime.strptime(fecha_cierre, '%Y-%m-%d').date(),
-                archivo_original=archivo
+            # 4. Validación de estructura del archivo
+            required_columns = [
+                'COD', 'CEDULA', 'APELLIDO', 'NOMBRE', 
+                'SDOBASE', 'TOTPGONOMINA', 'NUMERO DE CUENTA DE BANCO'
+            ]
+            
+            # Normalizar nombres de columnas
+            df.columns = [col.strip().upper().replace(' ', '_') for col in df.columns]
+            missing_columns = [col for col in required_columns 
+                            if col.replace(' ', '_') not in df.columns]
+            
+            if missing_columns:
+                return JsonResponse({
+                    'error': f'El archivo no tiene la estructura esperada. Faltan: {", ".join(missing_columns)}'
+                }, status=400)
+
+            # 5. Crear registro de nómina
+            nueva_nomina = nomina.objects.create(
+                tipo_nomina=tipo_nomina_obj,
+                periodo=f"{meses_obj.nombre_mes}-{anio}",
+                secuencia=secuencia_obj,
+                fecha_cierre=datetime.strptime(fecha_cierre, '%Y-%m-%d').date()
             )
-            
-            # Procesar cada concepto
+
+            # 6. Procesar cada registro del archivo
+            stats = {
+                'empleados_procesados': 0,
+                'conceptos_procesados': 0,
+                'errores': 0
+            }
+
             for _, row in df.iterrows():
-                concepto_pago.objects.update_or_create(
-                    codigo=row['COD'],
-                    defaults={
-                        'descripcion': row['DESCRIPCIÓN DEL CONCEPTO'],
-                        'tipo_pago': row['TIPO DE PAGO'],
-                        'tipo_nomina': row['TpoNomina'],
-                        'status': row['Status'],
-                        'nombre_nomina': row.get('NombNomina', '')
-                    }
-                )
-            
-            # Generar recibos (esto sería un proceso aparte)
-            # generar_recibos(nomina)
-            
+                try:
+                    # 6.1. Obtener o crear empleado
+                    empleado_obj, created = empleado.objects.get_or_create(
+                        cedula=row['CEDULA'],
+                        defaults={
+                            'codigo': row['COD'],
+                            'nombre': f"{row['NOMBRE']} {row['APELLIDO']}",
+                            'tipo_trabajador': tipo_trabajador.objects.first()
+                        }
+                    )
+
+                    # 6.2. Procesar conceptos dinámicos
+                    concept_cols = [col for col in df.columns if col not in [
+                        'COD', 'CEDULA', 'APELLIDO', 'NOMBRE', 
+                        'SDOBASE', 'TOTPGONOMINA', 'NUMERO_DE_CUENTA_DE_BANCO'
+                    ] and pd.api.types.is_numeric_dtype(df[col])]
+
+                    for col in concept_cols:
+                        monto = row[col]
+                        if pd.notna(monto) and float(monto) != 0:
+                            # 6.3. Buscar concepto en catálogo
+                            concepto_obj = concepto_pago.objects.filter(
+                                Q(nombre_nomina__iexact=col) | 
+                                Q(codigo__iexact=extract_codigo_from_colname(col))
+                            ).first()
+
+                            if concepto_obj:
+                                # 6.4. Crear detalle de nómina
+                                detalle_nomina.objects.create(
+                                    nomina=nueva_nomina,
+                                    cedula=empleado_obj,
+                                    codigo=concepto_obj,
+                                    monto=Decimal(str(monto))
+                                )
+                                stats['conceptos_procesados'] += 1
+                            else:
+                                logger.warning(f'Concepto no encontrado para columna: {col}')
+                                stats['errores'] += 1
+
+                    stats['empleados_procesados'] += 1
+
+                except Exception as e:
+                    stats['errores'] += 1
+                    logger.error(f"Error procesando empleado {row['CEDULA']}: {str(e)}")
+
+            # 7. Retornar resultados
             return JsonResponse({
                 'success': True,
-                'message': f'Nómina importada correctamente con {len(df)} registros',
-                'nomina_id': nomina.id
+                'message': f'Nómina importada correctamente. Empleados: {stats["empleados_procesados"]}, Conceptos: {stats["conceptos_procesados"]}',
+                'nomina_id': nueva_nomina.id_nomina,
+                'stats': stats
             })
-            
+
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            logger.error(f"Error en importar_nominas: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'error': f'Error interno del servidor: {str(e)}'
+            }, status=500)
     
-    return JsonResponse({'error': 'Método no permitido'}, status=405)
+    return JsonResponse({
+        'success': False,
+        'error': 'Método no permitido'
+    }, status=405)
+
+def extract_codigo_from_colname(col_name):
+    """
+    Extrae el código de concepto del nombre de columna.
+    Implementa según tu mapeo específico.
+    """
+    codigo_map = {
+        'MTO_VACAC': '1401c',
+        'PRM_HJOS': '1101c',
+        'DEDUC_FAOV': '20003c',
+        # Agrega todos los mapeos necesarios
+    }
+    return codigo_map.get(col_name, col_name)
 
 """def generar_recibos(nomina):
     # Aquí implementarías la lógica para generar los recibos

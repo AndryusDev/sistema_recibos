@@ -161,6 +161,7 @@ class tipo_trabajador(models.Model):
 class tipo_pago(models.Model):
     codigo_tipopago = models.IntegerField(primary_key=True)
     nombre_tipopago= models.CharField(max_length=100)
+    abreviatura_excel_tipopago = models.CharField(max_length=20)
 
     class Meta:
         db_table = 'tipo_pago'
