@@ -178,6 +178,7 @@ class concepto_pago(models.Model):
         ('ASIGNACION', 'Asignación'),
         ('DEDUCCION', 'Deducción'),
     ]
+    tipo_concepto = models.CharField(max_length=20, choices=tipo_concepto_choices)
     nombre_nomina = models.CharField(max_length=255)
 
     class Meta:
