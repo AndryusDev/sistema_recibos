@@ -20,18 +20,20 @@
                     <div class="form-group">
                         <label for="filtro-tipo"><i class="fas fa-filter"></i> Tipo:</label>
                         <select id="filtro-tipo" class="busqueda-input">
-                            <option value="">Todos los tipos</option>
-                            <option value="Administrativo">Administrativo</option>
-                            <option value="Obrero">Obrero</option>
+                        <option value="">Todos los tipos</option>
+                        {% for tipo in tipos_nomina %}
+                        <option value="{{ tipo }}">{{ tipo }}</option>
+                        {% endfor %}
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="filtro-mes"><i class="fas fa-calendar"></i> Mes:</label>
                         <select id="filtro-mes" class="busqueda-input">
                             <option value="">Todos los meses</option>
-                            <option value="1">Enero</option>
-                            <!-- Otros meses -->
-                        </select>
+                            {% for mes in mesess %}
+                            <option value="{{ mes }}">{{ mes }}</option>
+                            {% endfor %}
+                    </select>
                     </div>
                     <div class="form-group">
                         <label for="filtro-anio"><i class="fas fa-calendar-alt"></i> Año:</label>
@@ -68,26 +70,36 @@
                         </tr>
                     </thead>
                     <tbody class="tabla-recibos__tbody">
-                        <tr class="tabla-recibos__fila">
-                            <td class="tabla-recibos__celda">1</td>
-                            <td class="tabla-recibos__celda">Uniformados</td>
-                            <td class="tabla-recibos__celda">Marzo 2024</td>
-                            <td class="tabla-recibos__celda">Primera</td>
-                            <td class="tabla-recibos__celda">
-                                <div class="fecha-cierre-container">
-                                    <span class="fecha-cierre">15/03/2024</span>
-                                    </button>
-                                </div>
-                            </td>
-                            <td class="tabla-recibos__celda">15/03/2024 10:30</td>
-                            <td class="tabla-recibos__celda">
-                                <button class="tabla-recibos__boton"><i class="fas fa-eye"></i> Ver</button>
-                                <button class="tabla-recibos__boton"><i class="fas fa-download"></i> Descargar</button>
-                                <button class="tabla-recibos__boton" style="background-color: #dc3545;"><i class="fas fa-trash"></i> Eliminar</button>
-                            </td>
-                        </tr>
-                        <!-- Más filas se agregarán dinámicamente -->
-                    </tbody>
+                    {% for nomina in nominas %}
+                    <tr class="tabla-recibos__fila">
+                        <td class="tabla-recibos__celda">{{ nomina.id_nomina }}</td>
+                        <td class="tabla-recibos__celda">{{ nomina.tipo_nomina.tipo_nomina }}</td>  <!-- Accede al campo a través de la relación -->
+                        <td class="tabla-recibos__celda">{{ nomina.periodo }}</td>  <!-- Usa el campo periodo directamente -->
+                        <td class="tabla-recibos__celda">{{ nomina.secuencia.nombre_secuencia }}</td>  <!-- Accede al nombre de la secuencia -->
+                        <td class="tabla-recibos__celda">
+                            <div class="fecha-cierre-container">
+                                <span class="fecha-cierre">{{ nomina.fecha_cierre|date:"d/m/Y" }}</span>
+                            </div>
+                        </td>
+                        <td class="tabla-recibos__celda">{{ nomina.fecha_carga|date:"d/m/Y H:i" }}</td>
+                        <td class="tabla-recibos__celda">
+                            <button class="tabla-recibos__boton">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                            <button class="tabla-recibos__boton" >
+                                <i class="fas fa-download"></i> Descargar
+                            </button>
+                            <button class="tabla-recibos__boton" style="background-color: #dc3545;">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No hay nóminas registradas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
                 </table>
             </div>
         </div>

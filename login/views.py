@@ -81,11 +81,16 @@ def arc(request):
 
 def importar_nomina(request):
     tipos_nomina = tipo_nomina.objects.values_list('tipo_nomina', flat=True).distinct()
+
     mesess = meses.objects.values_list('nombre_mes', flat=True).distinct()
+
     secuencia_mes = secuencia.objects.values_list('nombre_secuencia', flat=True).distinct()
+
+    nominas = nomina.objects.select_related('tipo_nomina', 'secuencia').all().order_by('-fecha_carga')
+
     print("Tipos de nómina encontrados:", list(tipos_nomina))  # Debug
     return render(request, 'menu_principal/subs_menus/importar_nomina.html', {
-        'tipos_nomina': tipos_nomina, 'mesess': mesess, 'secuencia_mes': secuencia_mes
+        'tipos_nomina': tipos_nomina, 'mesess': mesess, 'secuencia_mes': secuencia_mes, 'nominas': nominas
     })
 
 
