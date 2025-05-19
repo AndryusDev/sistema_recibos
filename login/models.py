@@ -33,16 +33,16 @@ class tipo_trabajador(models.Model):
 
 class nivel_cargo(models.Model):
     NIVELES = [
-        (1,'I'),
-        (2,'II'),
-        (3,'III'),
-        (4,'IV'),
-        (5,'V'),
-        (6,'VI'),
-        (7,'Jefe'),
+        ('I', 'I'),
+        ('II', 'II'),
+        ('III', 'III'),
+        ('IV', 'IV'),
+        ('V', 'V'),
+        ('VI', 'VI'),
+        ('JEFE', 'Jefe'),
     ]
     
-    nivel = models.IntegerField(choices=NIVELES, unique=True,primary_key=True)
+    nivel = models.CharField(max_length=10, choices=NIVELES, unique=True, primary_key=True)
     nombre = models.CharField(max_length=50)
     orden_jerarquico = models.PositiveSmallIntegerField(unique=True)
     
@@ -56,7 +56,7 @@ class nivel_cargo(models.Model):
     
 
 class familia_cargo(models.Model):
-    codigo_familiacargo = models.CharField(max_length=10, primary_key=True)
+    codigo_familiacargo = models.IntegerField(primary_key=True)
     nombre = models.CharField(max_length=100)
     tipo_trabajador = models.ForeignKey(tipo_trabajador, on_delete=models.PROTECT)
     
@@ -79,7 +79,7 @@ class cargo(models.Model):
     
     nivel = models.ForeignKey(
         nivel_cargo,
-        on_delete=models.PROTECT,
+        on_delete=models.PROTECT,  # Impide la eliminación pero permite cambios en el nivel
         related_name='cargos'
     )
     
@@ -191,7 +191,7 @@ class empleado(models.Model):
 
     # Identificación
     tipo_identificacion = models.CharField(max_length=1, choices=TIPO_IDENTIFICACION)
-    cedula = models.CharField(max_length=20, primary_key=True)
+    cedula = models.IntegerField(primary_key=True)
     
     # Nombres
     primer_nombre = models.CharField(max_length=50)
@@ -226,7 +226,6 @@ class empleado(models.Model):
     
     # Información adicional
     rif = models.CharField(max_length=20, blank=True, null=True)
-    nss = models.CharField(max_length=50, blank=True, null=True)  # Número Seguro Social
     grado_instruccion = models.CharField(max_length=50, blank=True, null=True)
     
     # Auditoría
