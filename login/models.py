@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
+from django.utils import timezone
 
 
 class rol(models.Model):
@@ -22,23 +23,240 @@ class pregunta_seguridad(models.Model):
     
     def __str__(self):
         return self.pregunta[:50] + "..." if len(self.pregunta) > 50 else self.pregunta
+    
+class tipo_trabajador(models.Model):
+    codigo_trabajador = models.IntegerField(primary_key=True)
+    descripcion = models.CharField(max_length=100)
 
+    class Meta:
+        db_table = 'tipo_trabajador'
+
+class nivel_cargo(models.Model):
+    NIVELES = [
+        (1,'I'),
+        (2,'II'),
+        (3,'III'),
+        (4,'IV'),
+        (5,'V'),
+        (6,'VI'),
+        (7,'Jefe'),
+    ]
+    
+    nivel = models.IntegerField(choices=NIVELES, unique=True,primary_key=True)
+    nombre = models.CharField(max_length=50)
+    orden_jerarquico = models.PositiveSmallIntegerField(unique=True)
+    
+    class Meta:
+        db_table = 'niveles_cargo'
+        verbose_name_plural = 'Niveles de cargo'
+        ordering = ['orden_jerarquico']
+    
+    def __str__(self):
+        return f"Nivel {self.get_nivel_display()}"
+    
+
+class familia_cargo(models.Model):
+    codigo_familiacargo = models.CharField(max_length=10, primary_key=True)
+    nombre = models.CharField(max_length=100)
+    tipo_trabajador = models.ForeignKey(tipo_trabajador, on_delete=models.PROTECT)
+    
+    class Meta:
+        db_table = 'familias_cargo'
+        verbose_name_plural = 'Familias de cargo'
+        ordering = ['nombre']
+    
+    def __str__(self):
+        return f"{self.nombre} ({self.tipo_trabajador})"
+    
+
+class cargo(models.Model):
+    # Identificador único (relación compuesta familia + nivel)
+    familia = models.ForeignKey(
+        familia_cargo,
+        on_delete=models.PROTECT,
+        related_name='cargos'
+    )
+    
+    nivel = models.ForeignKey(
+        nivel_cargo,
+        on_delete=models.PROTECT,
+        related_name='cargos'
+    )
+    
+    # Atributos específicos del cargo
+    """sueldo_base = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Sueldo base"
+    )"""
+    
+    activo = models.BooleanField(default=True)
+    
+    # Metadata
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'cargos'
+        verbose_name = 'Cargo'
+        verbose_name_plural = 'Cargos'
+        ordering = ['familia', 'nivel__orden_jerarquico']
+        unique_together = [('familia', 'nivel')]  # Un cargo único por combinación familia-nivel
+    
+    def __str__(self):
+        return self.nombre_completo or "Cargo sin nombre"
+
+    
+    @property
+    def codigo(self):
+        """Genera código dinámico: FAMILIA-NIVEL"""
+        return f"{self.familia.codigo_familiacargo}-{self.nivel.orden_jerarquico}"
+    
+    @property
+    def nombre_completo(self):
+        """Genera nombre dinámico: NOMBRE_FAMILIA + NIVEL"""
+        return f"{self.familia.nombre} {self.nivel.nivel}"
+    
+    @property
+    def nombre_base(self):
+        """Para compatibilidad si necesitas este campo"""
+        return self.familia.nombre
+
+class banco(models.Model):
+    codigo = models.CharField(max_length=10, unique=True, primary_key=True)
+    nombre = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = 'bancos'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
+class cuenta_bancaria(models.Model):
+    TIPOS_CUENTA = [
+        ('C', 'Corriente'),
+        ('A', 'Ahorro'),
+    ]
+
+    empleado = models.ForeignKey(
+        'empleado',  # usar string si el modelo aún no ha sido declarado
+        on_delete=models.CASCADE,
+        related_name='cuentas_bancarias'
+    )
+    banco = models.ForeignKey(
+        banco,
+        on_delete=models.PROTECT,
+        related_name='cuentas'
+    )
+    tipo = models.CharField(
+        max_length=1,
+        choices=TIPOS_CUENTA,
+        default='C'
+    )
+    numero_cuenta = models.CharField(
+        max_length=20,
+    )
+    activa = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'cuentas_bancarias'
+        verbose_name_plural = 'Cuentas bancarias'
+        unique_together = ('banco', 'numero_cuenta')
+
+    def __str__(self):
+        return f"{self.empleado} - {self.banco} ({self.get_tipo_display()}) {self.numero_cuenta}"
+
+    
 class empleado(models.Model):
     TIPO_IDENTIFICACION = [
         ('V', 'Venezolano'),
         ('E', 'Extranjero'),
         ('P', 'Pasaporte'),
     ]
+    
+    ESTADO_CIVIL = [
+        ('S', 'Soltero/a'),
+        ('C', 'Casado/a'),
+        ('D', 'Divorciado/a'),
+        ('V', 'Viudo/a'),
+    ]
+    
+    GENERO = [
+        ('M', 'Masculino'),
+        ('F', 'Femenino'),
+        ('O', 'Otro'),
+    ]
+
+    # Identificación
     tipo_identificacion = models.CharField(max_length=1, choices=TIPO_IDENTIFICACION)
     cedula = models.CharField(max_length=20, primary_key=True)
+    
+    # Nombres
     primer_nombre = models.CharField(max_length=50)
+    segundo_nombre = models.CharField(max_length=50, blank=True, null=True)
     primer_apellido = models.CharField(max_length=50)
-    segundo_nombre = models.CharField(max_length=50)
-    segundo_apellido = models.CharField(max_length=50)
-    # ... otros campos
+    segundo_apellido = models.CharField(max_length=50, blank=True, null=True)
+    
+    # Datos personales
+    fecha_nacimiento = models.DateField(null=True, blank=True)
+    lugar_nacimiento = models.CharField(max_length=100, blank=True, null=True)
+    genero = models.CharField(max_length=1, choices=GENERO, blank=True, null=True)
+    estado_civil = models.CharField(max_length=1, choices=ESTADO_CIVIL, blank=True, null=True)
+    
+    # Información laboral
+    fecha_ingreso = models.DateField(default=timezone.now)  # Obligatorio para calcular antigüedad
+    cargo = models.ForeignKey(cargo, on_delete=models.PROTECT)
+    tipo_trabajador = models.ForeignKey(tipo_trabajador, on_delete=models.PROTECT)
+    #sueldo_base = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.BooleanField(default=True)  # Activo/Inactivo
+    
+    # Información bancaria
+    
+    # Contacto
+    telefono_principal = models.CharField(max_length=20, blank=True, null=True)
+    telefono_secundario = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    direccion = models.TextField(blank=True, null=True)
+    
+    # Beneficios (para PRM)
+    hijos = models.PositiveIntegerField(default=0)  # Para PRM por hijo
+    conyuge = models.BooleanField(default=False)  # Para asignaciones familiares
+    
+    # Información adicional
+    rif = models.CharField(max_length=20, blank=True, null=True)
+    nss = models.CharField(max_length=50, blank=True, null=True)  # Número Seguro Social
+    grado_instruccion = models.CharField(max_length=50, blank=True, null=True)
+    
+    # Auditoría
+    actualizado_en = models.DateTimeField(default=timezone.now)
     
     class Meta:
         db_table = 'empleados'
+        verbose_name = 'Empleado'
+        verbose_name_plural = 'Empleados'
+        ordering = ['primer_apellido', 'primer_nombre']
+
+    def __str__(self):
+        return f"{self.get_nombre_completo()} - {self.cedula}"
+    
+    def get_nombre_completo(self):
+        nombres = f"{self.primer_nombre} {self.segundo_nombre or ''}".strip()
+        apellidos = f"{self.primer_apellido} {self.segundo_apellido or ''}".strip()
+        return f"{apellidos} {nombres}"
+    
+    def get_antiguedad(self):
+        from dateutil.relativedelta import relativedelta
+        from django.utils import timezone
+        
+        hoy = timezone.now().date()
+        delta = relativedelta(hoy, self.fecha_ingreso)
+        return f"{delta.years} años, {delta.months} meses y {delta.days} días"
+    
+    @property
+    def nombre_completo(self):
+        return self.get_nombre_completo()
 
 class usuario(models.Model):
     """Modelo de usuarios del sistema"""
@@ -148,12 +366,6 @@ class secuencia(models.Model):
     def __str__(self):
         return self.nombre_secuencia
     
-class tipo_trabajador(models.Model):
-    codigo_trabajador = models.IntegerField(primary_key=True)
-    descripcion = models.CharField(max_length=100)
-
-    class Meta:
-        db_table = 'tipo_trabajador'
 
     def __str__(self):
         return self.descripcion
