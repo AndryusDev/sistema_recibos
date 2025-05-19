@@ -433,7 +433,6 @@ class detalle_nomina(models.Model):
     cedula = models.ForeignKey(empleado, on_delete=models.PROTECT)
     codigo = models.ForeignKey(concepto_pago, on_delete=models.PROTECT)
     monto = models.DecimalField(max_digits=12, decimal_places=2)
-    pdf = models.FileField(upload_to='recibos/')
     
     class Meta:
         verbose_name = "Detalle de Nomina"
@@ -444,51 +443,24 @@ class recibo_pago(models.Model):
     nomina = models.ForeignKey(nomina, on_delete=models.PROTECT)
     cedula = models.ForeignKey(empleado, on_delete=models.PROTECT)
     fecha_generacion = models.DateTimeField(auto_now_add=True)
-    pdf = models.FileField(upload_to='recibos/%Y/%m/')
-# Relación a los conceptos
     
     class Meta:
         db_table = 'recibo_pago'
     
+    # Método para obtener detalles (CORRECTO)
     def get_detalles(self):
-        """Obtiene todos los detalles agrupados por tipo"""
-        detalles = self.detalle_recibo_set.all().select_related('detalle_nomina__codigo__tipo_pago')
-
-        asignaciones = [
-            d.detalle_nomina for d in detalles
-            if d.detalle_nomina.codigo.tipo_pago.nombre_tipopago.upper() == 'ASIGNACION'
-        ]
-        deducciones = [
-            d.detalle_nomina for d in detalles
-            if d.detalle_nomina.codigo.tipo_pago.nombre_tipopago.upper() == 'DEDUCCION'
-        ]
-
-        total_asignaciones = sum(d.monto for d in asignaciones)
-        total_deducciones = sum(d.monto for d in deducciones)
-
-        return {
-            'asignaciones': asignaciones,
-            'deducciones': deducciones,
-            'totales': {
-                'asignaciones': total_asignaciones,
-                'deducciones': total_deducciones,
-                'neto': total_asignaciones - total_deducciones
-            }
-        }
-
-    def __str__(self):
-        return f"Recibo {self.nomina} - {self.cedula}"
+        return self.detalle_recibo_set.all()
 
 class detalle_recibo(models.Model):
-    recibo = models.ForeignKey(recibo_pago, on_delete=models.CASCADE)
-    detalle_nomina = models.OneToOneField(detalle_nomina, on_delete=models.PROTECT)
+    recibo = models.ForeignKey(recibo_pago, on_delete=models.CASCADE, related_name='detalles')
+    detalle_nomina = models.ForeignKey(detalle_nomina, on_delete=models.PROTECT)
     
     class Meta:
         db_table = 'detalle_recibo'
+        unique_together = ('recibo', 'detalle_nomina')  # Evita duplicados
     
     def __str__(self):
-        return f"Detalle {self.detalle_nomina} en {self.recibo}"
-
+        return f"Detalle {self.detalle_nomina.id} en recibo {self.recibo.id}"
 
 """class LineaRecibo(models.Model):
     recibo = models.ForeignKey(ReciboPago, on_delete=models.CASCADE, related_name='lineas')

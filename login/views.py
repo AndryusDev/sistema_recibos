@@ -106,7 +106,7 @@ from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 from django.shortcuts import render, redirect
-from .models import empleado, usuario, rol, usuario_rol, usuario_pregunta, pregunta_seguridad, tipo_nomina ,meses, secuencia, tipo_trabajador, detalle_nomina  # Importa tu modelo usuario actual
+from .models import empleado, usuario, rol, usuario_rol, usuario_pregunta, pregunta_seguridad, tipo_nomina ,meses, secuencia, tipo_trabajador, detalle_nomina, detalle_recibo, recibo_pago  # Importa tu modelo usuario actual
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime
@@ -368,7 +368,8 @@ def login_empleado(request):
 import pandas as pd
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import concepto_pago, nomina #ReciboPago, LineaRecibo
+from .models import concepto_pago, nomina, recibo_pago, detalle_recibo
+print(recibo_pago)
 from datetime import datetime
 import os
 from django.conf import settings
@@ -395,6 +396,8 @@ from django.db.models import Q
 
 logger = logging.getLogger(__name__)
 
+@csrf_exempt
+@transaction.atomic
 @csrf_exempt
 @transaction.atomic
 def importar_nominas(request):
@@ -433,8 +436,6 @@ def importar_nominas(request):
                     return JsonResponse({'error': 'Formato de archivo no soportado. Use CSV o Excel'}, status=400)
             except Exception as e:
                 return JsonResponse({'error': f'Error al leer el archivo: {str(e)}'}, status=400)
-            
-            print(df.head())
 
             # 4. Validación de estructura del archivo
             required_columns = [
@@ -464,20 +465,20 @@ def importar_nominas(request):
             stats = {
                 'empleados_procesados': 0,
                 'conceptos_procesados': 0,
+                'recibos_generados': 0,
                 'errores': 0
             }
 
             for _, row in df.iterrows():
+                detalles_empleado = []  # Mover la declaración aquí para que sea visible en todo el bloque
                 try:
-                    # 6.1. Obtener o crear empleado
-                    empleado_obj, created = empleado.objects.get_or_create(
-                        cedula=row['CEDULA'],
-                        defaults={
-                            'codigo': row['COD'],
-                            'nombre': f"{row['NOMBRE']} {row['APELLIDO']}",
-                            'tipo_trabajador': tipo_trabajador.objects.first()
-                        }
-                    )
+                    # 6.1. Obtener empleado (no crear si no existe)
+                    try:
+                        empleado_obj = empleado.objects.get(cedula=row['CEDULA'])
+                    except empleado.DoesNotExist:
+                        stats['errores'] += 1
+                        logger.error(f"Empleado no encontrado: {row['CEDULA']}")
+                        continue
 
                     # 6.2. Procesar conceptos dinámicos
                     concept_cols = [col for col in df.columns if col not in [
@@ -489,25 +490,51 @@ def importar_nominas(request):
                         monto = row[col]
                         if pd.notna(monto) and float(monto) != 0:
                             # 6.3. Buscar concepto en catálogo
-                            concepto_obj = concepto_pago.objects.filter(
-                                Q(nombre_nomina__iexact=col) | 
-                                Q(codigo__iexact=extract_codigo_from_colname(col))
-                            ).first()
-
-                            if concepto_obj:
+                            try:
+                                concepto_obj = concepto_pago.objects.get(
+                                    Q(nombre_nomina__iexact=col) | 
+                                    Q(codigo__iexact=extract_codigo_from_colname(col))
+                                )
+                                
                                 # 6.4. Crear detalle de nómina
-                                detalle_nomina.objects.create(
+                                detalle = detalle_nomina.objects.create(
                                     nomina=nueva_nomina,
                                     cedula=empleado_obj,
                                     codigo=concepto_obj,
                                     monto=Decimal(str(monto))
                                 )
+                                detalles_empleado.append(detalle)
                                 stats['conceptos_procesados'] += 1
-                            else:
+                            except ObjectDoesNotExist:
                                 logger.warning(f'Concepto no encontrado para columna: {col}')
+                                stats['errores'] += 1
+                            except Exception as e:
+                                logger.error(f"Error procesando concepto {col}: {str(e)}")
                                 stats['errores'] += 1
 
                     stats['empleados_procesados'] += 1
+
+                    # 6.5. Crear recibo de pago si hay detalles
+                    if detalles_empleado:  # Ahora la variable es visible aquí
+                        try:
+                            # Crear el recibo en la base de datos
+                            recibo = recibo_pago.objects.create(
+                                nomina=nueva_nomina,
+                                cedula=empleado_obj,
+                                fecha_generacion=datetime.now()
+                            )
+                            
+                            # Asociar los detalles al recibo
+                            for detalle in detalles_empleado:
+                                detalle_recibo.objects.create(
+                                    recibo=recibo,
+                                    detalle_nomina=detalle
+                                )
+                            
+                            stats['recibos_generados'] += 1
+                        except Exception as e:
+                            stats['errores'] += 1
+                            logger.error(f"Error creando recibo para {empleado_obj.cedula}: {str(e)}")
 
                 except Exception as e:
                     stats['errores'] += 1
@@ -516,7 +543,9 @@ def importar_nominas(request):
             # 7. Retornar resultados
             return JsonResponse({
                 'success': True,
-                'message': f'Nómina importada correctamente. Empleados: {stats["empleados_procesados"]}, Conceptos: {stats["conceptos_procesados"]}',
+                'message': f'Nómina importada correctamente. Empleados: {stats["empleados_procesados"]}, ' +
+                        f'Conceptos: {stats["conceptos_procesados"]}, ' +
+                        f'Recibos generados: {stats["recibos_generados"]}',
                 'nomina_id': nueva_nomina.id_nomina,
                 'stats': stats
             })
