@@ -446,10 +446,35 @@ class recibo_pago(models.Model):
     
     class Meta:
         db_table = 'recibo_pago'
+        verbose_name = 'Recibo de Pago'
+        verbose_name_plural = 'Recibos de Pago'
     
-    # Método para obtener detalles (CORRECTO)
-    def get_detalles(self):
+    def __str__(self):
+        return f"Recibo {self.id} - {self.cedula.get_nombre_completo()} ({self.fecha_generacion.date()})"
+    
+    @property
+    def detalles(self):
+        """Propiedad que devuelve los detalles del recibo"""
         return self.detalle_recibo_set.all()
+    
+    @property
+    def total_asignaciones(self):
+        """Calcula el total de asignaciones del recibo"""
+        return self.detalles.filter(
+            detalle_nomina__codigo__tipo_concepto='ASIGNACION'
+        ).aggregate(total=Sum('detalle_nomina__monto'))['total'] or 0
+    
+    @property
+    def total_deducciones(self):
+        """Calcula el total de deducciones del recibo"""
+        return self.detalles.filter(
+            detalle_nomina__codigo__tipo_concepto='DEDUCCION'
+        ).aggregate(total=Sum('detalle_nomina__monto'))['total'] or 0
+    
+    @property
+    def total_neto(self):
+        """Calcula el neto a pagar"""
+        return self.total_asignaciones - self.total_deducciones
 
 class detalle_recibo(models.Model):
     recibo = models.ForeignKey(recibo_pago, on_delete=models.CASCADE, related_name='detalles')

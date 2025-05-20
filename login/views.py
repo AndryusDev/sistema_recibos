@@ -594,104 +594,80 @@ from django.db.models import Prefetch
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-@login_required
-def obtener_detalle_recibo(request, recibo_id):
-    """
-    Endpoint que devuelve el detalle completo de un recibo específico
-    solo si pertenece al usuario autenticado
-    """
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from .models import recibo_pago
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from django.db.models import Sum
+from .models import recibo_pago
+import logging
+
+logger = logging.getLogger(__name__)
+
+@require_GET
+def obtener_datos_recibo(request, recibo_id):
     try:
-        # 1. Obtener el usuario personalizado y su empleado asociado
-        try:
-            usuario_personalizado = usuario.objects.get(email=request.user.email)
-            empleado_asociado = usuario_personalizado.empleado
-        except usuario.DoesNotExist:
-            return JsonResponse({
-                'error': 'Usuario no encontrado',
-                'detalle': 'No existe registro en la tabla usuarios'
-            }, status=404)
-        except AttributeError:
-            return JsonResponse({
-                'error': 'Relación incompleta',
-                'detalle': 'El usuario no tiene empleado asociado'
-            }, status=400)
+        # Optimización de consultas con select_related y prefetch_related
+        recibo = (recibo_pago.objects
+                .select_related(
+                    'cedula',
+                    'nomina',
+                    'cedula__cargo',
+                    'cedula__cargo__familia',
+                    'cedula__cargo__nivel'
+                )
+                .prefetch_related(
+                    'detalles__detalle_nomina__codigo',
+                    'cedula__cuentas_bancarias__banco'
+                )
+                .get(pk=recibo_id))
 
-        # 2. Obtener el recibo con todas las relaciones
-        recibo = get_object_or_404(
-            recibo_pago.objects.select_related(
-                'cedula',
-                'cedula__cargo',
-                'nomina',
-                'nomina__tipo_nomina'
-            ).prefetch_related(
-                Prefetch('detalles', queryset=detalle_recibo.objects.select_related(
-                    'detalle_nomina',
-                    'detalle_nomina__codigo'
-                ))
-            ),
-            id=recibo_id,
-            cedula=empleado_asociado
-        )
+        # Obtener cuenta bancaria activa
+        cuenta_activa = recibo.cedula.cuentas_bancarias.filter(activa=True).first()
 
-        # 3. Obtener cuenta bancaria activa
-        cuenta = recibo.cedula.cuentas_bancarias.filter(activa=True).first()
-
-        # 4. Procesar conceptos y calcular totales
+        # Procesar conceptos
         conceptos = []
-        total_asignaciones = Decimal('0.00')
-        total_deducciones = Decimal('0.00')
-
         for detalle in recibo.detalles.all():
-            concepto_data = {
-                'codigo': detalle.detalle_nomina.codigo.codigo,
-                'descripcion': detalle.detalle_nomina.codigo.descripcion,
-                'tipo': detalle.detalle_nomina.codigo.tipo_concepto,
-                'monto': str(detalle.detalle_nomina.monto.quantize(Decimal('0.01')))
-            }
+            concepto = detalle.detalle_nomina
+            conceptos.append({
+                'codigo': concepto.codigo.codigo,
+                'descripcion': concepto.codigo.descripcion,
+                'asignacion': float(concepto.monto) if concepto.codigo.tipo_concepto == 'ASIGNACION' else None,
+                'deduccion': float(concepto.monto) if concepto.codigo.tipo_concepto == 'DEDUCCION' else None
+            })
 
-            if concepto_data['tipo'] == 'ASIGNACION':
-                total_asignaciones += detalle.detalle_nomina.monto
-            else:
-                total_deducciones += detalle.detalle_nomina.monto
+        # Cálculo de totales
+        detalles = recibo.detalles.all()
+        total_asignaciones = sum(d.detalle_nomina.monto for d in detalles if d.detalle_nomina.codigo.tipo_concepto == 'ASIGNACION')
+        total_deducciones = sum(d.detalle_nomina.monto for d in detalles if d.detalle_nomina.codigo.tipo_concepto == 'DEDUCCION')
 
-            conceptos.append(concepto_data)
-
-        # 5. Estructurar la respuesta
-        data = {
+        datos = {
             'encabezado': {
-                'numero_recibo': recibo.id,
-                'fecha_generacion': recibo.fecha_generacion.strftime('%Y-%m-%d %H:%M:%S'),
-                'tipo_nomina': recibo.nomina.tipo_nomina.tipo_nomina if recibo.nomina.tipo_nomina else 'N/A'
-            },
-            'empleado': {
+                'fecha_ingreso': recibo.cedula.fecha_ingreso.strftime("%d-%b-%y") if recibo.cedula.fecha_ingreso else "N/A",
                 'nombre_completo': recibo.cedula.get_nombre_completo(),
                 'cedula': recibo.cedula.cedula,
-                'fecha_ingreso': recibo.cedula.fecha_ingreso.strftime('%Y-%m-%d'),
-                'cargo': recibo.cedula.cargo.nombre_completo if recibo.cedula.cargo else 'N/A',
-                'cuenta_bancaria': cuenta.numero_cuenta if cuenta else 'No registrada',
-                'sueldo_base': str(recibo.cedula.cargo.sueldo_base) if hasattr(recibo.cedula.cargo, 'sueldo_base') else 'N/A'
-            },
-            'nomina': {
-                'periodo': recibo.nomina.periodo,
-                'fecha_cierre': recibo.nomina.fecha_cierre.strftime('%Y-%m-%d') if recibo.nomina.fecha_cierre else 'N/A'
+                'numero_cuenta': cuenta_activa.numero_cuenta if cuenta_activa else "No registrado",
+                'banco': cuenta_activa.banco.nombre if cuenta_activa else "No especificado",
+                'cargo': recibo.cedula.cargo.nombre_completo if recibo.cedula.cargo else "Sin cargo",
+                'periodo': recibo.nomina.periodo if recibo.nomina else "Periodo no definido",
+                'sueldo_base': next((c['asignacion'] for c in conceptos if c['codigo'] == '1001'), 0)  # Asumiendo que 1001 es sueldo base
             },
             'conceptos': conceptos,
             'totales': {
-                'asignaciones': str(total_asignaciones.quantize(Decimal('0.01'))),
-                'deducciones': str(total_deducciones.quantize(Decimal('0.01'))),
-                'neto': str((total_asignaciones - total_deducciones).quantize(Decimal('0.01')))
+                'total_asignaciones': total_asignaciones,
+                'total_deducciones': total_deducciones,
+                'total_nomina': total_asignaciones - total_deducciones
             }
         }
+        return JsonResponse(datos)
 
-        return JsonResponse(data)
-
+    except recibo_pago.DoesNotExist:
+        return JsonResponse({'error': 'Recibo no encontrado'}, status=404)
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({
-            'error': 'Error al procesar el recibo',
-            'detalle': str(e)
-        }, status=500)
+        logger.error(f"Error al obtener recibo {recibo_id}: {str(e)}", exc_info=True)
+        return JsonResponse({'error': 'Error interno del servidor'}, status=500)
     
 @login_required
 def listado_recibos(request):

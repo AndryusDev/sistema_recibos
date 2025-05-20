@@ -317,3 +317,44 @@
         display: none; /* Ocultar botones de imprimir/cerrar en la impresión */
     }
 }
+
+/* recibos_pagos.css - Sección adicional */
+
+.recibo-loader, .recibo-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 2rem;
+    text-align: center;
+}
+
+.recibo-loader i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+    animation: spin 1s linear infinite;
+}
+
+.recibo-error i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #e74c3c;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.recibo-modal__tablaencabezado th {
+    white-space: nowrap;
+}
+
+.recibo-footer {
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    text-align: center;
+    color: #555;
+}

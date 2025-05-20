@@ -41,10 +41,10 @@
                         <tr class="tabla-recibos__fila">
                             <td class="tabla-recibos__celda">{{ recibo.id }}</td>
                             <td class="tabla-recibos__celda">{{ recibo.fecha_generacion|date:"d/M/Y" }}</td>
-                            <td class="tabla-recibos__celda">{{ recibo.cedula.get_nombre_completo }}</td>
-                            <td class="tabla-recibos__celda">{{ recibo.cedula.cargo.nombre_completo }}</td>
+                            <td class="tabla-recibos__celda">{{ recibo.cedula.get_nombre_completo|upper }}</td>
+                            <td class="tabla-recibos__celda">{{ recibo.cedula.cargo.nombre_completo|upper }}</td>
                             <td class="tabla-recibos__celda">
-                                <button class="tabla-recibos__boton" onclick="cargarRecibo({{ recibo.id }})">Ver Recibo</button>
+                                <button class="tabla-recibos__boton" data-recibo-id="{{ recibo.id }}">Ver Recibo</button>
                             </td>
                         </tr>
                         {% empty %}

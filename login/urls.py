@@ -5,7 +5,7 @@ from django.contrib import admin
 #from .views import CustomLoginView
 
 from django.contrib.auth.decorators import login_required
-from .views import listado_recibos, obtener_detalle_recibo
+from .views import listado_recibos
 
 urlpatterns = [
     path('login/', views.login, name='login'),  # Nuevo login JWT
@@ -27,7 +27,7 @@ urlpatterns = [
     path('api/nominas/importar/', views.importar_nominas, name='importar_nominas'),
 
     path('recibos/', login_required(listado_recibos), name='listado_recibos'),
-    path('recibo/<int:recibo_id>/', obtener_detalle_recibo, name='detalle-recibo'),
+    path('api/recibos/<int:recibo_id>/', views.obtener_datos_recibo, name='obtener_datos_recibo'),
 
     path('load_template/<str:template_name>/', views.load_template, name='load_template'),
     
