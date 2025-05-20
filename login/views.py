@@ -34,7 +34,7 @@ def menu(request):
     return render(request, 'menu_principal/menu.html')
 
 def load_template(request, template_name):
-    allowed_templates = ['noticias.html', 'perfil_usuario.html', 'recibo_pago.html',
+    allowed_templates = ['noticias.html', 'perfil_usuario.html', 'recibos_pagos.html',
                         'constancia_trabajo.html', 'arc.html','importar_nomina.html', 'gestion_nomina.html', 'prenomina.html']  # Añade todos tus templates
     
     if template_name not in allowed_templates:
@@ -47,7 +47,7 @@ def load_template(request, template_name):
 
 def serve_js(request, script_name):
     # Lista blanca de scripts permitidos
-    allowed_scripts = ['noticias.js', 'perfil_usuario.js','recibo_pago.js',
+    allowed_scripts = ['noticias.js', 'perfil_usuario.js','recibos_pagos.js',
                         'constancia_trabajo.js', 'arc.js', 'importar_nomina.js', 'gestion_nomina.js',
                         'prenomina.js']  # Añade todos tus scripts aquí
     
@@ -70,8 +70,8 @@ def noticias(request):
 def noticias(request):
     return render(request, 'menu_principal/subs_menus/noticias.html')
 
-def recibo_pago(request):
-    return render(request, 'menu_principal/subs_menus/recibo_pago.html')
+def recibos_pagos(request):
+    return render(request, 'menu_principal/subs_menus/recibos_pagos.html')
 
 def constancia_trabajo(request):
     return render(request, 'menu_principal/subs_menus/constancia_trabajo.html')

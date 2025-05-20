@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 url = "/importar_nomina";
             } else if (template === "perfil_usuario.html") {
                 url = "/perfil_usuario/";
-            } else if (template === "recibo_pago.html") {
-                url = "/recibo_pago/";
+            } else if (template === "recibos_pagos.html") {
+                url = "/recibos_pagos";
             } else if (template === "constancia_trabajo.html") {
                 url = "/constancia_trabajo/";
             } else if (template === "arc.html") {
