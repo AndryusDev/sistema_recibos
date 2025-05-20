@@ -37,24 +37,21 @@
                         </tr>
                     </thead>
                     <tbody class="tabla-recibos__tbody">
-                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
-                            <td class="tabla-recibos__celda">1</td>
-                            <td class="tabla-recibos__celda">30/Mar/2025</td>
-                            <td class="tabla-recibos__celda">Diana Estefania</td>
-                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
+                        {% for recibo in recibos %}
+                        <tr class="tabla-recibos__fila">
+                            <td class="tabla-recibos__celda">{{ recibo.id }}</td>
+                            <td class="tabla-recibos__celda">{{ recibo.fecha_generacion|date:"d/M/Y" }}</td>
+                            <td class="tabla-recibos__celda">{{ recibo.cedula.get_nombre_completo }}</td>
+                            <td class="tabla-recibos__celda">{{ recibo.cedula.cargo.nombre_completo }}</td>
                             <td class="tabla-recibos__celda">
-                                <button class="tabla-recibos__boton">Ver Recibo</button>
+                                <button class="tabla-recibos__boton" onclick="cargarRecibo({{ recibo.id }})">Ver Recibo</button>
                             </td>
                         </tr>
-                        <tr class="tabla-recibos__fila" onclick="reciboModal__abrir('Diana Estefania de los Angeles Garcia Siran')">
-                            <td class="tabla-recibos__celda">1</td>
-                            <td class="tabla-recibos__celda">30/Mar/2025</td>
-                            <td class="tabla-recibos__celda">Diana Estefania</td>
-                            <td class="tabla-recibos__celda">Asistente Administrativo I</td>
-                            <td class="tabla-recibos__celda">
-                                <button class="tabla-recibos__boton">Ver Recibo</button>
-                            </td>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No tienes recibos registrados.</td>
                         </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>

@@ -4,6 +4,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.contrib import admin
 #from .views import CustomLoginView
 
+from django.contrib.auth.decorators import login_required
+from .views import listado_recibos, obtener_detalle_recibo
+
 urlpatterns = [
     path('login/', views.login, name='login'),  # Nuevo login JWT
     path('crear_cuenta/', views.crear_cuenta),
@@ -22,6 +25,9 @@ urlpatterns = [
     path('gestion_nomina/', views.gestion_nomina, name= 'gestion_nomina'),
     path('prenomina/', views.prenomina, name= 'prenomina'),
     path('api/nominas/importar/', views.importar_nominas, name='importar_nominas'),
+
+    path('recibos/', login_required(listado_recibos), name='listado_recibos'),
+    path('recibo/<int:recibo_id>/', obtener_detalle_recibo, name='detalle-recibo'),
 
     path('load_template/<str:template_name>/', views.load_template, name='load_template'),
     

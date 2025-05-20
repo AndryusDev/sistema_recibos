@@ -8,42 +8,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     form.addEventListener('submit', function(event) {
         event.preventDefault();
-
-        const formData = new FormData(form);
-
+        
         fetch("/login_empleado/", {
             method: 'POST',
-            body: formData,
+            body: new FormData(form),
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
             }
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                alert(data.message);
-
-                // 1. Guardar la información del usuario
+                // Guardar información en sessionStorage
                 sessionStorage.setItem('usuario_info', JSON.stringify(data.usuario_info));
-
-                // 2. Redirigir a la página del menú
-                setTimeout(() => {
-                    window.location.href = data.redirect_url; // ejemplo: '/menu/'
-                }, 500); // medio segundo de espera para que el usuario vea el mensaje
+                
+                // Redirigir al menú
+                window.location.href = data.redirect_url;
             } else {
-                console.error("❌ Error en login:", data.message);
-                alert('⚠ Falló el inicio de sesión. Revisa tus credenciales.');
+                alert('Error: ' + data.error);
             }
         })
         .catch(error => {
-            console.error('⚠ Error en la solicitud:', error);
-            alert('⚠ Error del servidor. Intenta más tarde.');
+            console.error('Error:', error);
+            alert('Error al iniciar sesión');
         });
     });
 });
-

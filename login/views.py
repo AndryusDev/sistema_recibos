@@ -7,7 +7,7 @@ from django.http import HttpResponse, HttpResponseNotFound
 import os
 from django.conf import settings
 
-from login.models import usuario
+from login.models import usuario, recibo_pago
 
 # Create your views here.
 def login(request):
@@ -71,7 +71,12 @@ def noticias(request):
     return render(request, 'menu_principal/subs_menus/noticias.html')
 
 def recibos_pagos(request):
-    return render(request, 'menu_principal/subs_menus/recibos_pagos.html')
+    # Obtener todos los recibos de pago (puedes agregar filtros si es necesario)
+    recibos = recibo_pago.objects.select_related('cedula', 'cedula__cargo').all().order_by('-fecha_generacion')
+    
+    return render(request, 'menu_principal/subs_menus/recibos_pagos.html', {
+        'recibos': recibos
+    })
 
 def constancia_trabajo(request):
     return render(request, 'menu_principal/subs_menus/constancia_trabajo.html')
@@ -304,34 +309,42 @@ def login_empleado(request):
         if not check_password(contraseña, usuario_instance.contraseña_hash):
             return JsonResponse({'status': 'error', 'error': 'Contraseña incorrecta.'}, status=401)
 
+        # Obtener el empleado asociado
+        empleado_instance = usuario_instance.empleado  # Asegúrate de que esta relación exista
+
         # Guardar datos de sesión
         request.session['usuario_id'] = usuario_instance.id
         request.session['email'] = usuario_instance.email
         request.session['empleado_id'] = usuario_instance.empleado_id
         request.session.set_expiry(3600)  # 1 hora
 
-        usuario_instance.ultimo_login = timezone.now()  # Guarda la fecha/hora actual
-        usuario_instance.save()  # ¡No olvides guardar!
+        usuario_instance.ultimo_login = timezone.now()
+        usuario_instance.save()
 
         usuario_roles = usuario_rol.objects.filter(usuario=usuario_instance)
         rol_nombres = [usuario_rol_instance.rol.nombre_rol for usuario_rol_instance in usuario_roles]
 
         # Información del usuario para enviar al frontend
         usuario_info = {
-            'nombre': usuario_instance.empleado.primer_nombre,
-            'apellido': usuario_instance.empleado.primer_apellido,
-            'roles': rol_nombres,  # Lista de nombres de roles
+            'nombre': empleado_instance.primer_nombre,
+            'apellido': empleado_instance.primer_apellido,
+            'cedula': empleado_instance.cedula,
+            'cargo': str(empleado_instance.cargo) if empleado_instance.cargo else 'N/A',
+            'roles': rol_nombres,
+            'ultimo_login': usuario_instance.ultimo_login.strftime('%d/%m/%Y %H:%M') if usuario_instance.ultimo_login else 'Nunca'
         }
+        
         return JsonResponse({
             'status': 'success',
             'message': 'Inicio de sesión exitoso.',
-            'redirect_url': '/menu/',  # Agregar URL de redirección
-            'usuario_info': usuario_info,  # Información del usuario
+            'redirect_url': '/menu/',
+            'usuario_info': usuario_info
         })
 
     except Exception as e:
-        # Para producción no deberías mandar detalles de error, solo para debug
-        return JsonResponse({'status': 'error', 'error': 'Error interno del servidor.'}, status=500)
+        import traceback
+        traceback.print_exc()  # Esto imprimirá el traceback completo en la consola del servidor
+        return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
     
 #          <-------LOGIN_TERMINADO------->
 
@@ -575,45 +588,147 @@ def extract_codigo_from_colname(col_name):
     }
     return codigo_map.get(col_name, col_name)
 
-"""def generar_recibos(nomina):
-    # Aquí implementarías la lógica para generar los recibos
-    # basado en los conceptos de la nómina y los empleados
-    
-    # Ejemplo simplificado:
-    empleados = [...]  # Obtener lista de empleados según tipo de nómina
-    
-    for empleado in empleados:
-        recibo = ReciboPago.objects.create(
-            nomina=nomina,
-            empleado_id=empleado['id'],
-            total_bruto=0,
-            total_deducciones=0,
-            total_neto=0
+from django.shortcuts import get_object_or_404
+from django.db.models import Prefetch
+
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+@login_required
+def obtener_detalle_recibo(request, recibo_id):
+    """
+    Endpoint que devuelve el detalle completo de un recibo específico
+    solo si pertenece al usuario autenticado
+    """
+    try:
+        # 1. Obtener el usuario personalizado y su empleado asociado
+        try:
+            usuario_personalizado = usuario.objects.get(email=request.user.email)
+            empleado_asociado = usuario_personalizado.empleado
+        except usuario.DoesNotExist:
+            return JsonResponse({
+                'error': 'Usuario no encontrado',
+                'detalle': 'No existe registro en la tabla usuarios'
+            }, status=404)
+        except AttributeError:
+            return JsonResponse({
+                'error': 'Relación incompleta',
+                'detalle': 'El usuario no tiene empleado asociado'
+            }, status=400)
+
+        # 2. Obtener el recibo con todas las relaciones
+        recibo = get_object_or_404(
+            recibo_pago.objects.select_related(
+                'cedula',
+                'cedula__cargo',
+                'nomina',
+                'nomina__tipo_nomina'
+            ).prefetch_related(
+                Prefetch('detalles', queryset=detalle_recibo.objects.select_related(
+                    'detalle_nomina',
+                    'detalle_nomina__codigo'
+                ))
+            ),
+            id=recibo_id,
+            cedula=empleado_asociado
         )
-        
-        # Procesar conceptos para este empleado
-        for concepto in ConceptoNomina.objects.filter(tipo_nomina__contains=nomina.tipo):
-            valor = calcular_valor_concepto(concepto, empleado)
-            
-            LineaRecibo.objects.create(
-                recibo=recibo,
-                concepto=concepto,
-                cantidad=1,  # O calcular según concepto
-                valor=valor,
-                tipo='I' if not concepto.codigo.startswith(('2', '21', '24')) else 'D'
-            )
-            
-            # Actualizar totales
-            if concepto.codigo.startswith(('2', '21', '24')):
-                recibo.total_deducciones += valor
+
+        # 3. Obtener cuenta bancaria activa
+        cuenta = recibo.cedula.cuentas_bancarias.filter(activa=True).first()
+
+        # 4. Procesar conceptos y calcular totales
+        conceptos = []
+        total_asignaciones = Decimal('0.00')
+        total_deducciones = Decimal('0.00')
+
+        for detalle in recibo.detalles.all():
+            concepto_data = {
+                'codigo': detalle.detalle_nomina.codigo.codigo,
+                'descripcion': detalle.detalle_nomina.codigo.descripcion,
+                'tipo': detalle.detalle_nomina.codigo.tipo_concepto,
+                'monto': str(detalle.detalle_nomina.monto.quantize(Decimal('0.01')))
+            }
+
+            if concepto_data['tipo'] == 'ASIGNACION':
+                total_asignaciones += detalle.detalle_nomina.monto
             else:
-                recibo.total_bruto += valor
+                total_deducciones += detalle.detalle_nomina.monto
+
+            conceptos.append(concepto_data)
+
+        # 5. Estructurar la respuesta
+        data = {
+            'encabezado': {
+                'numero_recibo': recibo.id,
+                'fecha_generacion': recibo.fecha_generacion.strftime('%Y-%m-%d %H:%M:%S'),
+                'tipo_nomina': recibo.nomina.tipo_nomina.tipo_nomina if recibo.nomina.tipo_nomina else 'N/A'
+            },
+            'empleado': {
+                'nombre_completo': recibo.cedula.get_nombre_completo(),
+                'cedula': recibo.cedula.cedula,
+                'fecha_ingreso': recibo.cedula.fecha_ingreso.strftime('%Y-%m-%d'),
+                'cargo': recibo.cedula.cargo.nombre_completo if recibo.cedula.cargo else 'N/A',
+                'cuenta_bancaria': cuenta.numero_cuenta if cuenta else 'No registrada',
+                'sueldo_base': str(recibo.cedula.cargo.sueldo_base) if hasattr(recibo.cedula.cargo, 'sueldo_base') else 'N/A'
+            },
+            'nomina': {
+                'periodo': recibo.nomina.periodo,
+                'fecha_cierre': recibo.nomina.fecha_cierre.strftime('%Y-%m-%d') if recibo.nomina.fecha_cierre else 'N/A'
+            },
+            'conceptos': conceptos,
+            'totales': {
+                'asignaciones': str(total_asignaciones.quantize(Decimal('0.01'))),
+                'deducciones': str(total_deducciones.quantize(Decimal('0.01'))),
+                'neto': str((total_asignaciones - total_deducciones).quantize(Decimal('0.01')))
+            }
+        }
+
+        return JsonResponse(data)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'error': 'Error al procesar el recibo',
+            'detalle': str(e)
+        }, status=500)
+    
+@login_required
+def listado_recibos(request):
+    try:
+        # Obtener el usuario personalizado
+        try:
+            usuario_personalizado = usuario.objects.get(email=request.user.email)
+        except usuario.DoesNotExist:
+            return JsonResponse({'error': 'Usuario no encontrado'}, status=404)
         
-        recibo.total_neto = recibo.total_bruto - recibo.total_deducciones
-        recibo.save()
+        # Verificar que tenga empleado asociado
+        if not usuario_personalizado.empleado:
+            return JsonResponse({'error': 'Usuario no tiene empleado asociado'}, status=400)
         
-        # Generar PDF del recibo"""
-
-
-
-
+        recibos = recibo_pago.objects.filter(
+            cedula=usuario_personalizado.empleado
+        ).select_related(
+            'cedula',
+            'cedula__cargo',
+            'nomina'
+        ).order_by('-fecha_generacion')
+        
+        paginator = Paginator(recibos, 10)
+        page_number = request.GET.get('page')
+        
+        try:
+            page_obj = paginator.page(page_number)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+            
+        return render(request, 'menu_principal/subs_menus/recibo_pago.html', {
+            'page_obj': page_obj,
+            'titulo_pagina': 'Mis Recibos de Pago'
+        })
+        
+    except Exception as e:
+        print(f"Error en listado_recibos: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)

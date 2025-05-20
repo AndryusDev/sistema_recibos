@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
         scripts: {
             'noticias.html': ['/static/javascript/menu_principal/subs_menus/noticias.js'],
             'perfil_usuario.html': ['/static/javascript/menu_principal/subs_menus/perfil_usuario.js'],
-            'recibo_pago.html': ['/static/javascript/menu_principal/subs_menus/recibo_pago.js'],
+            'recibos_pagos.html': ['/static/javascript/menu_principal/subs_menus/recibos_pagos.js'],
             'constancia_trabajo.html': ['/static/javascript/menu_principal/subs_menus/constancia_trabajo.js'],
             'arc.html': ['/static/javascript/menu_principal/subs_menus/arc.js'],
             'importar_nomina.html': ['/static/javascript/menu_principal/subs_menus/importar_nomina.js'],
@@ -188,3 +188,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Si necesitas usar SecurityLvl desde otro lugar, exponela al ámbito global
     window.SecurityLvl = SecurityLvl;
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener información guardada
+    const usuarioInfo = JSON.parse(sessionStorage.getItem('usuario_info'));
+    
+    if (usuarioInfo) {
+        // Actualizar elementos del DOM
+        document.getElementById('user-name').textContent = usuarioInfo.nombre;
+        document.getElementById('user-lastname').textContent = usuarioInfo.apellido;
+        
+        // Mostrar roles (si existen)
+        if (usuarioInfo.roles && usuarioInfo.roles.length > 0) {
+            document.getElementById('roles').textContent = usuarioInfo.roles.join(', ');
+        }
+        
+        // Actualizar foto de perfil
+        const userImg = document.querySelector('.user-img img');
+        if (userImg) {
+            userImg.src = usuarioInfo.foto_perfil;
+            userImg.alt = `Foto de ${usuarioInfo.nombre} ${usuarioInfo.apellido}`;
+        }
+        
+        // Opcional: Mostrar más información donde sea necesario
+        console.log('Usuario cargado:', usuarioInfo);
+    } else {
+        console.warn('No se encontró información de usuario en sessionStorage');
+    }
+});   sidebar
