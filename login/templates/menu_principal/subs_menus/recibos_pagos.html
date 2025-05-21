@@ -44,7 +44,11 @@
                             <td class="tabla-recibos__celda">{{ recibo.cedula.get_nombre_completo|upper }}</td>
                             <td class="tabla-recibos__celda">{{ recibo.cedula.cargo.nombre_completo|upper }}</td>
                             <td class="tabla-recibos__celda">
-                                <button class="tabla-recibos__boton" data-recibo-id="{{ recibo.id }}">Ver Recibo</button>
+                                <button class="tabla-recibos__boton" 
+                                        data-recibo-id="{{ recibo.id }}" 
+                                        onclick="abrirRecibo(this)">
+                                    Ver Recibo
+                                </button>
                             </td>
                         </tr>
                         {% empty %}

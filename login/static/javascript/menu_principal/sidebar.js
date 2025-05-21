@@ -1,4 +1,3 @@
-// wdp/static/jvs/sidebar.js
 
 let currentTemplate = null;
 

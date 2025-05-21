@@ -1,17 +1,32 @@
 console.log("recibos_pagos.js cargado correctamente");
+
+console.log("recibos_pagos.js cargado correctamente");
+
+// Definimos primero la función global para asegurar su disponibilidad
+window.abrirRecibo = function(boton) {
+    // Verificamos si el manager está disponible
+    if (!window.reciboManager) {
+        console.error("Error: ReciboManager no está inicializado");
+        return;
+    }
+    // Llamamos al método del manager
+    window.reciboManager.abrirModal(boton);
+};
+
 class ReciboManager {
     constructor() {
-        this.initEventListeners();
+        console.log("Inicializando ReciboManager");
+        this.initModalCloseListener();
     }
 
-    initEventListeners() {
-        // Delegación de eventos para mejor performance
-        document.querySelector('.tabla-recibos__tbody').addEventListener('click', (e) => {
-            const btn = e.target.closest('[data-recibo-id]');
-            if (btn) this.abrirModal(btn);
-        });
+    initModalCloseListener() {
+        const modal = document.getElementById('reciboModal');
+        if (!modal) {
+            console.error("No se encontró el modal con ID 'reciboModal'");
+            return;
+        }
 
-        document.getElementById('reciboModal').addEventListener('click', (e) => {
+        modal.addEventListener('click', (e) => {
             if (e.target.classList.contains('recibo-modal') || 
                 e.target.classList.contains('recibo-modal__cerrar')) {
                 this.cerrarModal();
@@ -20,25 +35,42 @@ class ReciboManager {
     }
 
     async abrirModal(boton) {
+        if (!boton || !boton.dataset) {
+            console.error("Botón inválido recibido");
+            return;
+        }
+
         const reciboId = boton.dataset.reciboId;
+        if (!reciboId) {
+            console.error("No se encontró data-recibo-id en el botón");
+            return;
+        }
+
         console.log(`Solicitando datos para recibo ID: ${reciboId}`);
 
         try {
             // Mostrar loader
-            document.getElementById('contenidoRecibo').innerHTML = `
+            const contenido = document.getElementById('contenidoRecibo');
+            if (!contenido) {
+                throw new Error("No se encontró el contenedor del recibo");
+            }
+
+            contenido.innerHTML = `
                 <div class="recibo-loader">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Cargando recibo...</p>
                 </div>
             `;
             
-            document.getElementById('reciboModal').style.display = 'flex';
+            const modal = document.getElementById('reciboModal');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
 
-            // Fetch API con manejo de errores
             const response = await fetch(`/api/recibos/${reciboId}/`);
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`Error HTTP! estado: ${response.status}`);
             }
 
             const data = await response.json();
@@ -192,6 +224,15 @@ class ReciboManager {
         ventana.document.close();
     }
 }
+
+// Función global para el onclick
+window.abrirRecibo = function(boton) {
+    if (!window.reciboManager) {
+        console.error("ReciboManager no está inicializado");
+        return;
+    }
+    window.reciboManager.abrirModal(boton);
+};
 
 // Inicialización cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
