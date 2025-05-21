@@ -71,8 +71,21 @@ def noticias(request):
     return render(request, 'menu_principal/subs_menus/noticias.html')
 
 def recibos_pagos(request):
-    # Obtener todos los recibos de pago (puedes agregar filtros si es necesario)
-    recibos = recibo_pago.objects.select_related('cedula', 'cedula__cargo').all().order_by('-fecha_generacion')
+    # Verificar si el usuario está autenticado
+    if 'empleado_id' not in request.session:
+        # Redirigir a login si no hay sesión
+        return redirect('login_empleado')
+    
+    # Obtener el ID del empleado de la sesión
+    empleado_id = request.session['empleado_id']
+    
+    # Filtrar recibos solo para el empleado autenticado
+    recibos = recibo_pago.objects.filter(
+        cedula_id=empleado_id
+    ).select_related(
+        'cedula', 
+        'cedula__cargo'
+    ).order_by('-fecha_generacion')
     
     return render(request, 'menu_principal/subs_menus/recibos_pagos.html', {
         'recibos': recibos
