@@ -13,6 +13,23 @@ window.abrirRecibo = function(boton) {
     window.reciboManager.abrirModal(boton);
 };
 
+window.reciboModal__cerrar = function() {
+    if (!window.reciboManager) {
+        console.error("ReciboManager no está inicializado");
+        return;
+    }
+    window.reciboManager.cerrarModal();
+};
+
+// Función global para imprimir
+window.ImprimirRecibo = function() {
+    if (!window.reciboManager) {
+        console.error("ReciboManager no está inicializado");
+        return;
+    }
+    ReciboManager.imprimirRecibo();
+};
+
 class ReciboManager {
     constructor() {
         console.log("Inicializando ReciboManager");
@@ -192,9 +209,15 @@ class ReciboManager {
     }
 
     cerrarModal() {
-        document.getElementById('reciboModal').style.display = 'none';
+        const modal = document.getElementById('reciboModal');
+        if (modal) {
+            modal.style.display = 'none';
+            console.log('Modal cerrado correctamente');
+        } else {
+            console.error('No se encontró el elemento reciboModal');
+        }
     }
-
+    
     static imprimirRecibo() {
         const contenido = document.getElementById('contenidoRecibo').cloneNode(true);
         
