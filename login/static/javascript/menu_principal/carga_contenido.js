@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (template === "importar_nomina.html") {
                 url = "/importar_nomina";
             } else if (template === "perfil_usuario.html") {
-                url = "/perfil_usuario/";
+                url = "/perfil_usuario";
             } else if (template === "recibos_pagos.html") {
                 url = "/recibos_pagos";
             } else if (template === "constancia_trabajo.html") {

@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil de Usuario - Sistema de Nóminas</title>
@@ -24,20 +25,20 @@
             <div class="seccion-izquierda">
                 <div class="tarjeta-perfil">
                     <div class="foto-perfil">
-                        <img src="{% static 'image/perfil_andryus.jpeg'%}" alt="Foto de perfil">
+                        <img src="{% static 'image/perfil_andryus.jpeg' %}" alt="Foto de perfil">
                         <button class="btn-cambiar-foto">
                             <i class="fa-solid fa-camera"></i> Cambiar foto
                         </button>
                     </div>
                     
                     <div class="info-basica">
-                        <h2>María González</h2>
-                        <p class="cargo">Administradora de Nóminas</p>
-                        <p class="departamento">Recursos Humanos</p>
+                        <h2>{{ empleado.primer_nombre }} {{ empleado.primer_apellido }}</h2>
+                        <p class="cargo">{{ empleado.cargo.nombre_completo }}</p>
+                        <p class="departamento">{{ empleado.departamento.nombre|default:"Sin departamento" }}</p>
                         
                         <div class="estado-perfil">
                             <span class="badge badge-activo">Activo</span>
-                            <span>Miembro desde: 15/03/2020</span>
+                            <span>Miembro desde: {{ empleado.fecha_ingreso|date:"d/m/Y" }}</span>
                         </div>
                     </div>
                 </div>
@@ -47,27 +48,27 @@
                     <div class="datos-grid">
                         <div class="dato-item">
                             <span class="dato-label">Cédula:</span>
-                            <span class="dato-valor">V-12.345.678</span>
+                            <span class="dato-valor">{{ empleado.cedula }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Fecha Nacimiento:</span>
-                            <span class="dato-valor">15/08/1985</span>
+                            <span class="dato-valor">{{ empleado.fecha_nacimiento|date:"d/m/Y" }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Género:</span>
-                            <span class="dato-valor">Femenino</span>
+                            <span class="dato-valor">{{ empleado.get_genero_display }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Estado Civil:</span>
-                            <span class="dato-valor">Casada</span>
+                            <span class="dato-valor">{{ empleado.get_estado_civil_display }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Teléfono:</span>
-                            <span class="dato-valor">+58 412 5551234</span>
+                            <span class="dato-valor">{{ empleado.telefono }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Correo:</span>
-                            <span class="dato-valor">maria.gonzalez@empresa.com</span>
+                            <span class="dato-valor">{{ empleado.email }}</span>
                         </div>
                     </div>
                 </div>
@@ -77,15 +78,15 @@
                     <div class="datos-grid">
                         <div class="dato-item">
                             <span class="dato-label">Estado:</span>
-                            <span class="dato-valor">Distrito Capital</span>
+                            <span class="dato-valor">{{ empleado.estado }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Ciudad:</span>
-                            <span class="dato-valor">Caracas</span>
+                            <span class="dato-valor">{{ empleado.ciudad }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Dirección:</span>
-                            <span class="dato-valor">Av. Principal, Edif. Centro, Piso 5, Apt. 5A</span>
+                            <span class="dato-valor">{{ empleado.direccion }}</span>
                         </div>
                     </div>
                 </div>
@@ -98,39 +99,39 @@
                     <div class="datos-grid">
                         <div class="dato-item">
                             <span class="dato-label">Código Empleado:</span>
-                            <span class="dato-valor">EMP-2458</span>
+                            <span class="dato-valor">{{ empleado.codigo_empleado }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Fecha Ingreso:</span>
-                            <span class="dato-valor">15/03/2020</span>
+                            <span class="dato-valor">{{ empleado.fecha_ingreso|date:"d/m/Y" }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Tipo de Contrato:</span>
-                            <span class="dato-valor">Fijo</span>
+                            <span class="dato-valor">{{ empleado.get_tipo_contrato_display }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Cargo:</span>
-                            <span class="dato-valor">Administradora de Nóminas</span>
+                            <span class="dato-valor">{{ empleado.cargo.nombre_completo }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Departamento:</span>
-                            <span class="dato-valor">Recursos Humanos</span>
+                            <span class="dato-valor">{{ empleado.departamento.nombre }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Supervisor:</span>
-                            <span class="dato-valor">Carlos Pérez</span>
+                            <span class="dato-valor">{{ empleado.supervisor.get_nombre_completo }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Salario Base:</span>
-                            <span class="dato-valor">$ 2,500.00</span>
+                            <span class="dato-valor">{{ empleado.sueldo_base|floatformat:2 }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Banco:</span>
-                            <span class="dato-valor">Banco Nacional</span>
+                            <span class="dato-valor">{{ empleado.cuenta_activa.banco.nombre }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Cuenta Bancaria:</span>
-                            <span class="dato-valor">0123-4567-8910-1234</span>
+                            <span class="dato-valor">{{ empleado.cuenta_activa.numero_cuenta }}</span>
                         </div>
                     </div>
                 </div>
@@ -140,19 +141,19 @@
                     <div class="datos-grid">
                         <div class="dato-item">
                             <span class="dato-label">Nombre de Usuario:</span>
-                            <span class="dato-valor">mgonzalez</span>
+                            <span class="dato-valor">{{ request.user.username }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Rol del Sistema:</span>
-                            <span class="dato-valor">Administrador</span>
+                            <span class="dato-valor">
+                                {% for rol in request.user.roles.all %}
+                                    {{ rol.nombre_rol }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Último Acceso:</span>
-                            <span class="dato-valor">Hoy, 10:45 AM</span>
-                        </div>
-                        <div class="dato-item">
-                            <span class="dato-label">IP de Acceso:</span>
-                            <span class="dato-valor">192.168.1.105</span>
+                            <span class="dato-valor">{{ request.user.last_login|date:"d/m/Y H:i" }}</span>
                         </div>
                     </div>
                     
@@ -169,18 +170,16 @@
                 <div class="tarjeta-datos">
                     <h3><i class="fa-solid fa-file-invoice-dollar"></i> Nómina Reciente</h3>
                     <div class="resumen-nomina">
+                        {% for recibo in recibos_recientes %}
                         <div class="nomina-item">
-                            <span class="nomina-periodo">Marzo 2024 - Primera</span>
-                            <span class="nomina-monto">$ 2,745.50</span>
+                            <span class="nomina-periodo">{{ recibo.nomina.periodo }}</span>
+                            <span class="nomina-monto">{{ recibo.total_neto|floatformat:2 }}</span>
                         </div>
+                        {% empty %}
                         <div class="nomina-item">
-                            <span class="nomina-periodo">Febrero 2024 - Segunda</span>
-                            <span class="nomina-monto">$ 2,650.00</span>
+                            <span class="nomina-periodo">No hay recibos recientes</span>
                         </div>
-                        <div class="nomina-item">
-                            <span class="nomina-periodo">Febrero 2024 - Primera</span>
-                            <span class="nomina-monto">$ 2,650.00</span>
-                        </div>
+                        {% endfor %}
                     </div>
                     <button class="btn-secundario btn-ver-todas">
                         <i class="fa-solid fa-list"></i> Ver Todas las Nóminas
@@ -198,18 +197,19 @@
                 <button class="btn-cerrar-modal">&times;</button>
             </div>
             <div class="modal-body">
-                <form class="form-cambiar-clave">
+                <form class="form-cambiar-clave" method="post">
+                    {% csrf_token %}
                     <div class="form-group">
                         <label for="clave-actual">Contraseña Actual:</label>
-                        <input type="password" id="clave-actual" class="form-input" required>
+                        <input type="password" id="clave-actual" name="clave_actual" class="form-input" required>
                     </div>
                     <div class="form-group">
                         <label for="clave-nueva">Nueva Contraseña:</label>
-                        <input type="password" id="clave-nueva" class="form-input" required>
+                        <input type="password" id="clave-nueva" name="clave_nueva" class="form-input" required>
                     </div>
                     <div class="form-group">
                         <label for="clave-confirmar">Confirmar Nueva Contraseña:</label>
-                        <input type="password" id="clave-confirmar" class="form-input" required>
+                        <input type="password" id="clave-confirmar" name="clave_confirmar" class="form-input" required>
                     </div>
                     <div class="requisitos-clave">
                         <p><i class="fa-solid fa-circle-info"></i> La contraseña debe contener:</p>
@@ -223,12 +223,12 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn-secundario">Cancelar</button>
-                <button class="btn-primario">Guardar Cambios</button>
+                <button class="btn-secundario" type="button">Cancelar</button>
+                <button class="btn-primario" type="submit">Guardar Cambios</button>
             </div>
         </div>
     </div>
 
-    <script src="js/perfil_usuario.js"></script>
+    <script src="{% static 'menu_principal/subs_menus/perfil_usuario.js' %}"></script>
 </body>
 </html>

@@ -4,10 +4,21 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.http import HttpResponse, HttpResponseNotFound
+from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
+import pandas as pd
+from django.http import JsonResponse
+from .models import concepto_pago, nomina, recibo_pago, detalle_recibo
+from datetime import datetime
 import os
 from django.conf import settings
-
+from decimal import Decimal
+import logging
+from django.db import transaction
 from login.models import usuario, recibo_pago
+from .models import usuario, empleado, recibo_pago, usuario_rol
+from django.shortcuts import render, get_object_or_404, redirect
 
 # Create your views here.
 def login(request):
@@ -62,8 +73,35 @@ def serve_js(request, script_name):
     return HttpResponseNotFound('Script no encontrado')
 
 def perfil_usuario(request):
-    return render(request, 'menu_principal/subs_menus/perfil_usuario.html')
+    usuario_id = request.session.get('usuario_id')
 
+    if not usuario_id:
+        return redirect('login_empleado')
+    
+    usuario_instance = get_object_or_404(usuario, id=usuario_id)
+    empleado_instance = usuario_instance.empleado  # Usar relación FK para obtener empleado
+
+    recibos_recientes = recibo_pago.objects.filter(
+        cedula_id=empleado_instance.cedula
+    ).select_related(
+        'nomina',
+        'cedula',
+        'cedula__cargo'
+    ).order_by('-fecha_generacion')[:3]
+
+    roles_usuario = usuario_rol.objects.filter(usuario=usuario_instance)
+    usuario_roles = [r.rol for r in roles_usuario]
+
+    context = {
+        'usuario': usuario_instance,
+        'empleado': empleado_instance,
+        'recibos_recientes': recibos_recientes,
+        'roles': usuario_roles,
+    }
+    
+    return render(request, 'menu_principal/subs_menus/perfil_usuario.html', context)
+
+    
 def noticias(request):
     return render(request, 'menu_principal/subs_menus/noticias.html')
 
@@ -391,36 +429,9 @@ def login_empleado(request):
             return Response({"error": "Contraseña incorrecta"}, status=HTTP_400_BAD_REQUEST)"""
 
 #   <----------codigo importar documento -------------------->
-import pandas as pd
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import concepto_pago, nomina, recibo_pago, detalle_recibo
-print(recibo_pago)
-from datetime import datetime
-import os
-from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
-from decimal import Decimal
-import logging
-from django.db import transaction
-import pandas as pd
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
 logger = logging.getLogger(__name__)
 
-import pandas as pd
-from decimal import Decimal
-from datetime import datetime
-import logging
-from django.db import transaction
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
-
-logger = logging.getLogger(__name__)
 
 @csrf_exempt
 @transaction.atomic
