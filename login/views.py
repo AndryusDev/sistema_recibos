@@ -17,7 +17,7 @@ from decimal import Decimal
 import logging
 from django.db import transaction
 from login.models import usuario, recibo_pago
-from .models import usuario, empleado, recibo_pago, usuario_rol
+from .models import usuario, empleado, recibo_pago, usuario_rol, rol
 from django.shortcuts import render, get_object_or_404, redirect
 
 # Create your views here.
@@ -79,7 +79,13 @@ def perfil_usuario(request):
         return redirect('login_empleado')
     
     usuario_instance = get_object_or_404(usuario, id=usuario_id)
-    empleado_instance = usuario_instance.empleado  # Usar relación FK para obtener empleado
+    empleado_instance = usuario_instance.empleado
+
+    empleado_instance = empleado.objects.filter(
+        pk=empleado_instance.pk
+    ).prefetch_related(
+        'cuentas_bancarias__banco'
+    ).first()
 
     recibos_recientes = recibo_pago.objects.filter(
         cedula_id=empleado_instance.cedula
@@ -89,14 +95,14 @@ def perfil_usuario(request):
         'cedula__cargo'
     ).order_by('-fecha_generacion')[:3]
 
-    roles_usuario = usuario_rol.objects.filter(usuario=usuario_instance)
-    usuario_roles = [r.rol for r in roles_usuario]
+    # Obtener los roles del usuario
+    roles = usuario_rol.objects.select_related('rol').filter(usuario=usuario_instance)
 
     context = {
         'usuario': usuario_instance,
         'empleado': empleado_instance,
         'recibos_recientes': recibos_recientes,
-        'roles': usuario_roles,
+        'roles': roles,  # ← Agregado aquí
     }
     
     return render(request, 'menu_principal/subs_menus/perfil_usuario.html', context)

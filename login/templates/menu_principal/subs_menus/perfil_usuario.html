@@ -32,7 +32,7 @@
                     </div>
                     
                     <div class="info-basica">
-                        <h2>{{ empleado.primer_nombre }} {{ empleado.primer_apellido }}</h2>
+                        <h2>{{ empleado.primer_nombre|capfirst }} {{ empleado.primer_apellido|capfirst }}</h2>
                         <p class="cargo">{{ empleado.cargo.nombre_completo }}</p>
                         <p class="departamento">{{ empleado.departamento.nombre|default:"Sin departamento" }}</p>
                         
@@ -64,7 +64,7 @@
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Teléfono:</span>
-                            <span class="dato-valor">{{ empleado.telefono }}</span>
+                            <span class="dato-valor">{{ empleado.telefono_principal }}</span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Correo:</span>
@@ -113,7 +113,7 @@
                             <span class="dato-label">Cargo:</span>
                             <span class="dato-valor">{{ empleado.cargo.nombre_completo }}</span>
                         </div>
-                        <div class="dato-item">
+                        <!-- <div class="dato-item">
                             <span class="dato-label">Departamento:</span>
                             <span class="dato-valor">{{ empleado.departamento.nombre }}</span>
                         </div>
@@ -124,15 +124,31 @@
                         <div class="dato-item">
                             <span class="dato-label">Salario Base:</span>
                             <span class="dato-valor">{{ empleado.sueldo_base|floatformat:2 }}</span>
-                        </div>
+                        </div> -->
                         <div class="dato-item">
                             <span class="dato-label">Banco:</span>
-                            <span class="dato-valor">{{ empleado.cuenta_activa.banco.nombre }}</span>
+                            <span class="dato-valor">
+                                {% with cuenta=empleado.cuentas_bancarias.filter|first %}
+                                    {% if cuenta %}
+                                        {{ cuenta.banco.nombre }}
+                                    {% else %}
+                                        No registrado
+                                    {% endif %}
+                                {% endwith %}
+                            </span>
                         </div>
                         <div class="dato-item">
-                            <span class="dato-label">Cuenta Bancaria:</span>
-                            <span class="dato-valor">{{ empleado.cuenta_activa.numero_cuenta }}</span>
-                        </div>
+                        <span class="dato-label">Cuenta Bancaria:</span>
+                        <span class="dato-valor">
+                            {% with cuenta_activa=empleado.cuentas_bancarias.filter|first %}
+                                {% if cuenta_activa %}
+                                    {{ cuenta_activa.numero_cuenta }} ({{ cuenta_activa.get_tipo_display }})
+                                {% else %}
+                                    No registrada
+                                {% endif %}
+                            {% endwith %}
+                        </span>
+                    </div>
                     </div>
                 </div>
                 
@@ -140,20 +156,18 @@
                     <h3><i class="fa-solid fa-shield-halved"></i> Seguridad y Acceso</h3>
                     <div class="datos-grid">
                         <div class="dato-item">
-                            <span class="dato-label">Nombre de Usuario:</span>
-                            <span class="dato-valor">{{ request.user.username }}</span>
-                        </div>
-                        <div class="dato-item">
                             <span class="dato-label">Rol del Sistema:</span>
                             <span class="dato-valor">
-                                {% for rol in request.user.roles.all %}
-                                    {{ rol.nombre_rol }}{% if not forloop.last %}, {% endif %}
+                                {% for usuario_rol in roles %}
+                                    {{ usuario_rol.rol.nombre_rol|capfirst }}{% if not forloop.last %}, {% endif %}
+                                {% empty %}
+                                    Sin roles asignados
                                 {% endfor %}
                             </span>
                         </div>
                         <div class="dato-item">
                             <span class="dato-label">Último Acceso:</span>
-                            <span class="dato-valor">{{ request.user.last_login|date:"d/m/Y H:i" }}</span>
+                            <span class="dato-valor">{{ usuario.ultimo_login|date:"d/m/Y H:i"|default:"Nunca" }}</span>
                         </div>
                     </div>
                     
