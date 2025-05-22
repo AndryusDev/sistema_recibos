@@ -487,6 +487,35 @@ class detalle_recibo(models.Model):
     
     def __str__(self):
         return f"Detalle {self.detalle_nomina.id} en recibo {self.recibo.id}"
+    
+
+class prenomina(models.Model):
+    id_prenomina = models.AutoField(primary_key=True, unique=True)
+    nomina = models.OneToOneField(nomina, on_delete=models.CASCADE)  # Cada prenómina se asocia a una sola nómina
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'prenomina'
+        verbose_name = 'Pre-Nómina'
+        verbose_name_plural = 'Pre-Nóminas'
+
+    def __str__(self):
+        return f"Prenómina de {self.nomina}"
+    
+class detalle_prenomina(models.Model):
+    prenomina = models.ForeignKey(prenomina, on_delete=models.CASCADE, related_name='detalles')
+    codigo = models.ForeignKey(concepto_pago, on_delete=models.PROTECT)
+    total_monto = models.DecimalField(max_digits=14, decimal_places=2)
+
+    class Meta:
+        db_table = 'detalle_prenomina'
+        verbose_name = 'Detalle de Pre-Nómina'
+        verbose_name_plural = 'Detalles de Pre-Nómina'
+        unique_together = ('prenomina', 'codigo')  # Evita duplicados por concepto
+
+    def __str__(self):
+        return f"{self.codigo.nombre} - Total: {self.total_monto} (Prenómina {self.prenomina.id_prenomina})"
+
 
 """class LineaRecibo(models.Model):
     recibo = models.ForeignKey(ReciboPago, on_delete=models.CASCADE, related_name='lineas')
