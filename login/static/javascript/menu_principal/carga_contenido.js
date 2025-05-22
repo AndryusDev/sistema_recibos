@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 url = "/gestion_nomina/";
             } else if (template === "noticias.html") {
                 url = "/noticias/";
+            } else if (template === "ver_prenomina.html") {
+                url = "/ver_prenomina";
             }
 
             if (url !== "") {

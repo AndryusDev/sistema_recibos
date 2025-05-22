@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 import pandas as pd
 from django.http import JsonResponse
-from .models import concepto_pago, nomina, recibo_pago, detalle_recibo
+from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina
 from datetime import datetime
 import os
 from django.conf import settings
@@ -19,6 +19,7 @@ from django.db import transaction
 from login.models import usuario, recibo_pago
 from .models import usuario, empleado, recibo_pago, usuario_rol, rol
 from django.shortcuts import render, get_object_or_404, redirect
+from django.utils.timezone import now
 
 # Create your views here.
 def login(request):
@@ -46,7 +47,7 @@ def menu(request):
 
 def load_template(request, template_name):
     allowed_templates = ['noticias.html', 'perfil_usuario.html', 'recibos_pagos.html',
-                        'constancia_trabajo.html', 'arc.html','importar_nomina.html', 'gestion_nomina.html', 'prenomina.html']  # Añade todos tus templates
+                        'constancia_trabajo.html', 'arc.html','importar_nomina.html', 'gestion_nomina.html', 'ver_prenomina.html']  # Añade todos tus templates
     
     if template_name not in allowed_templates:
         return HttpResponseNotFound('Plantilla no permitida')
@@ -60,7 +61,7 @@ def serve_js(request, script_name):
     # Lista blanca de scripts permitidos
     allowed_scripts = ['noticias.js', 'perfil_usuario.js','recibos_pagos.js',
                         'constancia_trabajo.js', 'arc.js', 'importar_nomina.js', 'gestion_nomina.js',
-                        'prenomina.js']  # Añade todos tus scripts aquí
+                        'ver_prenomina.js']  # Añade todos tus scripts aquí
     
     if script_name not in allowed_scripts:
         return HttpResponseNotFound('Script no permitido')
@@ -159,8 +160,23 @@ def importar_nomina(request):
 def gestion_nomina(request):
     return render(request, 'menu_principal/subs_menus/gestion_nomina.html')
 
-def prenomina(request):
-    return render(request, 'menu_principal/subs_menus/prenomina.html')
+def ver_prenomina(request):
+    prenominas = prenomina.objects.all().prefetch_related('detalles', 'nomina')
+    
+    lista = []
+    for p in prenominas:
+        total = p.detalles.aggregate(suma=Sum('total_monto'))['suma'] or 0
+        lista.append({
+            'id_prenomina': p.id_prenomina,
+            'periodo': p.nomina.periodo,
+            'tipo': p.nomina.tipo_nomina.tipo_nomina,  
+            'total': total,
+            'obj': p
+        })
+
+    return render(request, 'menu_principal/subs_menus/ver_prenomina.html', {
+        'prenominas': lista
+    })
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -584,12 +600,13 @@ def importar_nominas(request):
                     logger.error(f"Error procesando empleado {row['CEDULA']}: {str(e)}")
 
             # 7. Retornar resultados
+            generar_prenomina_para_nomina(nueva_nomina)
             return JsonResponse({
                 'success': True,
                 'message': f'Nómina importada correctamente. Empleados: {stats["empleados_procesados"]}, ' +
                         f'Conceptos: {stats["conceptos_procesados"]}, ' +
                         f'Recibos generados: {stats["recibos_generados"]}',
-                'nomina_id': nueva_nomina.id_nomina,
+                'id': nueva_nomina.id_nomina,  # <--- aquí cambias de 'nomina_id' a 'id'
                 'stats': stats
             })
 
@@ -691,6 +708,7 @@ def obtener_datos_recibo(request, recibo_id):
                 'total_nomina': total_asignaciones - total_deducciones
             }
         }
+        
         return JsonResponse(datos)
 
     except recibo_pago.DoesNotExist:
@@ -738,3 +756,32 @@ def listado_recibos(request):
     except Exception as e:
         print(f"Error en listado_recibos: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
+    
+
+
+logger = logging.getLogger(__name__)
+
+def generar_prenomina_para_nomina(nomina_instance):
+    try:
+        if prenomina.objects.filter(nomina=nomina_instance).exists():
+            logger.info(f"Prenomina ya existe para la nómina {nomina_instance.id_nomina}")
+            return None
+
+        nueva = prenomina.objects.create(nomina=nomina_instance, fecha_creacion=now())
+
+        detalles = detalle_nomina.objects.filter(nomina=nomina_instance)
+        if not detalles.exists():
+            logger.warning(f"No hay detalles para la nómina {nomina_instance.id_nomina}")
+
+        resumen = detalles.values('codigo').annotate(total=Sum('monto'))
+        for item in resumen:
+            detalle_prenomina.objects.create(
+                prenomina=nueva, codigo_id=item['codigo'], total_monto=item['total']
+            )
+
+        logger.info(f"Prenomina generada para la nómina {nomina_instance.id_nomina}")
+        return nueva
+
+    except Exception as e:
+        logger.error(f"Error generando prenomina {nomina_instance.id_nomina}: {e}", exc_info=True)
+        raise
