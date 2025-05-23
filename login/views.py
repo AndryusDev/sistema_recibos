@@ -168,7 +168,8 @@ def ver_prenomina(request):
         lista.append({
             'id_prenomina': p.id_prenomina,
             'periodo': p.nomina.periodo,
-            'tipo': p.nomina.tipo_nomina.tipo_nomina,  
+            'tipo': p.nomina.tipo_nomina.tipo_nomina,
+            'secuencia': p.nomina.secuencia.nombre_secuencia,  
             'total': total,
             'obj': p
         })
@@ -178,7 +179,17 @@ def ver_prenomina(request):
     })
 
 def crear_usuarios(request):
-    return render(request, 'menu_principal/subs_menus/crear_usuarios.html')
+    # Obtener todos los usuarios con sus relaciones
+    usuarios = usuario.objects.select_related(
+        'empleado',
+        'empleado__cargo'
+    ).prefetch_related(
+        'usuario_rol_set__rol'  # Accede a los roles a través de la relación usuario_rol
+    ).all()
+    
+    return render(request, 'menu_principal/subs_menus/crear_usuarios.html', {
+        'usuarios': usuarios
+    })
 
 from rest_framework.views import APIView
 from rest_framework.response import Response

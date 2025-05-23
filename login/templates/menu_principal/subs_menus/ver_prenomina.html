@@ -37,6 +37,7 @@
                         <th class="prenomina-tabla__columna">ID</th>
                         <th class="prenomina-tabla__columna">Período</th>
                         <th class="prenomina-tabla__columna">Tipo</th>
+                        <th class="prenomina-tabla__columna">Secuencia</th>
                         <th class="prenomina-tabla__columna">Total</th>
                         <th class="prenomina-tabla__columna">Acciones</th>
                     </tr>
@@ -46,7 +47,8 @@
                     <tr class="prenomina-tabla__fila">
                         <td class="prenomina-tabla__celda">{{ p.id_prenomina }}</td>
                         <td class="prenomina-tabla__celda">{{ p.periodo }}</td>
-                        <td class="prenomina-tabla__celda">{{ p.nomina.tipo_nomina.tipo_nomina }}</td>
+                        <td class="prenomina-tabla__celda">{{ p.tipo }}</td>
+                        <td class="prenomina-tabla__celda">{{ p.secuencia }}</td> 
                         <td class="prenomina-tabla__celda">{{ p.total }}</td>
                         <td class="prenomina-tabla__celda">
                             <button class="prenomina-tabla__boton"

@@ -72,20 +72,28 @@
                 <tbody class="tabla-datos__tbody">
                     {% for usuario in usuarios %}
                     <tr class="tabla-datos__fila" data-usuario-id="{{ usuario.id }}">
-                        <td class="tabla-datos__celda">{{ usuario.cedula }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.get_nombre_completo }}</td>
+                        <td class="tabla-datos__celda">{{ usuario.empleado.cedula }}</td>
+                        <td class="tabla-datos__celda">{{ usuario.empleado.get_nombre_completo }}</td>
                         <td class="tabla-datos__celda">{{ usuario.email }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.cargo.nombre_completo }}</td>
+                        <td class="tabla-datos__celda">
+                            {% if usuario.empleado.cargo %}
+                                {{ usuario.empleado.cargo.nombre_completo }}
+                            {% else %}
+                                Sin cargo asignado
+                            {% endif %}
+                        </td>
                         <td class="tabla-datos__celda">
                             <div class="roles-usuario">
-                                {% for rol in usuario.roles.all %}
-                                <span class="badge-rol">{{ rol.nombre }}</span>
+                                {% for usuario_rol in usuario.usuario_rol_set.all %}
+                                    <span class="badge-rol">{{ usuario_rol.rol.nombre_rol }}</span>
+                                {% empty %}
+                                    <span class="text-muted">Sin roles</span>
                                 {% endfor %}
                             </div>
                         </td>
                         <td class="tabla-datos__celda">
-                            <span class="badge-estado {{ usuario.status|yesno:'activo,inactivo' }}">
-                                {{ usuario.status|yesno:'Activo,Inactivo' }}
+                            <span class="badge-estado {{ usuario.empleado.status|yesno:'activo,inactivo' }}">
+                                {{ usuario.empleado.status|yesno:'Activo,Inactivo' }}
                             </span>
                         </td>
                         <td class="tabla-datos__celda">

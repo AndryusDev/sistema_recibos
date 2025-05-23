@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Obtener información guardada
     const usuarioInfo = JSON.parse(sessionStorage.getItem('usuario_info'));
     
-    if (usuarioInfo) {
+    /*if (usuarioInfo) {
         // Actualizar elementos del DOM
         document.getElementById('user-name').textContent = usuarioInfo.nombre;
         document.getElementById('user-lastname').textContent = usuarioInfo.apellido;
@@ -215,5 +215,5 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Usuario cargado:', usuarioInfo);
     } else {
         console.warn('No se encontró información de usuario en sessionStorage');
-    }
-});   sidebar
+    }*/
+});
