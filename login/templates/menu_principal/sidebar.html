@@ -146,13 +146,14 @@
 
             <li class="menu-item menu-item-dropdown OpcMenu">
                 <a href="#" class="menu-link">
-                    <i class="fa-solid gear">&#x2699</i>
-                    <span>Configuración del Sistema</span>
+                    <i class="fa-solid user-shield">&#xF505</i>
+                    <span>Gestión de Usuarios</span>
                     <i class="fa-solid chevron-down">&#xF078</i>
                 </a>
                 <ul class="sub-menu">
-                    <li><a href="#" class="sub-menu-link OpcMenu" data-template="plantlaboral.tpl">Plantilla Laboral</a></li>
-                    <li><a href="#" class="sub-menu-link OpcMenu" data-template="lvlsecurity.tpl">Ctrl. de Acceso por Roles</a></li>
+                    <li><a href="#" class="sub-menu-link OpcMenu" data-template="crear_usuarios.html">Crear Usuario</a></li>
+                    <li><a href="#" class="sub-menu-link OpcMenu" data-template="asignar_roles.html">Asignar Roles</a></li>
+                    <li><a href="#" class="sub-menu-link OpcMenu" data-template="lista_usuarios.html">Lista de Usuarios</a></li>
                 </ul>
             </li>
         </ul>
@@ -161,14 +162,13 @@
         <ul class="menu">
             <li class="menu-item menu-item-dropdown">
                 <a href="#" class="menu-link">
-                    <i class="fa-solid users-gear">&#xF509</i>
-                    <span>Ajustes del Usuario</span>
+                    <i class="fa-solid user-cog">&#xF4FE</i>
+                    <span>Configuración Personal</span>
                     <i class="fa-solid chevron-down">&#xF078</i>
                 </a>
                 <ul class="sub-menu">
-                    <li><a href="#" class="sub-menu-link">Información Personal</a></li>
-                    <li><a href="#" class="sub-menu-link">Seguridad / Contraseña</a></li>
-                    <li><a href="#" class="sub-menu-link">Preguntas Secretas</a></li>
+                    <li><a href="#" class="sub-menu-link OpcMenu" data-template="cambiar_password.html">Seguridad/Contraseña</a></li>
+                    <li><a href="#" class="sub-menu-link OpcMenu" data-template="preguntas_secretas.html">Preguntas Secretas</a></li>
                 </ul>
             </li>
         </ul>

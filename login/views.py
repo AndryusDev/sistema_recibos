@@ -17,7 +17,7 @@ from decimal import Decimal
 import logging
 from django.db import transaction
 from login.models import usuario, recibo_pago
-from .models import usuario, empleado, recibo_pago, usuario_rol, rol
+from .models import usuario, empleado, usuario_rol, rol
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.timezone import now
 
@@ -47,7 +47,7 @@ def menu(request):
 
 def load_template(request, template_name):
     allowed_templates = ['noticias.html', 'perfil_usuario.html', 'recibos_pagos.html',
-                        'constancia_trabajo.html', 'arc.html','importar_nomina.html', 'gestion_nomina.html', 'ver_prenomina.html']  # Añade todos tus templates
+                        'constancia_trabajo.html', 'arc.html','importar_nomina.html', 'gestion_nomina.html', 'ver_prenomina.html','crear_usuarios.html']  # Añade todos tus templates
     
     if template_name not in allowed_templates:
         return HttpResponseNotFound('Plantilla no permitida')
@@ -61,7 +61,7 @@ def serve_js(request, script_name):
     # Lista blanca de scripts permitidos
     allowed_scripts = ['noticias.js', 'perfil_usuario.js','recibos_pagos.js',
                         'constancia_trabajo.js', 'arc.js', 'importar_nomina.js', 'gestion_nomina.js',
-                        'ver_prenomina.js']  # Añade todos tus scripts aquí
+                        'ver_prenomina.js', 'crear_usuarios.js']  # Añade todos tus scripts aquí
     
     if script_name not in allowed_scripts:
         return HttpResponseNotFound('Script no permitido')
@@ -156,7 +156,6 @@ def importar_nomina(request):
         'tipos_nomina': tipos_nomina, 'mesess': mesess, 'secuencia_mes': secuencia_mes, 'nominas': nominas
     })
 
-
 def gestion_nomina(request):
     return render(request, 'menu_principal/subs_menus/gestion_nomina.html')
 
@@ -177,6 +176,9 @@ def ver_prenomina(request):
     return render(request, 'menu_principal/subs_menus/ver_prenomina.html', {
         'prenominas': lista
     })
+
+def crear_usuarios(request):
+    return render(request, 'menu_principal/subs_menus/crear_usuarios.html')
 
 from rest_framework.views import APIView
 from rest_framework.response import Response

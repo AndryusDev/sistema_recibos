@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 url = "/noticias/";
             } else if (template === "ver_prenomina.html") {
                 url = "/ver_prenomina";
+            } else if (template === "crear_usuarios.html") {
+                url = "/crear_usuarios";
             }
 
             if (url !== "") {
