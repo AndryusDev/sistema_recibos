@@ -400,8 +400,17 @@ class concepto_pago(models.Model):
         return f"{self.codigo} - {self.descripcion}"
     
 class concepto_tipotrabajador(models.Model):
-    codigo = models.ForeignKey(concepto_pago, on_delete=models.CASCADE)
-    tipo_trabajador = models.ForeignKey(tipo_trabajador, on_delete=models.CASCADE)
+    concepto = models.ForeignKey(
+        concepto_pago,
+        on_delete=models.CASCADE,
+        db_column='codigo',  # Esto asegura que use la columna correcta
+        to_field='codigo'    # Esto especifica explícitamente qué campo referenciar
+    )
+    tipo_trabajador = models.ForeignKey(
+        tipo_trabajador,
+        on_delete=models.CASCADE,
+        db_column='tipo_trabajador_id'  # Asegúrate que coincida con tu DB
+    )
 
     class Meta:
         db_table = 'concepto_tipotrabajador'
