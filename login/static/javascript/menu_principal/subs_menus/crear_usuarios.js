@@ -146,28 +146,64 @@ function validarPasoActual() {
     if (!paso) return false;
 
     let valido = true;
-    const camposRequeridos = paso.querySelectorAll('[required]');
+    
+    // Seleccionar todos los campos requeridos excepto segundo nombre y apellido
+    const camposRequeridos = paso.querySelectorAll('[required]:not(#modal-segundo-nombre):not(#modal-segundo-apellido)');
 
     camposRequeridos.forEach(campo => {
         if (!campo.value.trim()) {
             campo.classList.add('invalido');
             valido = false;
+            
+            // Opcional: agregar mensaje de error
+            if (!campo.nextElementSibling || !campo.nextElementSibling.classList.contains('error-mensaje')) {
+                const errorMsg = document.createElement('span');
+                errorMsg.className = 'error-mensaje';
+                errorMsg.textContent = 'Este campo es requerido';
+                campo.parentNode.insertBefore(errorMsg, campo.nextSibling);
+            }
         } else {
             campo.classList.remove('invalido');
+            // Remover mensaje de error si existe
+            const errorMsg = campo.nextElementSibling;
+            if (errorMsg && errorMsg.classList.contains('error-mensaje')) {
+                errorMsg.remove();
+            }
         }
     });
 
-    // Validación especial para contraseñas
-    if (pasoActual === 3) {
-        const contrasena = document.getElementById('modal-contrasena');
-        const confirmarContrasena = document.getElementById('modal-confirmar-contrasena');
-
-        if (contrasena && confirmarContrasena) {
-            if (contrasena.value !== confirmarContrasena.value) {
-                confirmarContrasena.classList.add('invalido');
+    // Validaciones adicionales para campos específicos
+    if (pasoActual === 1) {
+        // Validar que la cédula sea numérica
+        const cedula = document.getElementById('modal-cedula');
+        if (cedula && cedula.value && isNaN(cedula.value)) {
+            cedula.classList.add('invalido');
+            valido = false;
+            
+            if (!cedula.nextElementSibling || !cedula.nextElementSibling.classList.contains('error-mensaje')) {
+                const errorMsg = document.createElement('span');
+                errorMsg.className = 'error-mensaje';
+                errorMsg.textContent = 'La cédula debe ser numérica';
+                cedula.parentNode.insertBefore(errorMsg, cedula.nextSibling);
+            }
+        }
+        
+        // Validar formato de fecha de nacimiento si existe
+        const fechaNacimiento = document.getElementById('modal-fecha-nacimiento');
+        if (fechaNacimiento && fechaNacimiento.value) {
+            const fecha = new Date(fechaNacimiento.value);
+            const hoy = new Date();
+            
+            if (fecha > hoy) {
+                fechaNacimiento.classList.add('invalido');
                 valido = false;
-            } else {
-                confirmarContrasena.classList.remove('invalido');
+                
+                if (!fechaNacimiento.nextElementSibling || !fechaNacimiento.nextElementSibling.classList.contains('error-mensaje')) {
+                    const errorMsg = document.createElement('span');
+                    errorMsg.className = 'error-mensaje';
+                    errorMsg.textContent = 'La fecha no puede ser futura';
+                    fechaNacimiento.parentNode.insertBefore(errorMsg, fechaNacimiento.nextSibling);
+                }
             }
         }
     }

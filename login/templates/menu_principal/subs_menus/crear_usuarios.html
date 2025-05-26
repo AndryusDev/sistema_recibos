@@ -127,66 +127,112 @@
                 <div class="modal-body">
                     <!-- Paso 1: Información Básica -->
                     <div class="paso-formulario activo" data-paso="1">
-                        <div class="seccion-titulo">
-                            <h4><i class="fas fa-id-card"></i> Información de Identificación</h4>
+                    <div class="seccion-titulo">
+                        <h4><i class="fas fa-id-card"></i> Información de Identificación</h4>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="modal-tipo-identificacion"><i class="fas fa-passport"></i> Tipo de Identificación:</label>
+                        <select id="modal-tipo-identificacion" name="tipo_identificacion" class="form-input" >
+                            <option value="">Seleccione...</option>
+                            {% for tipo in empleado.TIPO_IDENTIFICACION %}
+                                <option value="{{ tipo.0 }}">{{ tipo.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="modal-cedula"><i class="fas fa-id-badge"></i> Cédula/Número de Identificación:</label>
+                        <input type="number" id="modal-cedula" name="cedula" class="form-input" >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="modal-rif"><i class="fas fa-id-card-alt"></i> RIF:</label>
+                        <input type="text" id="modal-rif" name="rif" class="form-input">
+                    </div>
+                    
+                    <div class="seccion-titulo">
+                        <h4><i class="fas fa-user"></i> Datos Personales</h4>
+                    </div>
+                    
+                    <div class="grupo-campos">
+                        <div class="form-group">
+                            <label for="modal-primer-nombre">Primer Nombre:</label>
+                            <input type="text" id="modal-primer-nombre" name="primer_nombre" class="form-input" >
                         </div>
                         
                         <div class="form-group">
-                            <label for="modal-tipo-identificacion"><i class="fas fa-passport"></i> Tipo de Identificación:</label>
-                            <select id="modal-tipo-identificacion" name="tipo_identificacion" class="form-input" required>
+                            <label for="modal-segundo-nombre">Segundo Nombre:</label>
+                            <input type="text" id="modal-segundo-nombre" name="segundo_nombre" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="modal-primer-apellido">Primer Apellido:</label>
+                            <input type="text" id="modal-primer-apellido" name="primer_apellido" class="form-input" >
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="modal-segundo-apellido">Segundo Apellido:</label>
+                            <input type="text" id="modal-segundo-apellido" name="segundo_apellido" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <div class="grupo-campos">
+                        <div class="form-group">
+                            <label for="modal-fecha-nacimiento">Fecha de Nacimiento:</label>
+                            <input type="date" id="modal-fecha-nacimiento" name="fecha_nacimiento" class="form-input" >
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="modal-lugar-nacimiento">Lugar de Nacimiento:</label>
+                            <input type="text" id="modal-lugar-nacimiento" name="lugar_nacimiento" class="form-input" >
+                        </div>
+                    </div>
+                    
+                    <div class="grupo-campos">
+                        <div class="form-group">
+                            <label for="modal-genero">Género:</label>
+                            <select id="modal-genero" name="genero" class="form-input" >
                                 <option value="">Seleccione...</option>
-                                {% for tipo in empleado.TIPO_IDENTIFICACION %}
-                                    <option value="{{ tipo.0 }}">{{ tipo.1 }}</option>
+                                {% for genero in empleado.GENERO %}
+                                    <option value="{{ genero.0 }}">{{ genero.1 }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         
                         <div class="form-group">
-                            <label for="modal-cedula"><i class="fas fa-id-badge"></i> Cédula/Número de Identificación:</label>
-                            <input type="number" id="modal-cedula" name="cedula" class="form-input" required>
-                        </div>
-                        
-                        <div class="seccion-titulo">
-                            <h4><i class="fas fa-user"></i> Datos Personales</h4>
-                        </div>
-                        
-                        <div class="grupo-campos">
-                            <div class="form-group">
-                                <label for="modal-primer-nombre">Primer Nombre:</label>
-                                <input type="text" id="modal-primer-nombre" name="primer_nombre" class="form-input" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="modal-segundo-nombre">Segundo Nombre:</label>
-                                <input type="text" id="modal-segundo-nombre" name="segundo_nombre" class="form-input">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="modal-primer-apellido">Primer Apellido:</label>
-                                <input type="text" id="modal-primer-apellido" name="primer_apellido" class="form-input" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="modal-segundo-apellido">Segundo Apellido:</label>
-                                <input type="text" id="modal-segundo-apellido" name="segundo_apellido" class="form-input">
-                            </div>
+                            <label for="modal-estado-civil">Estado Civil:</label>
+                            <select id="modal-estado-civil" name="estado_civil" class="form-input" >
+                                <option value="">Seleccione...</option>
+                                {% for estado in empleado.ESTADO_CIVIL %}
+                                    <option value="{{ estado.0 }}">{{ estado.1 }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                     
-                    <!-- Paso 2: Información Laboral -->
-                    <div class="paso-formulario" data-paso="2">
-                        <div class="seccion-titulo">
-                            <h4><i class="fas fa-briefcase"></i> Información Laboral</h4>
+                    <div class="form-group">
+                        <label for="modal-grado-instruccion">Grado de Instrucción:</label>
+                        <input type="text" id="modal-grado-instruccion" name="grado_instruccion" class="form-input" >
+                    </div>
+                </div>
+                    
+                    <!-- Paso 2: Información Laboral y Contacto -->
+                <div class="paso-formulario" data-paso="2">
+                    <div class="seccion-titulo">
+                        <h4><i class="fas fa-briefcase"></i> Información Laboral</h4>
+                        <div class="linea-divisoria"></div>
+                    </div>
+                    
+                    <div class="grupo-campos">
+                        <div class="form-group">
+                            <label for="fecha-ingreso"><i class="fas fa-calendar-check"></i> Fecha de Ingreso:</label>
+                            <input type="date" id="fecha-ingreso" name="fecha_ingreso" class="form-input" >
                         </div>
                         
                         <div class="form-group">
-                            <label for="modal-fecha-ingreso"><i class="fas fa-calendar-check"></i> Fecha de Ingreso:</label>
-                            <input type="date" id="modal-fecha-ingreso" name="fecha_ingreso" class="form-input" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="modal-tipo-trabajador"><i class="fas fa-user-tie"></i> Tipo de Trabajador:</label>
-                            <select id="modal-tipo-trabajador" name="tipo_trabajador" class="form-input" required>
+                            <label for="tipo-trabajador"><i class="fas fa-user-tie"></i> Tipo de Trabajador:</label>
+                            <select id="tipo-trabajador" name="tipo_trabajador" class="form-input" >
                                 <option value="">Seleccione...</option>
                                 {% for trabajador in tipos_trabajador %}
                                     <option value="{{ trabajador.codigo_trabajador }}">{{ trabajador.descripcion }}</option>
@@ -195,138 +241,176 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="modal-familia-cargo"><i class="fas fa-sitemap"></i> Familia de Cargo:</label>
-                            <select id="modal-familia-cargo" name="familia_cargo" class="form-input" required disabled>
+                            <label for="familia-cargo"><i class="fas fa-sitemap"></i> Familia de Cargo:</label>
+                            <select id="familia-cargo" name="familia_cargo" class="form-input" >
                                 <option value="">Seleccione tipo de trabajador primero</option>
                             </select>
                         </div>
                         
                         <div class="form-group">
-                            <label for="modal-cargo"><i class="fas fa-user-tag"></i> Cargo:</label>
-                            <select id="modal-cargo" name="cargo" class="form-input" required disabled>
+                            <label for="cargo"><i class="fas fa-user-tag"></i> Cargo:</label>
+                            <select id="cargo" name="cargo" class="form-input" >
                                 <option value="">Seleccione familia de cargo primero</option>
                             </select>
                         </div>
-                        
-                        <div class="seccion-titulo">
-                            <h4><i class="fas fa-address-book"></i> Información de Contacto</h4>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="modal-email"><i class="fas fa-envelope"></i> Correo Electrónico:</label>
-                            <input type="email" id="modal-email" name="email" class="form-input" required>
-                        </div>
-                        
-                        <div class="grupo-campos">
-                            <div class="form-group">
-                                <label for="modal-telefono">Teléfono Principal:</label>
-                                <input type="tel" id="modal-telefono" name="telefono_principal" class="form-input">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="modal-telefono-secundario">Teléfono Secundario:</label>
-                                <input type="tel" id="modal-telefono-secundario" name="telefono_secundario" class="form-input">
-                            </div>
-                        </div>
                     </div>
                     
-                    <!-- Paso 3: Configuración de Usuario -->
-                    <div class="paso-formulario" data-paso="3">
-                        <div class="seccion-titulo">
-                            <h4><i class="fas fa-user-shield"></i> Configuración de Acceso</h4>
+                    <div class="seccion-titulo">
+                        <h4><i class="fas fa-address-book"></i> Información de Contacto</h4>
+                        <div class="linea-divisoria"></div>
+                    </div>
+                    
+                    <div class="grupo-campos">
+                        <div class="form-group">
+                            <label for="telefono-principal"><i class="fas fa-phone"></i> Teléfono Principal:</label>
+                            <input type="tel" id="telefono-principal" name="telefono_principal" class="form-input">
                         </div>
                         
                         <div class="form-group">
-                            <label for="modal-nombre-usuario"><i class="fas fa-user-circle"></i> Nombre de Usuario:</label>
-                            <input type="text" id="modal-nombre-usuario" name="nombre_usuario" class="form-input" required>
+                            <label for="telefono-secundario"><i class="fas fa-phone-alt"></i> Teléfono Secundario:</label>
+                            <input type="tel" id="telefono-secundario" name="telefono_secundario" class="form-input">
                         </div>
                         
-                        <div class="grupo-campos">
-                            <div class="form-group">
-                                <label for="modal-contrasena"><i class="fas fa-lock"></i> Contraseña:</label>
-                                <div class="input-con-icono">
-                                    <input type="password" id="modal-contrasena" name="contrasena" class="form-input" required>
-                                    <i class="fas fa-eye toggle-password"></i>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="modal-confirmar-contrasena"><i class="fas fa-lock"></i> Confirmar Contraseña:</label>
-                                <div class="input-con-icono">
-                                    <input type="password" id="modal-confirmar-contrasena" name="confirmar_contrasena" class="form-input" required>
-                                    <i class="fas fa-eye toggle-password"></i>
-                                </div>
-                            </div>
+                        <div class="form-group">
+                            <label for="email"><i class="fas fa-envelope"></i> Correo Electrónico:</label>
+                            <input type="email" id="email" name="email" class="form-input" >
                         </div>
                         
-                        <div class="seccion-titulo">
-                            <h4><i class="fas fa-users-cog"></i> Asignación de Roles</h4>
-                        </div>
-                        
-                        <div class="roles-container">
-                            {% for rol in roles %}
-                            <div class="rol-item">
-                                <input type="checkbox" id="modal-rol-{{ rol.id }}" name="roles" value="{{ rol.id }}" class="rol-checkbox">
-                                <label for="modal-rol-{{ rol.id }}" class="rol-label">
-                                    <span class="rol-nombre">{{ rol.nombre }}</span>
-                                    <span class="rol-descripcion">{{ rol.descripcion }}</span>
-                                </label>
-                            </div>
-                            {% endfor %}
+                        <div class="form-group">
+                            <label for="direccion"><i class="fas fa-map-marker-alt"></i> Dirección:</label>
+                            <textarea id="direccion" name="direccion" class="form-input" rows="3"></textarea>
                         </div>
                     </div>
+                                    <!-- Información Adicional -->
+                    <div class="seccion-titulo">
+                        <h4><i class="fas fa-info-circle"></i> Información Adicional</h4>
+                    </div>
+                    
+                    <div class="grupo-campos">
+                        <div class="form-group">
+                            <label for="hijos">N° de Hijos:</label>
+                            <input type="number" id="hijos" name="hijos" class="form-input" min="0" value="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="conyuge">¿Tiene Cónyuge?</label>
+                            <select id="conyuge" name="conyuge" class="form-input">
+                                <option value="false">No</option>
+                                <option value="true">Sí</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                    
+                    <!-- Paso 3: Configuración de Usuario y Roles -->
+                <div class="paso-formulario" data-paso="3">
+                <!-- Información Bancaria -->
+                <div class="seccion-titulo">
+                    <h4><i class="fas fa-piggy-bank"></i> Datos Bancarios</h4>
+                </div>
+                
+                <div class="grupo-campos">
+                    <div class="form-group">
+                        <label for="banco">Banco:</label>
+                        <select id="banco" name="banco" class="form-input">
+                            <option value="">Seleccione un banco</option>
+                            {% for banco in bancos %}
+                                <option value="{{ banco.codigo }}">{{ banco.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tipo-cuenta">Tipo de Cuenta:</label>
+                        <select id="tipo-cuenta" name="tipo_cuenta" class="form-input">
+                            <option value="C">Corriente</option>
+                            <option value="A">Ahorro</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero-cuenta">Número de Cuenta:</label>
+                    <input type="text" id="numero-cuenta" name="numero_cuenta" class="form-input">
+                </div>
+                </div>
                     
                     <!-- Paso 4: Resumen -->
                     <div class="paso-formulario" data-paso="4">
-                        <div class="resumen-creacion">
-                            <h4><i class="fas fa-check-circle"></i> Resumen</h4>
-                            
-                            <div class="resumen-seccion">
-                                <h5>Información Personal</h5>
-                                <div class="resumen-item">
-                                    <span>Nombre Completo:</span>
-                                    <strong id="resumen-nombre-completo"></strong>
-                                </div>
-                                <div class="resumen-item">
-                                    <span>Cédula:</span>
-                                    <strong id="resumen-cedula"></strong>
-                                </div>
-                                <div class="resumen-item">
-                                    <span>Email:</span>
-                                    <strong id="resumen-email"></strong>
-                                </div>
+                    <div class="resumen-creacion">
+                        <h4><i class="fas fa-check-circle"></i> Resumen del Empleado</h4>
+                        
+                        <!-- Sección 1: Información Personal -->
+                        <div class="resumen-seccion">
+                            <h5>Información Personal</h5>
+                            <div class="resumen-item">
+                                <span>Nombre Completo:</span>
+                                <strong id="resumen-nombre-completo"></strong>
                             </div>
-                            
-                            <div class="resumen-seccion">
-                                <h5>Información Laboral</h5>
-                                <div class="resumen-item">
-                                    <span>Cargo:</span>
-                                    <strong id="resumen-cargo"></strong>
-                                </div>
-                                <div class="resumen-item">
-                                    <span>Fecha de Ingreso:</span>
-                                    <strong id="resumen-fecha-ingreso"></strong>
-                                </div>
+                            <div class="resumen-item">
+                                <span>Cédula/RIF:</span>
+                                <strong id="resumen-identificacion"></strong>
                             </div>
-                            
-                            <div class="resumen-seccion">
-                                <h5>Configuración de Acceso</h5>
-                                <div class="resumen-item">
-                                    <span>Nombre de Usuario:</span>
-                                    <strong id="resumen-nombre-usuario"></strong>
-                                </div>
-                                <div class="resumen-item">
-                                    <span>Roles Asignados:</span>
-                                    <strong id="resumen-roles"></strong>
-                                </div>
-                            </div>
-                            
-                            <div class="advertencia-creacion">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <p>Revise cuidadosamente la información antes de confirmar.</p>
+                            <div class="resumen-item">
+                                <span>Fecha de Nacimiento:</span>
+                                <strong id="resumen-fecha-nacimiento"></strong>
                             </div>
                         </div>
+                        
+                        <!-- Sección 2: Información Laboral -->
+                        <div class="resumen-seccion">
+                            <h5>Información Laboral</h5>
+                            <div class="resumen-item">
+                                <span>Cargo:</span>
+                                <strong id="resumen-cargo"></strong>
+                            </div>
+                            <div class="resumen-item">
+                                <span>Tipo de Trabajador:</span>
+                                <strong id="resumen-tipo-trabajador"></strong>
+                            </div>
+                            <div class="resumen-item">
+                                <span>Fecha de Ingreso:</span>
+                                <strong id="resumen-fecha-ingreso"></strong>
+                            </div>
+                        </div>
+                        
+                        <!-- Sección 3: Datos Bancarios -->
+                        <div class="resumen-seccion">
+                            <h5>Datos Bancarios</h5>
+                            <div class="resumen-item">
+                                <span>Banco:</span>
+                                <strong id="resumen-banco"></strong>
+                            </div>
+                            <div class="resumen-item">
+                                <span>Tipo de Cuenta:</span>
+                                <strong id="resumen-tipo-cuenta"></strong>
+                            </div>
+                            <div class="resumen-item">
+                                <span>Número de Cuenta:</span>
+                                <strong id="resumen-numero-cuenta"></strong>
+                            </div>
+                        </div>
+                        
+                        <!-- Sección 4: Configuración de Usuario -->
+                        <div class="resumen-seccion" id="resumen-usuario-seccion" style="display: none;">
+                            <h5>Configuración de Usuario</h5>
+                            <div class="resumen-item">
+                                <span>Cuenta de usuario:</span>
+                                <strong>Será creada</strong>
+                            </div>
+                            <div class="resumen-item">
+                                <span>Correo para acceso:</span>
+                                <strong id="resumen-email-usuario"></strong>
+                            </div>
+                        </div>
+                        
+                        <div class="advertencia-creacion">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Revise cuidadosamente toda la información antes de confirmar. No podrá modificar algunos datos posteriormente.</p>
+                        </div>
                     </div>
+                </div>
                 </div>
                 
                 <div class="modal-acciones">
