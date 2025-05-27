@@ -199,8 +199,14 @@
     max-height: 90vh;
     border-radius: 10px;
     box-shadow: var(--sombra-suave);
+    display: flex;
+    flex-direction: column;
+}
+.modal-contenido {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     overflow: hidden;
-    position: relative;
 }
 
 
@@ -244,6 +250,7 @@
 }
 
 .modal-body {
+    flex: 1;
     padding: 20px 25px;
     overflow-y: auto;
     max-height: calc(90vh - 120px);
@@ -495,12 +502,12 @@ select.form-input {
 /* ==================== */
 
 .modal-acciones {
-    padding: 20px;
+    padding: 15px 25px;
     background-color: var(--color-fondo);
     border-top: 1px solid var(--color-borde);
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
 }
 
 
