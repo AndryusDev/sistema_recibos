@@ -1,0 +1,135 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        {% load static %}
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Respaldo - Base de datos</title>
+        <link rel="stylesheet" href="{% static 'css/gestion_respaldo.css' %}">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    </head>
+    <body>
+        <div class="titulo-pagina">
+            <h1>Respaldo - Base de datos</h1>
+        </div>
+        
+        <div class="contenedor-principal">
+            <!-- Columna izquierda - Tabla de respaldos -->
+            <div class="columna-izquierda">
+                <div class="panel-acciones">
+                    <button class="accion-boton principal" onclick="realizarRespaldo()">
+                        <i class="fa-solid fa-database"></i> Realizar copia de seguridad
+                    </button>
+                </div>
+                
+                <div class="panel-busqueda">
+                    <div class="busqueda-grupo">
+                        <input type="text" id="buscarRespaldo" class="busqueda-input" placeholder="Buscar por nombre">
+                        <button onclick="buscarRespaldo()" class="busqueda-boton">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                        <button onclick="limpiarBusqueda()" class="busqueda-boton secundario">
+                            <i class="fa-solid fa-broom"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="contenedor-tabla">
+                    <h2>Listado de las copias de la base de datos</h2>
+                    <table class="tabla-respaldos">
+                        <thead class="tabla-respaldos__thead">
+                            <tr class="tabla-respaldos__fila">
+                                <th class="tabla-respaldos__columna"><input type="checkbox" id="selectAll"></th>
+                                <th class="tabla-respaldos__columna">Nombre</th>
+                                <th class="tabla-respaldos__columna">Opciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="tabla-respaldos__tbody">
+                            <tr class="tabla-respaldos__fila">
+                                <td class="tabla-respaldos__celda"><input type="checkbox"></td>
+                                <td class="tabla-respaldos__celda">base_de_datos_08_03_2021_(14:58:57_hrs)</td>
+                                <td class="tabla-respaldos__celda">
+                                    <button class="tabla-respaldos__boton" onclick="restaurarRespaldo(2)">
+                                        <i class="fa-solid fa-rotate-left"></i> Restaurar
+                                    </button>
+                                    <button class="tabla-respaldos__boton secundario" onclick="eliminarRespaldo(2)">
+                                        <i class="fa-solid fa-trash"></i> Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="tabla-respaldos__fila">
+                                <td class="tabla-respaldos__celda"><input type="checkbox"></td>
+                                <td class="tabla-respaldos__celda">base_de_datos_20_03_2021_(16:17:43_hrs)</td>
+                                <td class="tabla-respaldos__celda">
+                                    <button class="tabla-respaldos__boton" onclick="restaurarRespaldo(1)">
+                                        <i class="fa-solid fa-rotate-left"></i> Restaurar
+                                    </button>
+                                    <button class="tabla-respaldos__boton secundario" onclick="eliminarRespaldo(1)">
+                                        <i class="fa-solid fa-trash"></i> Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="tabla-respaldos__fila">
+                                <td class="tabla-respaldos__celda"><input type="checkbox"></td>
+                                <td class="tabla-respaldos__celda">default_database</td>
+                                <td class="tabla-respaldos__celda">
+                                    <button class="tabla-respaldos__boton" onclick="restaurarRespaldo(0)">
+                                        <i class="fa-solid fa-rotate-left"></i> Restaurar
+                                    </button>
+                                    <button class="tabla-respaldos__boton secundario" onclick="eliminarRespaldo(0)">
+                                        <i class="fa-solid fa-trash"></i> Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="tabla-info">
+                        Mostrando registros del 1 al 3 de un total de 3 registros
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Columna derecha - Información -->
+            <div class="columna-derecha">
+                <div class="panel-informacion">
+                    <h2>Información para la restauración de la base de datos</h2>
+                    <p>Antes de realizar la restauración de la base de datos, asegúrese de que haya echo una copia.</p>
+                    
+                    <div class="pasos-seccion">
+                        <h3><i class="fa-solid fa-database"></i> Pasos para una buena restauración:</h3>
+                        <ol class="pasos-lista">
+                            <li>Realice la copia respectiva</li>
+                            <li>Asegúrese de que la copia este visible en la tabla</li>
+                            <li>Identifique la copia respectiva y seleccione la opción restaurar</li>
+                            <li>Y listo la copia se de haber restaurado exitosamente</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="pasos-seccion">
+                        <h3><i class="fa-solid fa-trash"></i> Pasos para una eliminación exitosa:</h3>
+                        <ol class="pasos-lista">
+                            <li>Seleccione una de las copias en la respectiva tabla</li>
+                            <li>Seleccione la opción de eliminar</li>
+                            <li>Y listo la copia se de haber eliminado exitosamente</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de confirmación -->
+        <div class="respaldo-modal" id="respaldoModal">
+            <div class="respaldo-modal__contenido" id="contenidoRespaldo">
+                <h3 id="modalTitulo">Confirmar acción</h3>
+                <p id="modalMensaje">¿Está seguro que desea realizar esta acción?</p>
+            </div>
+            <div class="respaldo-modal__acciones">
+                <button class="respaldo-modal__boton confirmar" id="modalConfirmar">Confirmar</button>
+                <button class="respaldo-modal__boton cancelar" onclick="cerrarModal()">Cancelar</button>
+            </div>
+        </div>
+        
+        <script src="{% static 'javascript/respaldo_bd.js' %}"></script>
+    </body>
+</html>
