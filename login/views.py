@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 import pandas as pd
 from django.http import JsonResponse
-from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina
+from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco
 from datetime import datetime
 import os
 from django.conf import settings
@@ -182,13 +182,23 @@ def crear_usuarios(request):
     # Obtener todos los usuarios con sus relaciones
     usuarios = usuario.objects.select_related(
         'empleado',
-        'empleado__cargo'
+        'empleado__cargo',
+        'empleado__cargo__familia',
+        'empleado__cargo__nivel',
+        'empleado__tipo_trabajador'
     ).prefetch_related(
-        'usuario_rol_set__rol'  # Accede a los roles a través de la relación usuario_rol
+        'usuario_rol_set__rol'
     ).all()
     
+    # Obtener datos para el formulario
+    tipos_trabajador_list = tipo_trabajador.objects.all()
+    bancos_list = banco.objects.all()
+    
     return render(request, 'menu_principal/subs_menus/crear_usuarios.html', {
-        'usuarios': usuarios
+        'usuarios': usuarios,
+        'tipos_trabajador': tipos_trabajador_list,
+        'bancos': bancos_list,
+        'empleado': empleado  # Para acceder a las constantes del modelo
     })
 
 from rest_framework.views import APIView

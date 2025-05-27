@@ -62,6 +62,10 @@
                     <tr class="tabla-datos__fila">
                         <th class="tabla-datos__columna">Cédula</th>
                         <th class="tabla-datos__columna">Nombre Completo</th>
+                        <th class="tabla-datos__columna">Fecha de Nacimiento</th>
+                        <th class="tabla-datos__columna">Lugar de Nacimiento</th>
+                        <th class="tabla-datos__columna">Estado Civil</th>
+                        <th class="tabla-datos__columna">Grado de Instrucción</th>
                         <th class="tabla-datos__columna">Email</th>
                         <th class="tabla-datos__columna">Cargo</th>
                         <th class="tabla-datos__columna">Roles</th>
@@ -74,6 +78,11 @@
                     <tr class="tabla-datos__fila" data-usuario-id="{{ usuario.id }}">
                         <td class="tabla-datos__celda">{{ usuario.empleado.cedula }}</td>
                         <td class="tabla-datos__celda">{{ usuario.empleado.get_nombre_completo }}</td>
+                        <td class="tabla-datos__celda">
+                        {{ usuario.empleado.fecha_nacimiento|date:"d/m/Y" }}
+                        <td class="tabla-datos__celda">{{ usuario.empleado.lugar_nacimiento }}</td>
+                        <td class="tabla-datos__celda">{{ usuario.empleado.get_estado_civil_display }}</td>
+                        <td class="tabla-datos__celda">{{ usuario.empleado.grado_instruccion }}</td>
                         <td class="tabla-datos__celda">{{ usuario.email }}</td>
                         <td class="tabla-datos__celda">
                             {% if usuario.empleado.cargo %}
