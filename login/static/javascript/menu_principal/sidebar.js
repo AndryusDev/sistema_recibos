@@ -34,7 +34,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'ver_prenomina.html': ['/static/javascript/menu_principal/subs_menus/ver_prenomina.js'],
             'crear_usuarios.html': ['/static/javascript/menu_principal/subs_menus/crear_usuarios.js'],
             'gestion_respaldo.html': ['/static/javascript/menu_principal/subs_menus/gestion_respaldo.js'],
-            'dashboard.html': ['/static/javascript/menu_principal/subs_menus/dashboard.js']
+            'dashboard.html': ['/static/javascript/menu_principal/subs_menus/dashboard.js'],
+            'roles_usuarios': ['/static/javascript/menu_principal/subs_menus/roles_usuarios.js']
         }
     };
     

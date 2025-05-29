@@ -26,6 +26,7 @@ urlpatterns = [
     path('ver_prenomina/', views.ver_prenomina, name= 'ver_prenomina'),
     path('gestion_respaldo/', views.gestion_respaldo, name= 'gestion_respaldo'),
     path('crear_usuarios/', views.crear_usuarios, name= 'crear_usuarios'),
+    path('roles_usuarios/', views.roles_usuarios, name='rol_usuarios'),
     path('api/nominas/importar/', views.importar_nominas, name='importar_nominas'),
 
     path('recibos/', login_required(listado_recibos), name='listado_recibos'),

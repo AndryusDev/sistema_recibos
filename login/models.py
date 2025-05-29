@@ -12,6 +12,25 @@ class rol(models.Model):
     class Meta:
         db_table = 'rol'
     
+class permiso(models.Model):
+    codigo = models.CharField(max_length=50, unique=True, primary_key=True)
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'permisos'
+
+    def __str__(self):
+        return self.nombre
+    
+class rol_permisos(models.Model):
+    rol = models.ForeignKey("rol", on_delete=models.CASCADE)  # Usar comillas para evitar el NameError
+    permiso = models.ForeignKey("permiso", on_delete=models.CASCADE)
+    fecha_asignacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "rol_permisos"
+        unique_together = (("rol", "permiso"),)
 
 class pregunta_seguridad(models.Model):
     """Modelo para el catálogo de preguntas de seguridad"""
