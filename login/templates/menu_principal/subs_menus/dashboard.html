@@ -1,0 +1,201 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración | Sistema de Nóminas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="admin-container">
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Panel de Administración</h1>
+                <div class="header-actions">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Buscar...">
+                    </div>
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card employees">
+                        <div class="card-content">
+                            <div class="card-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-title">Empleados</span>
+                                <span class="card-value">142</span>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>12% vs mes anterior</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card payrolls">
+                        <div class="card-content">
+                            <div class="card-icon">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-title">Nóminas</span>
+                                <span class="card-value">24</span>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <i class="fas fa-check-circle"></i>
+                            <span>2 pendientes</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card users">
+                        <div class="card-content">
+                            <div class="card-icon">
+                                <i class="fas fa-user-cog"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-title">Usuarios</span>
+                                <span class="card-value">8</span>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <i class="fas fa-user-clock"></i>
+                            <span>3 activos ahora</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card total">
+                        <div class="card-content">
+                            <div class="card-icon">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-title">Total General</span>
+                                <span class="card-value">$90,000.00</span>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Total año 2021</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-section">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3><i class="fas fa-chart-pie"></i> Estado de Nóminas</h3>
+                            <div class="chart-actions">
+                                <select class="period-select">
+                                    <option>2021</option>
+                                    <option>2022</option>
+                                    <option selected>2023</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="payrollChart"></canvas>
+                        </div>
+                        <div class="chart-footer">
+                            <div class="chart-legend">
+                                <div class="legend-item">
+                                    <span class="legend-color total"></span>
+                                    <span>Total año 2023</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color normal"></span>
+                                    <span>Normales de Mato</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color extra"></span>
+                                    <span>Normales de Juli</span>
+                                </div>
+                            </div>
+                            <div class="chart-summary">
+                                <p>Total de Nóminas respectivas en el año 2023: <strong>24 nóminas</strong></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Inicializar gráfico
+        const ctx = document.getElementById('payrollChart').getContext('2d');
+        const payrollChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                datasets: [
+                    {
+                        label: 'Total año 2023',
+                        data: [7500, 8200, 7800, 9000, 9500, 9200, 9800, 10000, 9500, 10200, 10500, 11000],
+                        backgroundColor: '#4e73df',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Normales de Mato',
+                        data: [4500, 5000, 4800, 5500, 6000, 5800, 6200, 6500, 6000, 6700, 7000, 7500],
+                        backgroundColor: '#1cc88a',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Normales de Juli',
+                        data: [3000, 3200, 3000, 3500, 3500, 3400, 3600, 3500, 3500, 3500, 3500, 3500],
+                        backgroundColor: '#36b9cc',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
