@@ -141,6 +141,9 @@
     min-width: 1200px;    /* Ancho mínimo para evitar compresión excesiva */
     table-layout: fixed;  /* Distribución fija de columnas (importante) */
 }
+.tabla-datos th, .tabla-datos td {
+    text-align: center;
+}
 
 .tabla-datos__columna, 
 .tabla-datos__celda {

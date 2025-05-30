@@ -47,7 +47,7 @@ def menu(request):
 
 def load_template(request, template_name):
     allowed_templates = ['noticias.html', 'perfil_usuario.html', 'recibos_pagos.html',
-                        'constancia_trabajo.html', 'arc.html','importar_nomina.html', 'gestion_nomina.html', 'ver_prenomina.html','crear_usuarios.html','gestion_respaldo.html', 'dashboard.html', 'roles_usuarios.html']  # Añade todos tus templates
+                        'constancia_trabajo.html', 'arc.html','importar_nomina.html', 'gestion_nomina.html', 'ver_prenomina.html','crear_usuarios.html','gestion_respaldo.html', 'dashboard.html', 'roles_usuarios.html', 'crear_roles.html']  # Añade todos tus templates
     
     if template_name not in allowed_templates:
         return HttpResponseNotFound('Plantilla no permitida')
@@ -61,7 +61,7 @@ def serve_js(request, script_name):
     # Lista blanca de scripts permitidos
     allowed_scripts = ['noticias.js', 'perfil_usuario.js','recibos_pagos.js',
                         'constancia_trabajo.js', 'arc.js', 'importar_nomina.js', 'gestion_nomina.js',
-                        'ver_prenomina.js', 'crear_usuarios.js', 'gestion_respaldo.js', 'dashboard.js', 'roles_usuarios']  # Añade todos tus scripts aquí
+                        'ver_prenomina.js', 'crear_usuarios.js', 'gestion_respaldo.js', 'dashboard.js', 'roles_usuarios', 'crear_roles.js']  # Añade todos tus scripts aquí
     
     if script_name not in allowed_scripts:
         return HttpResponseNotFound('Script no permitido')
@@ -209,6 +209,9 @@ def dashboard(request):
 
 def roles_usuarios(request):
     return render(request, 'menu_principal/subs_menus/rol_usuario.html')
+
+def crear_roles(request):
+    return render(request, 'menu_principal/subs_menus/crear_roles.html')
 
 from rest_framework.views import APIView
 from rest_framework.response import Response

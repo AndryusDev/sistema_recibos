@@ -35,7 +35,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'crear_usuarios.html': ['/static/javascript/menu_principal/subs_menus/crear_usuarios.js'],
             'gestion_respaldo.html': ['/static/javascript/menu_principal/subs_menus/gestion_respaldo.js'],
             'dashboard.html': ['/static/javascript/menu_principal/subs_menus/dashboard.js'],
-            'roles_usuarios': ['/static/javascript/menu_principal/subs_menus/roles_usuarios.js']
+            'roles_usuarios': ['/static/javascript/menu_principal/subs_menus/roles_usuarios.js'],
+            'crear_roles.html': ['/static/javascript/menu_principal/subs_menus/crear_roles.js']
         }
     };
     
