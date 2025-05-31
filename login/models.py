@@ -289,6 +289,7 @@ class usuario(models.Model):
     contraseña_hash = models.CharField(max_length=128)
     ultimo_login = models.DateTimeField(null=True, blank=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
+    rol = models.ForeignKey(rol, on_delete=models.PROTECT)
     
     class Meta:
         db_table = 'usuarios'
@@ -304,18 +305,6 @@ class usuario(models.Model):
     def __str__(self):
         return f"{self.email} ({self.empleado})"
     
-
-class usuario_rol(models.Model):
-    usuario = models.ForeignKey(usuario, on_delete=models.CASCADE)
-    rol = models.ForeignKey(rol, on_delete=models.CASCADE)
-    fecha_asignacion = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'usuario_roles'
-        unique_together = (('usuario', 'rol'),)  # Clave única compuesta (equivalente a PK compuesta)
-    
-    def __str__(self):
-        return f"Usuario {self.usuario_id} → Rol {self.rol_id}"
 
 class usuario_pregunta(models.Model):
     """Relación entre usuarios y sus preguntas de seguridad"""

@@ -17,7 +17,7 @@ from decimal import Decimal
 import logging
 from django.db import transaction
 from login.models import usuario, recibo_pago
-from .models import usuario, empleado, usuario_rol, rol
+from .models import usuario, empleado, rol
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.timezone import now
 
@@ -97,7 +97,7 @@ def perfil_usuario(request):
     ).order_by('-fecha_generacion')[:3]
 
     # Obtener los roles del usuario
-    roles = usuario_rol.objects.select_related('rol').filter(usuario=usuario_instance)
+    roles = rol.objects.select_related('rol').filter(usuario=usuario_instance)
 
     context = {
         'usuario': usuario_instance,
@@ -187,7 +187,7 @@ def crear_usuarios(request):
         'empleado__cargo__nivel',
         'empleado__tipo_trabajador'
     ).prefetch_related(
-        'usuario_rol_set__rol'
+        'rol'
     ).all()
     
     # Obtener datos para el formulario
@@ -219,7 +219,7 @@ from rest_framework.status import HTTP_200_OK
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 from django.shortcuts import render, redirect
-from .models import empleado, usuario, rol, usuario_rol, usuario_pregunta, pregunta_seguridad, tipo_nomina ,meses, secuencia, tipo_trabajador, detalle_nomina, detalle_recibo, recibo_pago  # Importa tu modelo usuario actual
+from .models import empleado, usuario, rol, usuario_pregunta, pregunta_seguridad, tipo_nomina ,meses, secuencia, tipo_trabajador, detalle_nomina, detalle_recibo, recibo_pago  # Importa tu modelo usuario actual
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime
@@ -361,7 +361,8 @@ def completar_registro(request):
             email=datos_sesion['email'],
             contraseña_hash=datos_sesion['contraseña'],  # ← Contraseña en texto plano
             empleado=empleado_instance,  # Usamos _id para asignación directa
-            ultimo_login=timezone.now()
+            ultimo_login=timezone.now(),
+            rol_id='1',
         )
 
         # 4. Preguntas de seguridad (SIN HASH)
@@ -372,12 +373,6 @@ def completar_registro(request):
                 respuesta_hash=make_password(respuesta.lower().strip()),  # ← Respuesta en texto plano
             )
 
-        # 5. Asignar rol
-        usuario_rol.objects.create(
-            usuario_id=nuevo_usuario.id,
-            rol_id='1',  # Asume que existe este código
-            fecha_asignacion=timezone.now()
-        )
 
         # 6. Limpiar sesión
         del request.session['datos_registro']
@@ -429,8 +424,8 @@ def login_empleado(request):
         usuario_instance.ultimo_login = timezone.now()
         usuario_instance.save()
 
-        usuario_roles = usuario_rol.objects.filter(usuario=usuario_instance)
-        rol_nombres = [usuario_rol_instance.rol.nombre_rol for usuario_rol_instance in usuario_roles]
+        rol_nombre = usuario_instance.rol.nombre_rol if usuario_instance.rol else 'Sin rol asignado'
+        
 
         # Información del usuario para enviar al frontend
         usuario_info = {
@@ -438,7 +433,7 @@ def login_empleado(request):
             'apellido': empleado_instance.primer_apellido,
             'cedula': empleado_instance.cedula,
             'cargo': str(empleado_instance.cargo) if empleado_instance.cargo else 'N/A',
-            'roles': rol_nombres,
+            'roles': rol_nombre,
             'ultimo_login': usuario_instance.ultimo_login.strftime('%d/%m/%Y %H:%M') if usuario_instance.ultimo_login else 'Nunca'
         }
         

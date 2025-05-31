@@ -67,7 +67,6 @@
                         <th class="tabla-datos__columna">Grado de Instrucción</th>
                         <th class="tabla-datos__columna">Email</th>
                         <th class="tabla-datos__columna">Cargo</th>
-                        <th class="tabla-datos__columna">Roles</th>
                         <th class="tabla-datos__columna">Estado</th>
                         <th class="tabla-datos__columna">Acciones</th>
                     </tr>
@@ -89,15 +88,6 @@
                             {% else %}
                                 Sin cargo asignado
                             {% endif %}
-                        </td>
-                        <td class="tabla-datos__celda">
-                            <div class="roles-usuario">
-                                {% for usuario_rol in usuario.usuario_rol_set.all %}
-                                    <span class="badge-rol">{{ usuario_rol.rol.nombre_rol }}</span>
-                                {% empty %}
-                                    <span class="text-muted">Sin roles</span>
-                                {% endfor %}
-                            </div>
                         </td>
                         <td class="tabla-datos__celda">
                             <span class="badge-estado {{ usuario.empleado.status|yesno:'activo,inactivo' }}">
