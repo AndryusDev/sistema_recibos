@@ -37,7 +37,7 @@
                             </div>
                             <div class="card-info">
                                 <span class="card-title">Empleados</span>
-                                <span class="card-value">142</span>
+                                <span class="card-value">{{ total_empleados }}</span>
                             </div>
                         </div>
                         <div class="card-footer">
@@ -53,7 +53,7 @@
                             </div>
                             <div class="card-info">
                                 <span class="card-title">Nóminas</span>
-                                <span class="card-value">24</span>
+                                <span class="card-value">{{ total_nominas }}</span>
                             </div>
                         </div>
                         <div class="card-footer">
@@ -69,7 +69,7 @@
                             </div>
                             <div class="card-info">
                                 <span class="card-title">Usuarios</span>
-                                <span class="card-value">8</span>
+                                <span class="card-value">{{ total_usuarios }}</span>
                             </div>
                         </div>
                         <div class="card-footer">
@@ -85,7 +85,7 @@
                             </div>
                             <div class="card-info">
                                 <span class="card-title">Total General</span>
-                                <span class="card-value">$90,000.00</span>
+                                <span class="card-value">Bs.{{ total_gastado|floatformat:2 }}</span>
                             </div>
                         </div>
                         <div class="card-footer">

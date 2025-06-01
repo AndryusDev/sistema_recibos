@@ -176,7 +176,7 @@ class cuenta_bancaria(models.Model):
         default='C'
     )
     numero_cuenta = models.CharField(
-        max_length=20,
+        max_length=20, unique=True
     )
     activa = models.BooleanField(default=True)
 
@@ -211,7 +211,7 @@ class empleado(models.Model):
 
     # Identificación
     tipo_identificacion = models.CharField(max_length=1, choices=TIPO_IDENTIFICACION)
-    cedula = models.IntegerField(primary_key=True)
+    cedula = models.IntegerField(primary_key=True, unique=True)
     
     # Nombres
     primer_nombre = models.CharField(max_length=50)
@@ -237,7 +237,7 @@ class empleado(models.Model):
     # Contacto
     telefono_principal = models.CharField(max_length=20, blank=True, null=True)
     telefono_secundario = models.CharField(max_length=20, blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)
+    email = models.EmailField(blank=True, null=True, unique=True)
     direccion = models.TextField(blank=True, null=True)
     
     # Beneficios (para PRM)
@@ -245,7 +245,7 @@ class empleado(models.Model):
     conyuge = models.BooleanField(default=False)  # Para asignaciones familiares
     
     # Información adicional
-    rif = models.CharField(max_length=20, blank=True, null=True)
+    rif = models.CharField(max_length=20, blank=True, null=True, unique=True)
     grado_instruccion = models.CharField(max_length=50, blank=True, null=True)
     
     # Auditoría

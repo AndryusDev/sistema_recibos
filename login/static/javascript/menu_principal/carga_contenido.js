@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 url = "/ver_prenomina";
             } else if (template === "crear_usuarios.html") {
                 url = "/crear_usuarios";
+            } else if (template === "dashboard.html") {
+                url = "/dashboard";
             }
 
             if (url !== "") {

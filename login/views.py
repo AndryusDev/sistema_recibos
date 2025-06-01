@@ -205,7 +205,28 @@ def gestion_respaldo(request):
     return render(request, 'menu_principal/subs_menus/gestion_respaldo.html')
 
 def dashboard(request):
-    return render(request, 'menu_principal/subs_menus/dashboard.html')
+    # Obtener conteo de empleados
+    total_empleados = empleado.objects.count()
+    
+    # Obtener conteo de usuarios
+    total_usuarios = usuario.objects.count()
+    
+    # Obtener conteo de nóminas
+    total_nominas = nomina.objects.count()
+    
+    # Calcular total gastado (suma de todos los montos en detalle_nomina)
+    total_gastado = detalle_nomina.objects.aggregate(
+        total=Sum('monto')
+    )['total'] or 0
+    
+    # Pasar los datos al template
+    context = {
+        'total_empleados': total_empleados,
+        'total_usuarios': total_usuarios,
+        'total_nominas': total_nominas,
+        'total_gastado': total_gastado,
+    }
+    return render(request, 'menu_principal/subs_menus/dashboard.html', context)
 
 def roles_usuarios(request):
     return render(request, 'menu_principal/subs_menus/rol_usuario.html')
