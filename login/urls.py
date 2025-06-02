@@ -17,6 +17,7 @@ urlpatterns = [
     path('login_empleado/', views.login_empleado, name='login_empleado'),
     path('completar_registro/', views.completar_registro, name='completar_registro'),\
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('api/nominas/chart-data/', views.chart_data, name='chart_data'),
     path('perfil_usuario/', views.perfil_usuario, name= 'perfil_usuario'),
     path('noticias/', views.noticias, name= 'noticias'),
     path('recibos_pagos/', views.recibos_pagos, name= 'recibos_pagos'),

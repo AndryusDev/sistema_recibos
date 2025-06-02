@@ -20,6 +20,7 @@ from login.models import usuario, recibo_pago
 from .models import usuario, empleado, rol
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.timezone import now
+from django.db.models.functions import ExtractMonth
 
 # Create your views here.
 def login(request):
@@ -205,28 +206,60 @@ def gestion_respaldo(request):
     return render(request, 'menu_principal/subs_menus/gestion_respaldo.html')
 
 def dashboard(request):
-    # Obtener conteo de empleados
-    total_empleados = empleado.objects.count()
+    # Obtener años disponibles para el selector
+    available_years = nomina.objects.dates('fecha_cierre', 'year').values_list('fecha_cierre__year', flat=True)
+    current_year = datetime.now().year
     
-    # Obtener conteo de usuarios
-    total_usuarios = usuario.objects.count()
+    # Si no hay años en la base de datos, usar el año actual
+    if not available_years:
+        available_years = [current_year]
     
-    # Obtener conteo de nóminas
-    total_nominas = nomina.objects.count()
-    
-    # Calcular total gastado (suma de todos los montos en detalle_nomina)
-    total_gastado = detalle_nomina.objects.aggregate(
-        total=Sum('monto')
-    )['total'] or 0
-    
-    # Pasar los datos al template
     context = {
-        'total_empleados': total_empleados,
-        'total_usuarios': total_usuarios,
-        'total_nominas': total_nominas,
-        'total_gastado': total_gastado,
+        'total_empleados': empleado.objects.count(),
+        'total_usuarios': usuario.objects.count(),
+        'total_nominas': nomina.objects.count(),
+        'total_gastado': detalle_nomina.objects.aggregate(total=Sum('monto')).get('total') or 0,
+        'current_year': current_year,
+        'available_years': sorted(available_years, reverse=True)
     }
+    
     return render(request, 'menu_principal/subs_menus/dashboard.html', context)
+
+def chart_data(request):
+    try:
+        year = request.GET.get('year', datetime.now().year)
+        
+        # Obtener datos mensuales
+        gastos_mensuales = (
+            detalle_nomina.objects
+            .filter(nomina__fecha_cierre__year=year)
+            .annotate(month=ExtractMonth('nomina__fecha_cierre'))
+            .values('month')
+            .annotate(total=Sum('monto'))
+            .order_by('month')
+        )
+        
+        # Preparar datos para el gráfico
+        meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+        datos = [0.0] * 12
+        
+        for gasto in gastos_mensuales:
+            month_index = gasto['month'] - 1
+            if 0 <= month_index < 12:
+                datos[month_index] = float(gasto['total'])
+        
+        # Total de nóminas
+        total_nominas = nomina.objects.filter(fecha_cierre__year=year).count()
+        
+        return JsonResponse({
+            'year': year,
+            'meses': meses,
+            'datos': datos,
+            'total_nominas': total_nominas
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 def roles_usuarios(request):
     return render(request, 'menu_principal/subs_menus/rol_usuario.html')

@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (template === "crear_usuarios.html") {
                 url = "/crear_usuarios";
             } else if (template === "dashboard.html") {
+                loadDashboardContent();
                 url = "/dashboard";
             }
 
@@ -48,3 +49,4 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
