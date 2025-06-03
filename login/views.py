@@ -239,6 +239,12 @@ def chart_data(request):
             .order_by('month')
         )
         
+        # Calcular el total anual
+        total_anual = float(detalle_nomina.objects
+                        .filter(nomina__fecha_cierre__year=year)
+                        .aggregate(total=Sum('monto'))
+                        .get('total') or 0.0)
+        
         # Preparar datos para el gráfico
         meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
         datos = [0.0] * 12
@@ -255,7 +261,8 @@ def chart_data(request):
             'year': year,
             'meses': meses,
             'datos': datos,
-            'total_nominas': total_nominas
+            'total_nominas': total_nominas,
+            'total_anual': total_anual  # Añadimos este campo
         })
         
     except Exception as e:

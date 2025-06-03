@@ -133,10 +133,23 @@ class DashboardChartManager {
         const totalNominas = data.total_nominas || 0;
         const totalGastado = data.datos.reduce((a, b) => a + b, 0);
         
+        // Actualizar el resumen del gráfico
         summaryElement.innerHTML = `
             Total de Nóminas en ${data.year}: <strong>${totalNominas} nóminas</strong><br>
             Total gastado: <strong>Bs. ${totalGastado.toLocaleString('es-VE', {minimumFractionDigits: 2})}</strong>
         `;
+        
+        // Actualizar el panel del total general
+        const totalValueElement = document.getElementById('total-year-value');
+        const totalYearElement = document.getElementById('total-year-text');
+        
+        if (totalValueElement) {
+            totalValueElement.textContent = `Bs.${totalGastado.toLocaleString('es-VE', {minimumFractionDigits: 2})}`;
+        }
+        
+        if (totalYearElement) {
+            totalYearElement.textContent = `Total año ${data.year}`;
+        }
     }
 
     showLoading(show) {
