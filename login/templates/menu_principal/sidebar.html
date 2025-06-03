@@ -10,9 +10,9 @@
             <div class="user-img">
                 <img src="{% static 'image/Andryus.jpeg' %}" alt="user">
                 <div class="user-data">
-                    <span class="firstname" id="user-name"></span>  <!-- Agregado ID 'user-name' -->
-                    <span class="firstapell" id="user-lastname"></span>  <!-- Agregado ID 'user-lastname' -->
-                    <span class="lvlsecurity" id="roles"></span>  <!-- Agregado ID 'roles' -->
+                    <span class="firstname" id="user-name">{{ usuario.empleado.nombre }}</span>
+                    <span class="firstapell" id="user-lastname">{{ usuario.empleado.apellido }}</span>
+                    <span class="lvlsecurity" id="roles">{{ rol_usuario }}</span>
                 </div>
             </div>
         </div>

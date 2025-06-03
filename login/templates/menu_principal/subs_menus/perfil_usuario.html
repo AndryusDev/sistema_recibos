@@ -158,11 +158,11 @@
                         <div class="dato-item">
                             <span class="dato-label">Rol del Sistema:</span>
                             <span class="dato-valor">
-                                {% for usuario_rol in roles %}
-                                    {{ usuario_rol.rol.nombre_rol|capfirst }}{% if not forloop.last %}, {% endif %}
-                                {% empty %}
+                                {% if usuario.rol %}
+                                    {{ usuario.rol.nombre_rol|capfirst }}
+                                {% else %}
                                     Sin roles asignados
-                                {% endfor %}
+                                {% endif %}
                             </span>
                         </div>
                         <div class="dato-item">

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
@@ -74,40 +74,50 @@ def serve_js(request, script_name):
             return HttpResponse(f.read(), content_type='application/javascript')
     return HttpResponseNotFound('Script no encontrado')
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponseServerError
+from .models import usuario, empleado, recibo_pago, rol
+
 def perfil_usuario(request):
-    usuario_id = request.session.get('usuario_id')
-
-    if not usuario_id:
-        return redirect('login_empleado')
+    try:
+        usuario_id = request.session.get('usuario_id')
+        if not usuario_id:
+            return redirect('login_empleado')
+        
+        # Obtener el usuario con sus relaciones
+        usuario_instance = get_object_or_404(
+            usuario.objects.select_related('empleado', 'rol'),
+            id=usuario_id
+        )
+        
+        # Verificar si el empleado existe
+        if not hasattr(usuario_instance, 'empleado'):
+            raise ValueError("El usuario no tiene empleado asociado")
+        
+        # Obtener información del empleado con cuentas bancarias
+        empleado_con_cuentas = empleado.objects.filter(
+            pk=usuario_instance.empleado.pk
+        ).prefetch_related('cuentas_bancarias__banco').first()
+        
+        # Obtener recibos recientes
+        recibos_recientes = recibo_pago.objects.filter(
+            cedula_id=usuario_instance.empleado.cedula
+        ).select_related('nomina', 'cedula', 'cedula__cargo'
+        ).order_by('-fecha_generacion')[:3]
+        
+        # Preparar el contexto (SIMPLIFICADO)
+        context = {
+            'usuario': usuario_instance,
+            'empleado': empleado_con_cuentas,
+            'recibos_recientes': recibos_recientes,
+            # Eliminamos 'rol_usuario' ya que accederemos directamente desde usuario.rol
+        }
+        
+        return render(request, 'menu_principal/subs_menus/perfil_usuario.html', context)
     
-    usuario_instance = get_object_or_404(usuario, id=usuario_id)
-    empleado_instance = usuario_instance.empleado
-
-    empleado_instance = empleado.objects.filter(
-        pk=empleado_instance.pk
-    ).prefetch_related(
-        'cuentas_bancarias__banco'
-    ).first()
-
-    recibos_recientes = recibo_pago.objects.filter(
-        cedula_id=empleado_instance.cedula
-    ).select_related(
-        'nomina',
-        'cedula',
-        'cedula__cargo'
-    ).order_by('-fecha_generacion')[:3]
-
-    # Obtener los roles del usuario
-    roles = rol.objects.select_related('rol').filter(usuario=usuario_instance)
-
-    context = {
-        'usuario': usuario_instance,
-        'empleado': empleado_instance,
-        'recibos_recientes': recibos_recientes,
-        'roles': roles,  # ← Agregado aquí
-    }
-    
-    return render(request, 'menu_principal/subs_menus/perfil_usuario.html', context)
+    except Exception as e:
+        print(f"Error en perfil_usuario: {str(e)}")
+        return HttpResponseServerError("Error al cargar el perfil. Por favor intente más tarde.")
 
     
 def noticias(request):
