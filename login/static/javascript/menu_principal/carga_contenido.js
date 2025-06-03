@@ -25,10 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 url = "/ver_prenomina";
             } else if (template === "crear_usuarios.html") {
                 url = "/crear_usuarios";
-            } else if (template === "dashboard.html") {
-                loadDashboardContent();
-                url = "/dashboard";
-            }
+            } 
 
             if (url !== "") {
                 fetch(url)
@@ -50,3 +47,52 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+function loadDashboardContent() {
+    fetch('/dashboard')
+        .then(response => response.text())
+        .then(html => {
+            const container = document.getElementById('contenido-dinamico');
+            container.innerHTML = html;
+            
+            // Cargar dependencias en orden
+            loadChartJs()
+                .then(() => loadDashboardJs())
+                .then(() => {
+                    // Inicializar el dashboard después de cargar todo
+                    if (window.initializeDashboard) {
+                        window.initializeDashboard();
+                    }
+                })
+                .catch(error => {
+                    console.error("Error cargando dependencias:", error);
+                });
+        });
+}
+
+function loadChartJs() {
+    return new Promise((resolve) => {
+        if (typeof Chart !== 'undefined') {
+            resolve();
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.onload = resolve;
+        document.head.appendChild(script);
+    });
+}
+
+function loadDashboardJs() {
+    return new Promise((resolve) => {
+        if (typeof DashboardChartManager !== 'undefined') {
+            resolve();
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = '/static/javascript/menu_principal/subs_menus/dashboard.js';
+        script.onload = resolve;
+        document.head.appendChild(script);
+    });
+}

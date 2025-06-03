@@ -1,27 +1,22 @@
-// dashboard.js - Versión corregida
-console.log()
+// dashboard.js - Versión definitiva sin errores de canvas
 class DashboardChartManager {
     constructor() {
         this.chart = null;
         this.currentYear = new Date().getFullYear();
+        this.chartCanvas = document.getElementById('payrollChart');
         this.init();
     }
 
     async init() {
         try {
-            // Obtener el año inicial del selector
             const yearSelector = document.getElementById('year-selector');
             if (yearSelector) {
                 this.currentYear = yearSelector.value;
-                
-                // Configurar evento para el selector de año
                 yearSelector.addEventListener('change', (e) => {
                     this.currentYear = e.target.value;
                     this.loadChartData();
                 });
             }
-
-            // Cargar datos iniciales
             await this.loadChartData();
         } catch (error) {
             console.error('Error al inicializar el dashboard:', error);
@@ -49,51 +44,86 @@ class DashboardChartManager {
     }
 
     updateChart(data) {
-        const canvas = document.getElementById('payrollChart');
-        if (!canvas) return;
-        
-        const ctx = canvas.getContext('2d');
-        
-        if (this.chart) this.chart.destroy();
-        
-        this.chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: data.meses,
-                datasets: [{
-                    label: `Gastos en Nóminas ${data.year}`,
-                    data: data.datos,
-                    backgroundColor: 'rgba(78, 115, 223, 0.5)',
-                    borderColor: 'rgba(78, 115, 223, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return 'Bs. ' + value.toLocaleString('es-VE');
+        try {
+            // Verificar si el canvas existe
+            if (!this.chartCanvas) {
+                console.error('Canvas no encontrado');
+                return;
+            }
+
+            // Resetear completamente el canvas
+            this.resetCanvas();
+
+            // Destruir el gráfico anterior si existe
+            this.destroyChart();
+
+            // Crear nuevo contexto y gráfico
+            const ctx = this.chartCanvas.getContext('2d');
+            
+            this.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.meses,
+                    datasets: [{
+                        label: `Gastos en Nóminas ${data.year}`,
+                        data: data.datos,
+                        backgroundColor: 'rgba(78, 115, 223, 0.5)',
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'Bs. ' + value.toLocaleString('es-VE');
+                                }
                             }
                         }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return 'Bs. ' + context.raw.toLocaleString('es-VE');
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Bs. ' + context.raw.toLocaleString('es-VE');
+                                }
                             }
                         }
                     }
                 }
+            });
+            
+            const yearDisplay = document.getElementById('chart-year-display');
+            if (yearDisplay) yearDisplay.textContent = `Total año ${data.year}`;
+            
+        } catch (error) {
+            console.error('Error al actualizar el gráfico:', error);
+            this.showError('Error al mostrar el gráfico');
+            // Forzar limpieza del canvas si hay error
+            this.resetCanvas();
+        }
+    }
+
+    resetCanvas() {
+        if (this.chartCanvas) {
+            // Esta es la solución clave - resetear completamente el canvas
+            this.chartCanvas.width = this.chartCanvas.width;
+        }
+    }
+
+    destroyChart() {
+        if (this.chart) {
+            try {
+                this.chart.destroy();
+            } catch (destroyError) {
+                console.warn('Error al destruir gráfico anterior:', destroyError);
             }
-        });
-        
-        const yearDisplay = document.getElementById('chart-year-display');
-        if (yearDisplay) yearDisplay.textContent = `Total año ${data.year}`;
+            this.chart = null;
+        }
     }
 
     updateSummary(data) {
@@ -125,43 +155,52 @@ class DashboardChartManager {
         if (existingError) existingError.remove();
         
         const errorDiv = document.createElement('div');
-        errorDiv.className = 'chart-error';
+        errorDiv.className = 'chart-error alert alert-danger';
         errorDiv.innerHTML = `<p>${message}</p>`;
         container.prepend(errorDiv);
     }
+
+    // Limpieza completa
+    destroy() {
+        this.destroyChart();
+        this.resetCanvas();
+    }
 }
 
-// Función global para inicialización
+// Inicialización mejorada
 window.initializeDashboard = function() {
-    // Verificar si Chart.js está disponible
-    if (typeof Chart === 'undefined') {
-        console.error('Chart.js no está cargado');
+    try {
+        if (typeof Chart === 'undefined') {
+            throw new Error('Chart.js no está cargado');
+        }
+        
+        // Limpiar instancia anterior
+        if (window.dashboardChartManager) {
+            window.dashboardChartManager.destroy();
+            window.dashboardChartManager = null;
+        }
+        
+        // Crear nueva instancia
+        window.dashboardChartManager = new DashboardChartManager();
+        return true;
+    } catch (error) {
+        console.error('Error en initializeDashboard:', error);
+        const container = document.querySelector('.chart-container');
+        if (container) {
+            container.innerHTML = '<div class="alert alert-danger">Error al cargar el gráfico. Recargue la página.</div>';
+        }
         return false;
     }
-    
-    // Limpiar instancia anterior si existe
-    if (window.dashboardChartManager) {
-        try {
-            if (window.dashboardChartManager.chart) {
-                window.dashboardChartManager.chart.destroy();
-            }
-        } catch (e) {
-            console.error('Error al limpiar gráfico anterior:', e);
-        }
-    }
-    
-    // Crear nueva instancia
-    window.dashboardChartManager = new DashboardChartManager();
-    return true;
 };
 
-// Inicialización automática si el gráfico está en la página
-if (document.getElementById('payrollChart')) {
-    // Esperar a que Chart.js esté disponible
-    const checkChart = setInterval(() => {
-        if (typeof Chart !== 'undefined') {
-            clearInterval(checkChart);
-            window.initializeDashboard();
-        }
-    }, 100);
-}
+// Inicialización automática segura
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('payrollChart')) {
+        const checkChart = setInterval(() => {
+            if (typeof Chart !== 'undefined') {
+                clearInterval(checkChart);
+                window.initializeDashboard();
+            }
+        }, 100);
+    }
+});

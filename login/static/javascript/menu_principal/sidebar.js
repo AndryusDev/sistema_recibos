@@ -41,58 +41,94 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // Función loadTemplate ACTUALIZADA
-    async function loadTemplate(templateName) {
-        // Validación adicional
-        if (!templateName || templateName === 'null') {
-            console.error('Se intentó cargar una plantilla nula');
-            return false;
-        }
-    
-        try {
-            // Limpiar plantilla anterior
-            if (currentTemplate) {
-                const event = new CustomEvent('templateUnloading', {
-                    detail: { template: currentTemplate }
-                });
-                document.dispatchEvent(event);
-            }
-    
-            // Cargar nueva plantilla - URL ACTUALIZADA
-            const response = await fetch(`/load_template/${templateName}/`);
-            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-            
-            mainContentDiv.innerHTML = await response.text();
-            currentTemplate = templateName;
-            
-            // Cargar scripts - MANEJO DE ERRORES MEJORADO
-            if (templatesConfig.scripts[templateName]) {
-                try {
-                    await Promise.all(
-                        templatesConfig.scripts[templateName].map(scriptUrl => 
-                            loadScript(scriptUrl).catch(e => {
-                                console.error(`Error cargando script ${scriptUrl}:`, e);
-                                return null; // Continuar aunque falle un script
-                            })
-                        )
-                    );
-                } catch (e) {
-                    console.error('Error cargando scripts:', e);
-                }
-            }
-            
-            return true;
-        } catch (error) {
-            console.error(`Error cargando plantilla ${templateName}:`, error);
-            mainContentDiv.innerHTML = `
-                <div class="error-message">
-                    <h3>Error al cargar la página</h3>
-                    <p>${error.message}</p>
-                    <button onclick="location.reload()">Recargar</button>
-                </div>
-            `;
-            return false;
-        }
+    // En tu sidebar.js, reemplaza la función loadTemplate con esta versión mejorada:
+async function loadTemplate(templateName) {
+    if (!templateName || templateName === 'null') {
+        console.error('Plantilla nula');
+        return false;
     }
+
+    try {
+        // 1. Limpiar plantilla anterior (como ya lo hace)
+        if (currentTemplate) {
+            const event = new CustomEvent('templateUnloading', {
+                detail: { template: currentTemplate }
+            });
+            document.dispatchEvent(event);
+        }
+
+        // 2. Mapeo de templates a URLs (como en tu primer enfoque)
+        let url = "";
+        switch(templateName) {
+            case "importar_nomina.html": url = "/importar_nomina"; break;
+            case "perfil_usuario.html": url = "/perfil_usuario"; break;
+            case "recibos_pagos.html": url = "/recibos_pagos"; break;
+            case "constancia_trabajo.html": url = "/constancia_trabajo/"; break;
+            case "arc.html": url = "/arc/"; break;
+            case "gestion_nomina.html": url = "/gestion_nomina/"; break;
+            case "noticias.html": url = "/noticias/"; break;
+            case "ver_prenomina.html": url = "/ver_prenomina"; break;
+            case "crear_usuarios.html": url = "/crear_usuarios"; break;
+            case "dashboard.html": 
+                url = "/dashboard";
+                // Manejo especial para dashboard como en tu primer enfoque
+                await loadDashboardContent();
+                return true;
+            default: 
+                console.error(`Template no mapeado: ${templateName}`);
+                return false;
+        }
+
+        // 3. Cargar contenido desde la URL de Django
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        
+        mainContentDiv.innerHTML = await response.text();
+        currentTemplate = templateName;
+        
+        // 4. Cargar scripts asociados (como ya lo hace)
+        if (templatesConfig.scripts[templateName]) {
+            await Promise.all(
+                templatesConfig.scripts[templateName].map(scriptUrl => 
+                    loadScript(scriptUrl).catch(e => {
+                        console.error(`Error cargando script ${scriptUrl}:`, e);
+                        return null;
+                    })
+                )
+            );
+        }
+        
+        return true;
+    } catch (error) {
+        console.error(`Error cargando plantilla ${templateName}:`, error);
+        mainContentDiv.innerHTML = `
+            <div class="error-message">
+                <h3>Error al cargar la página</h3>
+                <p>${error.message}</p>
+                <button onclick="location.reload()">Recargar</button>
+            </div>
+        `;
+        return false;
+    }
+}
+
+// Mantén tu función loadDashboardContent similar al primer enfoque
+async function loadDashboardContent() {
+    try {
+        const response = await fetch('/dashboard');
+        const html = await response.text();
+        mainContentDiv.innerHTML = html;
+        
+        await loadChartJs();
+        await loadDashboardJs();
+        
+        if (window.initializeDashboard) {
+            window.initializeDashboard();
+        }
+    } catch (error) {
+        console.error("Error cargando dashboard:", error);
+    }
+}
 
     // Cargar plantilla inicial
     if (mainContentDiv) {
