@@ -30,7 +30,7 @@ body, html {
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden; /* Evita barras de desplazamiento globales */
+
 }
 
 .admin-container {
@@ -120,6 +120,7 @@ body, html {
 .dashboard-content {
     flex: 1;
     padding: 0 1.5rem 1.5rem;
+    margin-bottom: 50px;
 }
 
 /* Stats cards - Estilo actualizado */
@@ -290,8 +291,16 @@ body, html {
 }
 
 .chart-container {
-    padding: 1.5rem;
-    height: 300px;
+    position: relative;
+    padding: 0.5rem;
+    height: 280px; /* Reducido de 350px */
+    min-height: 250px; /* Reducido de 300px */
+    width: 100%;
+}
+.chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
 }
 
 .chart-footer {

@@ -222,6 +222,7 @@ button:disabled {
     justify-content: space-between;
     align-items: center;
     padding: 20px;
+    z-index: 100;
 }
 
 /*ESTILOS DIEGO*/
