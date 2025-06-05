@@ -245,63 +245,97 @@ async function enviarDatosImportacion(formData) {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Error en la importación');
+            const errorData = await response.json().catch(() => ({}));
+            const errorMsg = errorData.error || 'Error en la importación';
+            mostrarNotificacion(errorMsg, 'error');
+            throw new Error(errorMsg);
         }
         
         const data = await response.json();
+        return data;
         
-        // Asegurarnos de devolver el mensaje completo
-        return {
-            success: true,
-            message: data.message || 'Nómina importada correctamente',
-            data: data
-        };
     } catch (error) {
         console.error('Error al importar nómina:', error);
+        mostrarNotificacion(error.message, 'error');
         throw error;
     }
 }
 
 // Función para actualizar la tabla después de importar
-function actualizarTablaNominas(nominas) {
+async function actualizarTablaNominas(nominas) {
     const tbody = document.getElementById('cuerpoTablaNominas');
     const sinResultados = document.getElementById('sin-resultados');
     
-    if (!nominas || nominas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay nóminas registradas</td></tr>';
-        sinResultados.style.display = 'block';
-        return;
+    // Mostrar estado de carga
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando nóminas...</td></tr>';
+    
+    try {
+        // Si no se proporcionan nóminas, obtenerlas del servidor
+        if (!nominas) {
+            const params = new URLSearchParams({
+                orden: document.getElementById('filtro-orden')?.value || '-fecha_carga'
+            });
+            
+            const response = await fetch(`${API_NOMINAS_URL}?${params.toString()}`, {
+                headers: {
+                    'X-CSRFToken': CSRF_TOKEN,
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                nominas = data.nominas || [];
+            } else {
+                throw new Error(data.error || 'Error desconocido al obtener nóminas');
+            }
+        }
+        
+        // Actualizar la tabla con los datos
+        if (nominas.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay nóminas registradas</td></tr>';
+            if (sinResultados) sinResultados.style.display = 'block';
+        } else {
+            tbody.innerHTML = nominas.map(nomina => `
+                <tr class="tabla-recibos__fila" data-id="${nomina.id_nomina}">
+                    <td class="tabla-recibos__celda">${nomina.id_nomina}</td>
+                    <td class="tabla-recibos__celda">${nomina.tipo_nomina}</td>
+                    <td class="tabla-recibos__celda">${nomina.periodo}</td>
+                    <td class="tabla-recibos__celda">${nomina.secuencia}</td>
+                    <td class="tabla-recibos__celda">
+                        <div class="fecha-cierre-container">
+                            <span class="fecha-cierre">${nomina.fecha_cierre}</span>
+                        </div>
+                    </td>
+                    <td class="tabla-recibos__celda">${nomina.fecha_carga}</td>
+                    <td class="tabla-recibos__celda">
+                        <button class="tabla-recibos__boton" onclick="descargarNomina(${nomina.id_nomina})">
+                            <i class="fas fa-download"></i> Descargar
+                        </button>
+                        <button class="tabla-recibos__boton btn-eliminar" style="background-color: #dc3545;" data-id="${nomina.id_nomina}">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            if (sinResultados) sinResultados.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error al actualizar tabla:', error);
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center error">Error al cargar datos: ${error.message}</td></tr>`;
+        if (sinResultados) sinResultados.style.display = 'block';
     }
-    
-    tbody.innerHTML = nominas.map(nomina => `
-        <tr class="tabla-recibos__fila" data-id="${nomina.id_nomina}">
-            <td class="tabla-recibos__celda">${nomina.id_nomina}</td>
-            <td class="tabla-recibos__celda">${nomina.tipo_nomina}</td>
-            <td class="tabla-recibos__celda">${nomina.periodo}</td>
-            <td class="tabla-recibos__celda">${nomina.secuencia}</td>
-            <td class="tabla-recibos__celda">
-                <div class="fecha-cierre-container">
-                    <span class="fecha-cierre">${nomina.fecha_cierre}</span>
-                </div>
-            </td>
-            <td class="tabla-recibos__celda">${nomina.fecha_carga}</td>
-            <td class="tabla-recibos__celda">
-                <button class="tabla-recibos__boton" onclick="descargarNomina(${nomina.id_nomina})">
-                    <i class="fas fa-download"></i> Descargar
-                </button>
-                <button class="tabla-recibos__boton btn-eliminar" style="background-color: #dc3545;" data-id="${nomina.id_nomina}">
-                    <i class="fas fa-trash"></i> Eliminar
-                </button>
-            </td>
-        </tr>
-    `).join('');
-    
-    sinResultados.style.display = 'none';
 }
 
 async function aplicarFiltros() {
     const cuerpoTabla = document.getElementById('cuerpoTablaNominas');
+    await actualizarTablaNominas();
     if (!cuerpoTabla) return;
 
     try {
@@ -432,13 +466,21 @@ function formatearFechaHora(fechaStr) {
     return fecha.toLocaleString('es-ES');
 }
 
+let = Swal = window.Swal;
+
 function mostrarNotificacion(mensaje, tipo) {
-    Swal.fire({
-        title: tipo === 'success' ? 'Éxito' : 'Error',
-        text: mensaje,
-        icon: tipo,
-        confirmButtonText: 'Aceptar'
-    });
+    // Asegúrate de que SweetAlert esté cargado
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: tipo === 'success' ? 'Éxito' : 'Error',
+            text: mensaje,
+            icon: tipo,
+            confirmButtonText: 'Aceptar'
+        });
+    } else {
+        console.error('SweetAlert2 no está cargado');
+        alert(mensaje); // Fallback básico
+    }
 }
 
 // Inicialización al cargar la página
