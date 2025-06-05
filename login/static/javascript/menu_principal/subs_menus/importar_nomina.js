@@ -182,50 +182,141 @@ function inicializarModalImportacion() {
     }
     
     if (btnImportar) {
-        btnImportar.addEventListener('click', async function() {
-            if (!validarPasoActual()) {
-                mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
-                return;
-            }
+    btnImportar.addEventListener('click', async function() {
+        if (!validarPasoActual()) {
+            mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+            return;
+        }
 
-            btnImportar.disabled = true;
-            btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        btnImportar.disabled = true;
+        btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
-            const formData = new FormData();
-            formData.append('tipo_nomina', modal.querySelector('#modal-tipo-nomina')?.value || '');
-            formData.append('mes', modal.querySelector('#modal-mes')?.value || '');
-            formData.append('anio', modal.querySelector('#modal-anio')?.value || '');
-            formData.append('secuencia', modal.querySelector('#modal-secuencia')?.value || '');
-            formData.append('fecha_cierre', modal.querySelector('#modal-fecha-cierre')?.value || '');
+        const formData = new FormData();
+        
+        // Obtener valores de los campos
+        const tipoNomina = modal.querySelector('#modal-tipo-nomina')?.value;
+        const mes = modal.querySelector('#modal-mes')?.value;
+        const anio = modal.querySelector('#modal-anio')?.value;
+        const secuencia = modal.querySelector('#modal-secuencia')?.value;
+        const fechaCierre = modal.querySelector('#modal-fecha-cierre')?.value;
+        const archivo = inputArchivo?.files[0];
 
-            if (inputArchivo?.files[0]) {
-                formData.append('archivo', inputArchivo.files[0]);
-            }
+        // Verificar que todos los campos tengan valor
+        if (!tipoNomina || !mes || !anio || !secuencia || !fechaCierre || !archivo) {
+            mostrarNotificacion('Todos los campos son requeridos', 'error');
+            btnImportar.disabled = false;
+            btnImportar.innerHTML = '<i class="fas fa-check"></i> Confirmar Importación';
+            return;
+        }
 
-            try {
-                const resultado = await enviarDatosImportacion(formData);
+        // Agregar campos al FormData con los nombres exactos que espera el backend
+        formData.append('tipo_nomina', tipoNomina);
+        formData.append('mes', mes);
+        formData.append('anio', anio);
+        formData.append('secuencia', secuencia);
+        formData.append('fecha_cierre', fechaCierre);
+        formData.append('archivo', archivo);
 
-                // Mostrar el mensaje completo como antes
-                mostrarNotificacion(
-                    `SUCCESS: ${resultado.message}`,
-                    'success'
-                );
-
-                // Actualizar la tabla directamente sin aplicar filtros
-                actualizarTablaNominas();
-                cerrarModal();
-            } catch (error) {
-                mostrarNotificacion(
-                    `Error al importar nómina: ${error.message}`,
-                    'error'
-                );
-            } finally {
-                btnImportar.disabled = false;
-                btnImportar.innerHTML = '<i class="fas fa-check"></i> Confirmar Importación';
-            }
+        // Depuración: Mostrar los valores que se enviarán
+        console.log('Datos a enviar:', {
+            tipo_nomina: tipoNomina,
+            mes: mes,
+            anio: anio,
+            secuencia: secuencia,
+            fecha_cierre: fechaCierre,
+            archivo: archivo.name
         });
-    }
+
+        try {
+            const resultado = await enviarDatosImportacion(formData);
+            console.log("Resultado completo:", resultado);
+
+            // Versión simplificada sin verificación de errores
+            const mensajeDetallado = crearMensajeDetallado({
+                message: resultado.message || 'Nómina importada exitosamente',
+                stats: resultado.stats || {
+                    empleados_procesados: 0,
+                    recibos_generados: 0,
+                    conceptos_procesados: 0
+                }
+            });
+            
+            await mostrarNotificacionDetallada(mensajeDetallado);
+            await actualizarTablaNominas();
+            setTimeout(cerrarModal, 1500);
+
+        } catch (error) {
+            console.error("Error en el proceso de importación:", error);
+            mostrarNotificacion(`Error al importar nómina: ${error.message}`, 'error');
+        } finally {
+            btnImportar.disabled = false;
+            btnImportar.innerHTML = '<i class="fas fa-check"></i> Confirmar Importación';
+        }
+    });
 }
+}
+
+// Función auxiliar para crear el mensaje HTML
+function crearMensajeDetallado(resultado) {
+    return `
+        <div class="notificacion-detallada">
+            <div class="notificacion-titulo">${resultado.message || 'Proceso completado'}</div>
+            <div class="notificacion-contenido">
+                <div class="notificacion-seccion">
+                    <h4>Resumen de Importación</h4>
+                    <ul class="notificacion-lista">
+                        <li><strong>Empleados procesados:</strong> ${resultado.stats.empleados_procesados || 0}</li>
+                        <li><strong>Recibos generados:</strong> ${resultado.stats.recibos_generados || 0}</li>
+                        <li><strong>Conceptos procesados:</strong> ${resultado.stats.conceptos_procesados || 0}</li>
+                        <li class="texto-exito">Proceso completado</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Función para mostrar notificación con estilos
+async function mostrarNotificacionDetallada(mensaje) {
+    const style = document.createElement('style');
+    style.textContent = `
+        .notificacion-detallada {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+        }
+        .notificacion-titulo {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #155724;
+        }
+        .notificacion-contenido {
+            margin-top: 10px;
+        }
+        .notificacion-seccion {
+            margin-bottom: 10px;
+        }
+        .notificacion-seccion h4 {
+            margin: 5px 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .notificacion-lista {
+            padding-left: 20px;
+            margin: 5px 0;
+        }
+        .notificacion-lista li {
+            margin-bottom: 5px;
+        }
+        .texto-exito {
+            color: #28a745;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    return mostrarNotificacion(mensaje, 'success', true);
+}
+
 
 // Función global para cerrar el modal
 function importarnominaModal__cerrar() {
@@ -245,14 +336,11 @@ async function enviarDatosImportacion(formData) {
         });
         
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            const errorMsg = errorData.error || 'Error en la importación';
-            mostrarNotificacion(errorMsg, 'error');
-            throw new Error(errorMsg);
+            const errorText = await response.text();
+            throw new Error(errorText || 'Error en la importación');
         }
         
-        const data = await response.json();
-        return data;
+        return await response.json();
         
     } catch (error) {
         console.error('Error al importar nómina:', error);
@@ -539,41 +627,50 @@ try {
     };
 }
 
-function mostrarNotificacion(mensaje, tipo) {
-    // Asegúrate de que SweetAlert esté cargado
+function mostrarNotificacion(mensaje, tipo, html = false) {
+    console.log("Mostrando notificación:", {mensaje, tipo, html}); // Depuración
+    
+    // Asegurarse de que SweetAlert2 esté cargado correctamente
+    if (typeof Swal === 'undefined' && typeof window.Swal !== 'undefined') {
+        Swal = window.Swal;
+    }
+    
     if (typeof Swal !== 'undefined') {
-        Swal.fire({
+        const options = {
             title: tipo === 'success' ? 'Éxito' : 'Error',
-            text: mensaje,
             icon: tipo,
-            confirmButtonText: 'Aceptar'
+            confirmButtonText: 'Aceptar',
+            allowOutsideClick: false
+        };
+
+        if (html) {
+            options.html = mensaje;
+        } else {
+            options.text = mensaje;
+        }
+
+        // Forzar el renderizado de HTML si es necesario
+        return Swal.fire(options).then(result => {
+            console.log("Notificación mostrada", result);
+            return result;
         });
     } else {
-        console.error('SweetAlert2 no está cargado');
-        alert(mensaje); // Fallback básico
+        console.error('SweetAlert2 no está disponible');
+        // Fallback mejorado
+        const div = document.createElement('div');
+        div.innerHTML = `<div style="padding: 20px; background: ${tipo === 'success' ? '#d4edda' : '#f8d7da'}; 
+                        color: ${tipo === 'success' ? '#155724' : '#721c24'}; border-radius: 5px;">
+            <strong>${tipo === 'success' ? 'Éxito' : 'Error'}:</strong> ${mensaje}
+        </div>`;
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), 5000);
     }
 }
 
 // Inicialización al cargar la página
-// Inicialización al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
     // Configurar eventos estáticos (filtros)
     inicializarEventosBusqueda();
-    
-    // Delegación de eventos para elementos dinámicos
-    document.addEventListener('click', function(e) {
-        // Eliminar nómina - versión mejorada
-        const btnEliminar = e.target.closest('.btn-eliminar');
-        if (btnEliminar) {
-            const idNomina = btnEliminar.getAttribute('data-id');
-            if (idNomina) {
-                eliminarNomina(idNomina).catch(error => {
-                    console.error('Error en eliminación:', error);
-                });
-            }
-        }
-    });
-    
     // Cargar datos iniciales
     aplicarFiltros();
 });
@@ -678,4 +775,21 @@ if (document.getElementById('cuerpoTablaNominas')) {
         // Si el DOM ya está listo
         setTimeout(inicializarModuloNominas, 100);
     }
+}
+
+// Verificar y cargar SweetAlert2 correctamente
+if (typeof window.Swal !== 'undefined') {
+    Swal = window.Swal;
+} else if (typeof swal !== 'undefined') {
+    Swal = swal;
+} else {
+    console.error('SweetAlert2 no está cargado correctamente');
+    // Cargar dinámicamente si es necesario
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+    script.onload = () => {
+        Swal = window.Swal;
+        console.log('SweetAlert2 cargado dinámicamente');
+    };
+    document.head.appendChild(script);
 }
