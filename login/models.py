@@ -447,7 +447,7 @@ class nomina(models.Model):
         db_table = 'nomina'
 
 class detalle_nomina(models.Model):
-    nomina = models.ForeignKey(nomina, on_delete=models.PROTECT)
+    nomina = models.ForeignKey(nomina, on_delete=models.CASCADE)
     cedula = models.ForeignKey(empleado, on_delete=models.PROTECT)
     codigo = models.ForeignKey(concepto_pago, on_delete=models.PROTECT)
     monto = models.DecimalField(max_digits=12, decimal_places=2)
@@ -458,7 +458,7 @@ class detalle_nomina(models.Model):
         db_table = "detalle_nomina"
 
 class recibo_pago(models.Model):
-    nomina = models.ForeignKey(nomina, on_delete=models.PROTECT)
+    nomina = models.ForeignKey(nomina, on_delete=models.CASCADE)
     cedula = models.ForeignKey(empleado, on_delete=models.PROTECT)
     fecha_generacion = models.DateTimeField(auto_now_add=True)
     

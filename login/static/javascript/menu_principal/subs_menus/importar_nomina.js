@@ -388,41 +388,92 @@ function limpiarFiltros() {
     aplicarFiltros();
 }
 
-// Función para eliminar nómina
 async function eliminarNomina(idNomina) {
+    const confirmacion = await Swal.fire({
+        title: '¿Estás seguro?',
+        html: `Esta acción eliminará la nómina ID: ${idNomina}`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirmacion.isConfirmed) return;
+
     try {
-        const confirmacion = await Swal.fire({
-            title: '¿Estás seguro?',
-            text: "Esta acción eliminará la nómina y no se puede deshacer",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        });
-        
-        if (!confirmacion.isConfirmed) return;
-        
-        const response = await fetch(`${API_NOMINAS_URL}${idNomina}/`, {
-            method: 'DELETE',
+        // Deshabilitar el botón para evitar doble clic
+        const btn = document.querySelector(`.btn-eliminar[data-id="${idNomina}"]`);
+        if (btn) btn.disabled = true;
+
+        const response = await fetch(`/api/nominas/${idNomina}/`, {
+            method: 'POST',
             headers: {
-                'X-CSRFToken': CSRF_TOKEN,
-                'Content-Type': 'application/json'
-            }
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({action: 'delete'}),
+            credentials: 'include'
         });
-        
+
         const data = await response.json();
-        
-        if (!response.ok) throw new Error(data.error || 'Error al eliminar nómina');
-        
-        mostrarNotificacion('Nómina eliminada correctamente', 'success');
-        await aplicarFiltros();
-        
+
+        if (!response.ok) {
+            throw new Error(data.error || `Error ${response.status}`);
+        }
+
+        await Swal.fire({
+            title: '¡Eliminada!',
+            text: data.message,
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+        });
+
+        await actualizarTablaNominas();
+
     } catch (error) {
-        console.error('Error al eliminar nómina:', error);
-        mostrarNotificacion('Error al eliminar nómina: ' + error.message, 'error');
+        console.error('Error eliminando nómina:', error);
+        
+        // Mostrar error solo si no es un "no encontrado"
+        if (!error.message.includes('404') && !error.message.includes('no existe')) {
+            await Swal.fire({
+                title: 'Error',
+                text: 'Ocurrió un error al eliminar la nómina',
+                icon: 'error'
+            });
+        }
+    } finally {
+        // Rehabilitar el botón si existe
+        const btn = document.querySelector(`.btn-eliminar[data-id="${idNomina}"]`);
+        if (btn) btn.disabled = false;
     }
+}
+
+function getCSRFToken() {
+    // 1. Intentar obtener de la etiqueta meta
+    const metaToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (metaToken) return metaToken;
+    
+    // 2. Intentar obtener del input hidden
+    const inputToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    if (inputToken) return inputToken;
+    
+    // 3. Intentar obtener de las cookies
+    const cookieToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+    
+    if (cookieToken) return cookieToken;
+    
+    // 4. Fallback a variable global si existe
+    if (typeof CSRF_TOKEN !== 'undefined') return CSRF_TOKEN;
+    
+    console.error('No se pudo obtener el token CSRF');
+    throw new Error('No se pudo obtener el token de seguridad');
 }
 
 // Inicializar eventos de búsqueda
@@ -466,7 +517,27 @@ function formatearFechaHora(fechaStr) {
     return fecha.toLocaleString('es-ES');
 }
 
-let = Swal = window.Swal;
+let Swal;
+try {
+    Swal = window.Swal;
+    if (!Swal) {
+        console.warn('SweetAlert2 no está cargado globalmente');
+        // Opción 1: Cargar dinámicamente (si es necesario)
+        // await cargarSweetAlert2(); // Implementar esta función si es necesario
+        // Opción 2: Usar un fallback básico
+        Swal = {
+            fire: (options) => { return Promise.resolve({ isConfirmed: confirm(options.title) } )},
+            close: () => {},
+            // ...otros métodos que uses
+        };
+    }
+} catch (error) {
+    console.error('Error verificando SweetAlert2:', error);
+    Swal = {
+        fire: (options) => { return Promise.resolve({ isConfirmed: confirm(options.title) } )},
+        close: () => {}
+    };
+}
 
 function mostrarNotificacion(mensaje, tipo) {
     // Asegúrate de que SweetAlert esté cargado
@@ -491,14 +562,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Delegación de eventos para elementos dinámicos
     document.addEventListener('click', function(e) {
-        // Eliminar nómina
-        if (e.target.closest('.btn-eliminar')) {
-            const idNomina = e.target.closest('.btn-eliminar').getAttribute('data-id');
-            eliminarNomina(idNomina);
+        // Eliminar nómina - versión mejorada
+        const btnEliminar = e.target.closest('.btn-eliminar');
+        if (btnEliminar) {
+            const idNomina = btnEliminar.getAttribute('data-id');
+            if (idNomina) {
+                eliminarNomina(idNomina).catch(error => {
+                    console.error('Error en eliminación:', error);
+                });
+            }
         }
     });
     
-    // Cargar datos iniciales - AÑADIR ESTA LÍNEA
+    // Cargar datos iniciales
     aplicarFiltros();
 });
 

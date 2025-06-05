@@ -976,29 +976,59 @@ def listar_nominas(request):
             'detail': str(e)
         }, status=500)
 
-@require_http_methods(["DELETE"])
-def eliminar_nomina(request, id_nomina):
-    """API para eliminar una nómina"""
-    try:
-        # Verificar si existe la nómina
-        nomina_obj = nomina.objects.get(id_nomina=id_nomina)
-        
-        # Eliminar (esto activará cascadas según las relaciones definidas)
-        nomina_obj.delete()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Nómina eliminada correctamente'
-        })
-        
-    except nomina.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'La nómina no existe'
-        }, status=404)
-    except Exception as e:
-        logger.error(f"Error en eliminar_nomina: {str(e)}", exc_info=True)
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+logger = logging.getLogger(__name__)
+
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+
+logger = logging.getLogger(__name__)
+
+
+
+@csrf_exempt
+@transaction.atomic
+def eliminar_nomina(request, pk):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            if data.get('action') == 'delete':
+                # Intenta obtener y eliminar la nómina
+                try:
+                    nomina_obj = nomina.objects.get(id_nomina=pk)
+                    
+                    # Eliminación en cascada
+                    detalle_recibo.objects.filter(detalle_nomina__nomina=nomina_obj).delete()
+                    recibo_pago.objects.filter(nomina=nomina_obj).delete()
+                    
+                    try:
+                        prenomina_obj = prenomina.objects.get(nomina=nomina_obj)
+                        detalle_prenomina.objects.filter(prenomina=prenomina_obj).delete()
+                        prenomina_obj.delete()
+                    except prenomina.DoesNotExist:
+                        pass
+                        
+                    detalle_nomina.objects.filter(nomina=nomina_obj).delete()
+                    nomina_obj.delete()
+                    
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Nómina eliminada correctamente'
+                    }, status=200)
+                
+                except nomina.DoesNotExist:
+                    # Si la nómina no existe, considerarlo como éxito (quizás ya fue eliminada)
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'La nómina ya no existe (posiblemente eliminada)'
+                    }, status=200)
+                    
+        except Exception as e:
+            return JsonResponse({
+                'error': str(e),
+                'details': 'Error al procesar la solicitud'
+            }, status=500)
+    
+    return JsonResponse({
+        'error': 'Método no permitido'
+    }, status=405)
