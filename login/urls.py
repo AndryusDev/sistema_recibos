@@ -23,7 +23,10 @@ urlpatterns = [
     path('recibos_pagos/', views.recibos_pagos, name= 'recibos_pagos'),
     path('constancia_trabajo/', views.constancia_trabajo, name= 'constancia_trabajo'),
     path('arc/', views.arc, name= 'arc'),
+    
     path('importar_nomina/', views.importar_nomina, name= 'importar_nomina'),
+    path('api/nominas/', views.listar_nominas, name='listar_nominas'),
+    
     path('gestion_nomina/', views.gestion_nomina, name= 'gestion_nomina'),
     path('ver_prenomina/', views.ver_prenomina, name= 'ver_prenomina'),
     path('gestion_respaldo/', views.gestion_respaldo, name= 'gestion_respaldo'),

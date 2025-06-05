@@ -1,3 +1,7 @@
+// ===== CONSTANTES GLOBALES =====
+const API_NOMINAS_URL = '/api/nominas/';
+const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
 // Función global para abrir el modal
 function importarnominaModal__abrir() {
     const modal = document.getElementById("importarnominaModal");
@@ -91,7 +95,7 @@ function inicializarModalImportacion() {
                 {id: 'modal-mes', valid: v => !!v},
                 {id: 'modal-anio', valid: v => v && v >= 2020 && v <= 2030},
                 {id: 'modal-secuencia', valid: v => !!v},
-                {id: 'modal-fecha-cierre', valid: v => !!v} // Validación del nuevo campo
+                {id: 'modal-fecha-cierre', valid: v => !!v}
             ];
             
             campos.forEach(campo => {
@@ -137,7 +141,7 @@ function inicializarModalImportacion() {
         });
     }
     
-    // Drag and drop para archivos (código existente sin cambios)
+    // Drag and drop para archivos
     if (dropzone) {
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             dropzone.addEventListener(eventName, preventDefaults, false);
@@ -166,12 +170,10 @@ function inicializarModalImportacion() {
         if (files?.length && nombreArchivo) {
             const file = files[0];
             nombreArchivo.textContent = file.name;
-            
-            // Validación de tipo y tamaño (código existente)
         }
     }
     
-    // Descargar plantilla (código existente)
+    // Descargar plantilla
     if (descargarPlantilla) {
         descargarPlantilla.addEventListener('click', function(e) {
             e.preventDefault();
@@ -180,61 +182,56 @@ function inicializarModalImportacion() {
     }
     
     if (btnImportar) {
-    btnImportar.addEventListener('click', async function() {
-        if (!validarPasoActual()) {
-            mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
-            return;
-        }
+        btnImportar.addEventListener('click', async function() {
+            if (!validarPasoActual()) {
+                mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+                return;
+            }
 
-        btnImportar.disabled = true;
-        btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+            btnImportar.disabled = true;
+            btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
-        const formData = new FormData();
-        formData.append('tipo_nomina', modal.querySelector('#modal-tipo-nomina')?.value || '');
-        formData.append('mes', modal.querySelector('#modal-mes')?.value || '');
-        formData.append('anio', modal.querySelector('#modal-anio')?.value || '');
-        formData.append('secuencia', modal.querySelector('#modal-secuencia')?.value || '');
-        formData.append('fecha_cierre', modal.querySelector('#modal-fecha-cierre')?.value || '');
+            const formData = new FormData();
+            formData.append('tipo_nomina', modal.querySelector('#modal-tipo-nomina')?.value || '');
+            formData.append('mes', modal.querySelector('#modal-mes')?.value || '');
+            formData.append('anio', modal.querySelector('#modal-anio')?.value || '');
+            formData.append('secuencia', modal.querySelector('#modal-secuencia')?.value || '');
+            formData.append('fecha_cierre', modal.querySelector('#modal-fecha-cierre')?.value || '');
 
-        if (inputArchivo?.files[0]) {
-            formData.append('archivo', inputArchivo.files[0]);
-        }
+            if (inputArchivo?.files[0]) {
+                formData.append('archivo', inputArchivo.files[0]);
+            }
 
-        try {
-            const resultado = await enviarDatosImportacion(formData);
+            try {
+                const resultado = await enviarDatosImportacion(formData);
 
-            mostrarNotificacion(
-                `Nómina importada correctamente. ${resultado.message}`,
-                'success'
-            );
+                // Mostrar el mensaje completo como antes
+                mostrarNotificacion(
+                    `SUCCESS: ${resultado.message}`,
+                    'success'
+                );
 
-            actualizarTablaNominas(); // Asegúrate de que esta función esté definida
-            cerrarModal();
-        } catch (error) {
-            mostrarNotificacion(
-                `Error al importar nómina: ${error.message}`,
-                'error'
-            );
-        } finally {
-            btnImportar.disabled = false;
-            btnImportar.innerHTML = '<i class="fas fa-check"></i> Confirmar Importación';
-        }
-    });
+                // Actualizar la tabla directamente sin aplicar filtros
+                actualizarTablaNominas();
+                cerrarModal();
+            } catch (error) {
+                mostrarNotificacion(
+                    `Error al importar nómina: ${error.message}`,
+                    'error'
+                );
+            } finally {
+                btnImportar.disabled = false;
+                btnImportar.innerHTML = '<i class="fas fa-check"></i> Confirmar Importación';
+            }
+        });
+    }
 }
 
-
-}
-
-// Función global para cerrar el modal (sin cambios)
+// Función global para cerrar el modal
 function importarnominaModal__cerrar() {
     const modal = document.getElementById("importarnominaModal");
     if (modal) modal.style.display = 'none';
 }
-
-// Inicialización al cargar el DOM (sin cambios)
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM completamente cargado");
-});
 
 // Función para enviar los datos al servidor
 async function enviarDatosImportacion(formData) {
@@ -243,7 +240,7 @@ async function enviarDatosImportacion(formData) {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRFToken': getCSRFToken(),
+                'X-CSRFToken': CSRF_TOKEN,
             },
         });
         
@@ -253,7 +250,13 @@ async function enviarDatosImportacion(formData) {
         }
         
         const data = await response.json();
-        return data;
+        
+        // Asegurarnos de devolver el mensaje completo
+        return {
+            success: true,
+            message: data.message || 'Nómina importada correctamente',
+            data: data
+        };
     } catch (error) {
         console.error('Error al importar nómina:', error);
         throw error;
@@ -261,40 +264,155 @@ async function enviarDatosImportacion(formData) {
 }
 
 // Función para actualizar la tabla después de importar
-function actualizarTablaNominas() {
-    fetch('/api/nominas/')
-        .then(response => response.json())
-        .then(data => {
-            const tbody = document.querySelector('.tabla-recibos__tbody');
-            if (tbody) {
-                tbody.innerHTML = data.map(nomina => `
-                    <tr class="tabla-recibos__fila">
-                        <td class="tabla-recibos__celda">${nomina.tipo}</td>
-                        <td class="tabla-recibos__celda">${obtenerNombreMes(nomina.mes)} ${nomina.año}</td>
-                        <td class="tabla-recibos__celda">${nomina.secuencia}</td>
-                        <td class="tabla-recibos__celda">${nomina.registros}</td>
-                        <td class="tabla-recibos__celda">
-                            <div class="fecha-cierre-container">
-                                <span class="fecha-cierre">${formatearFecha(nomina.fecha_cierre)}</span>
-                            </div>
-                        </td>
-                        <td class="tabla-recibos__celda">${formatearFechaHora(nomina.fecha_carga)}</td>
-                        <td class="tabla-recibos__celda">
-                            <button class="tabla-recibos__boton" onclick="verNomina(${nomina.id})">
-                                <i class="fas fa-eye"></i> Ver
-                            </button>
-                            <button class="tabla-recibos__boton" onclick="descargarNomina(${nomina.id})">
-                                <i class="fas fa-download"></i> Descargar
-                            </button>
-                            <button class="tabla-recibos__boton" style="background-color: #dc3545;" onclick="eliminarNomina(${nomina.id})">
-                                <i class="fas fa-trash"></i> Eliminar
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
+function actualizarTablaNominas(nominas) {
+    const tbody = document.getElementById('cuerpoTablaNominas');
+    const sinResultados = document.getElementById('sin-resultados');
+    
+    if (!nominas || nominas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay nóminas registradas</td></tr>';
+        sinResultados.style.display = 'block';
+        return;
+    }
+    
+    tbody.innerHTML = nominas.map(nomina => `
+        <tr class="tabla-recibos__fila" data-id="${nomina.id_nomina}">
+            <td class="tabla-recibos__celda">${nomina.id_nomina}</td>
+            <td class="tabla-recibos__celda">${nomina.tipo_nomina}</td>
+            <td class="tabla-recibos__celda">${nomina.periodo}</td>
+            <td class="tabla-recibos__celda">${nomina.secuencia}</td>
+            <td class="tabla-recibos__celda">
+                <div class="fecha-cierre-container">
+                    <span class="fecha-cierre">${nomina.fecha_cierre}</span>
+                </div>
+            </td>
+            <td class="tabla-recibos__celda">${nomina.fecha_carga}</td>
+            <td class="tabla-recibos__celda">
+                <button class="tabla-recibos__boton" onclick="descargarNomina(${nomina.id_nomina})">
+                    <i class="fas fa-download"></i> Descargar
+                </button>
+                <button class="tabla-recibos__boton btn-eliminar" style="background-color: #dc3545;" data-id="${nomina.id_nomina}">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    sinResultados.style.display = 'none';
+}
+
+async function aplicarFiltros() {
+    const cuerpoTabla = document.getElementById('cuerpoTablaNominas');
+    if (!cuerpoTabla) return;
+
+    try {
+        // Mostrar estado de carga
+        cuerpoTabla.innerHTML = '<tr><td colspan="7" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando nóminas...</td></tr>';
+
+        // Construir parámetros
+        const params = new URLSearchParams({
+            tipo: document.getElementById('filtro-tipo')?.value || '',
+            mes: document.getElementById('filtro-mes')?.value || '',
+            anio: document.getElementById('filtro-anio')?.value || '',
+            orden: document.getElementById('filtro-orden')?.value || '-fecha_carga'
+        });
+
+        const response = await fetch(`${API_NOMINAS_URL}?${params.toString()}`, {
+            headers: {
+                'X-CSRFToken': CSRF_TOKEN,
+                'Accept': 'application/json'
             }
-        })
-        .catch(error => console.error('Error al actualizar tabla:', error));
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            if (data.nominas && data.nominas.length > 0) {
+                actualizarTablaNominas(data.nominas);
+            } else {
+                cuerpoTabla.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron nóminas con los filtros aplicados</td></tr>';
+            }
+        } else {
+            throw new Error(data.error || 'Error desconocido al obtener nóminas');
+        }
+    } catch (error) {
+        console.error('Error al aplicar filtros:', error);
+        cuerpoTabla.innerHTML = `<tr><td colspan="7" class="text-center error">Error al cargar datos: ${error.message}</td></tr>`;
+        mostrarNotificacion('Error al cargar nóminas: ' + error.message, 'error');
+    }
+}
+
+// Función para limpiar filtros
+function limpiarFiltros() {
+    document.getElementById('filtro-tipo').value = '';
+    document.getElementById('filtro-mes').value = '';
+    document.getElementById('filtro-anio').value = '';
+    document.getElementById('filtro-orden').value = '-fecha_carga';
+    aplicarFiltros();
+}
+
+// Función para eliminar nómina
+async function eliminarNomina(idNomina) {
+    try {
+        const confirmacion = await Swal.fire({
+            title: '¿Estás seguro?',
+            text: "Esta acción eliminará la nómina y no se puede deshacer",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+        
+        if (!confirmacion.isConfirmed) return;
+        
+        const response = await fetch(`${API_NOMINAS_URL}${idNomina}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': CSRF_TOKEN,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) throw new Error(data.error || 'Error al eliminar nómina');
+        
+        mostrarNotificacion('Nómina eliminada correctamente', 'success');
+        await aplicarFiltros();
+        
+    } catch (error) {
+        console.error('Error al eliminar nómina:', error);
+        mostrarNotificacion('Error al eliminar nómina: ' + error.message, 'error');
+    }
+}
+
+// Inicializar eventos de búsqueda
+function inicializarEventosBusqueda() {
+    const btnBuscar = document.getElementById('btn-aplicar-filtros');
+    const btnLimpiar = document.getElementById('btn-limpiar-filtros');
+    
+    if (btnBuscar) btnBuscar.addEventListener('click', aplicarFiltros);
+    if (btnLimpiar) btnLimpiar.addEventListener('click', limpiarFiltros);
+    
+    // Permitir búsqueda al presionar Enter en cualquier filtro
+    document.querySelectorAll('.busqueda-input').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') aplicarFiltros();
+        });
+    });
+    
+    // Asegurarse de que los elementos de filtro existan
+    if (!document.getElementById('filtro-tipo') || 
+        !document.getElementById('filtro-mes') || 
+        !document.getElementById('filtro-anio') || 
+        !document.getElementById('filtro-orden')) {
+        console.warn('No se encontraron todos los elementos de filtro en el DOM');
+    }
 }
 
 // Funciones auxiliares
@@ -315,10 +433,131 @@ function formatearFechaHora(fechaStr) {
 }
 
 function mostrarNotificacion(mensaje, tipo) {
-    // Implementar lógica para mostrar notificación al usuario
-    alert(`${tipo.toUpperCase()}: ${mensaje}`);
+    Swal.fire({
+        title: tipo === 'success' ? 'Éxito' : 'Error',
+        text: mensaje,
+        icon: tipo,
+        confirmButtonText: 'Aceptar'
+    });
 }
 
-function getCSRFToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+// Inicialización al cargar la página
+// Inicialización al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar eventos estáticos (filtros)
+    inicializarEventosBusqueda();
+    
+    // Delegación de eventos para elementos dinámicos
+    document.addEventListener('click', function(e) {
+        // Eliminar nómina
+        if (e.target.closest('.btn-eliminar')) {
+            const idNomina = e.target.closest('.btn-eliminar').getAttribute('data-id');
+            eliminarNomina(idNomina);
+        }
+    });
+    
+    // Cargar datos iniciales - AÑADIR ESTA LÍNEA
+    aplicarFiltros();
+});
+
+// ===== FUNCIÓN DE INICIALIZACIÓN MEJORADA =====
+function initializeImportarNomina() {
+    // Verificar primero si estamos en la página correcta
+    if (!document.getElementById('cuerpoTablaNominas')) {
+        console.log('No está en página de importar nómina');
+        return;
+    }
+
+    console.log('Inicializando módulo de importar nómina...');
+    
+    // 1. Configurar eventos de filtrado con verificación de existencia
+    const setupFiltros = () => {
+        const elementosRequeridos = [
+            'filtro-tipo', 'filtro-mes', 'filtro-anio', 'filtro-orden',
+            'btn-aplicar-filtros', 'btn-limpiar-filtros'
+        ];
+        
+        const elementosExisten = elementosRequeridos.every(id => {
+            const existe = document.getElementById(id) !== null;
+            if (!existe) console.warn(`Elemento no encontrado: ${id}`);
+            return existe;
+        });
+        
+        if (elementosExisten) {
+            // Configurar eventos solo si todos los elementos existen
+            document.getElementById('btn-aplicar-filtros').addEventListener('click', aplicarFiltros);
+            document.getElementById('btn-limpiar-filtros').addEventListener('click', limpiarFiltros);
+            
+            document.querySelectorAll('.busqueda-input').forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') aplicarFiltros();
+                });
+            });
+            
+            console.log('Eventos de filtrado configurados correctamente');
+            return true;
+        }
+        return false;
+    };
+    
+    // 2. Intentar configurar inmediatamente
+    let filtrosConfigurados = setupFiltros();
+    
+    // 3. Si no se configuró, usar MutationObserver para esperar por los elementos
+    if (!filtrosConfigurados) {
+        console.log('Configurando observer para elementos dinámicos...');
+        
+        const observer = new MutationObserver((mutations, obs) => {
+            if (setupFiltros()) {
+                obs.disconnect(); // Dejar de observar cuando esté listo
+                console.log('Elementos dinámicos detectados, eventos configurados');
+                aplicarFiltros(); // Cargar datos iniciales
+            }
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    } else {
+        // Si ya estaban los elementos, cargar datos
+        aplicarFiltros();
+    }
+    
+    // 4. Configurar otros eventos (eliminación, etc.)
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-eliminar')) {
+            const idNomina = e.target.closest('.btn-eliminar').getAttribute('data-id');
+            if (idNomina) eliminarNomina(idNomina);
+        }
+    });
+}
+
+// ===== INICIALIZACIÓN CUANDO EL TEMPLATE SE CARGA =====
+// Solo inicializar si estamos en la página correcta
+if (document.getElementById('importarnominaModal')) {
+    // Esperar a que el DOM esté completamente cargado
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeImportarNomina);
+    } else {
+        // Si el DOM ya está listo
+        setTimeout(initializeImportarNomina, 300);
+    }
+}
+
+// Exportar funciones globales
+window.initializeImportarNomina = initializeImportarNomina;
+window.aplicarFiltros = aplicarFiltros;
+window.limpiarFiltros = limpiarFiltros;
+
+// ===== EJECUCIÓN INICIAL =====
+// Verificar si estamos en la página de nóminas
+if (document.getElementById('cuerpoTablaNominas')) {
+    // Esperar a que el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', inicializarModuloNominas);
+    } else {
+        // Si el DOM ya está listo
+        setTimeout(inicializarModuloNominas, 100);
+    }
 }

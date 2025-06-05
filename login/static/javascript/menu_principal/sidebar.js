@@ -1,20 +1,49 @@
 
 let currentTemplate = null;
 
+
+
+// Función mejorada para cargar scripts
 function loadScript(url) {
     return new Promise((resolve, reject) => {
+        // Verificar si el script ya está cargado
         const existingScript = document.querySelector(`script[src="${url}"]`);
         if (existingScript) {
+            // Si ya está cargado, verificar si necesita inicialización
+            const moduleName = getModuleNameFromScript(url);
+            if (window[moduleName] && typeof window[moduleName].init === 'function') {
+                window[moduleName].init();
+            }
             resolve();
             return;
         }
 
         const script = document.createElement('script');
         script.src = url;
-        script.onload = resolve;
+        
+        script.onload = function() {
+            // Inicializar el módulo después de cargar
+            const moduleName = getModuleNameFromScript(url);
+            if (window[moduleName] && typeof window[moduleName].init === 'function') {
+                window[moduleName].init();
+            }
+            resolve();
+        };
+        
         script.onerror = () => reject(new Error(`Error cargando script: ${url}`));
         document.body.appendChild(script);
     });
+}
+
+function getModuleNameFromScript(scriptUrl) {
+    const matches = scriptUrl.match(/\/([^\/]+)\.js$/);
+    if (!matches) return null;
+    
+    // Convertir a formato PascalCase (ej: importar_nomina.js -> ImportarNomina)
+    return matches[1]
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join('');
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -60,7 +89,7 @@ async function loadTemplate(templateName) {
         // 2. Mapeo de templates a URLs (como en tu primer enfoque)
         let url = "";
         switch(templateName) {
-            case "importar_nomina.html": url = "/importar_nomina"; break;
+            case "importar_nomina.html": url = "/importar_nomina/"; break;
             case "perfil_usuario.html": url = "/perfil_usuario"; break;
             case "recibos_pagos.html": url = "/recibos_pagos"; break;
             case "constancia_trabajo.html": url = "/constancia_trabajo/"; break;
@@ -69,8 +98,8 @@ async function loadTemplate(templateName) {
             case "noticias.html": url = "/noticias/"; break;
             case "ver_prenomina.html": url = "/ver_prenomina"; break;
             case "crear_usuarios.html": url = "/crear_usuarios"; break;
-            case "dashboard.html": 
-                url = "/dashboard";
+            /*case "dashboard.html": 
+                url = "/dashboard";*/
                 // Manejo especial para dashboard como en tu primer enfoque
                 await loadDashboardContent();
                 return true;

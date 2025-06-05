@@ -1,8 +1,5 @@
+from django.views.decorators.http import require_http_methods
 import json
-from rest_framework.response import Response
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
@@ -556,8 +553,7 @@ def login_empleado(request):
 logger = logging.getLogger(__name__)
 
 
-@csrf_exempt
-@transaction.atomic
+
 @csrf_exempt
 @transaction.atomic
 def importar_nominas(request):
@@ -886,3 +882,123 @@ def generar_prenomina_para_nomina(nomina_instance):
     except Exception as e:
         logger.error(f"Error generando prenomina {nomina_instance.id_nomina}: {e}", exc_info=True)
         raise
+
+
+
+#   /////////////// Importar nominas al panel ///////////////
+
+@require_http_methods(["GET"])
+def listar_nominas(request):
+    """API para listar nóminas con filtros mejorados"""
+    try:
+        # 1. Obtener y validar parámetros de filtrado
+        tipo = request.GET.get('tipo', '').strip()
+        mes = request.GET.get('mes', '').strip()
+        anio = request.GET.get('anio', '').strip()
+        orden = request.GET.get('orden', '-fecha_carga')
+        
+        # 2. Construir consulta base con select_related para optimización
+        queryset = nomina.objects.select_related('tipo_nomina', 'secuencia').all()
+        
+        # 3. Aplicar filtros con condiciones más precisas
+        filters = Q()
+        
+        if tipo:
+            filters &= Q(tipo_nomina__tipo_nomina__icontains=tipo)
+        
+        if mes:
+            # Asume que periodo tiene formato "MM-YYYY" o similar
+            if len(mes) == 1:
+                mes = f'0{mes}'  # Normalizar a dos dígitos
+            filters &= Q(periodo__contains=f'-{mes}-') | Q(periodo__startswith=f'{mes}-')
+        
+        if anio:
+            # Busca año al inicio (2023-), en medio (-2023-) o al final (-2023)
+            filters &= Q(periodo__contains=anio)
+        
+        queryset = queryset.filter(filters)
+        
+        # 4. Validar y aplicar ordenamiento
+        campos_orden_validos = [
+            '-fecha_carga', 'fecha_carga',
+            'tipo_nomina__tipo_nomina', '-tipo_nomina__tipo_nomina',
+            '-fecha_cierre', 'fecha_cierre'
+        ]
+        
+        if orden not in campos_orden_validos:
+            orden = '-fecha_carga'
+            
+        queryset = queryset.order_by(orden)
+        
+        # 5. Paginación con manejo de errores
+        page_number = request.GET.get('page', 1)
+        paginator = Paginator(queryset, 25)  # 25 items por página
+        
+        try:
+            nominas_paginadas = paginator.page(page_number)
+        except:
+            nominas_paginadas = paginator.page(1)  # Fallback a primera página
+        
+        # 6. Preparar datos para respuesta con manejo de valores nulos
+        nominas_data = []
+        for nom in nominas_paginadas:
+            nominas_data.append({
+                'id_nomina': nom.id_nomina,
+                'tipo_nomina': nom.tipo_nomina.tipo_nomina if nom.tipo_nomina else '',
+                'periodo': nom.periodo,
+                'secuencia': nom.secuencia.nombre_secuencia if nom.secuencia else '',
+                'fecha_cierre': nom.fecha_cierre.strftime('%d/%m/%Y') if nom.fecha_cierre else '',
+                'fecha_carga': nom.fecha_carga.strftime('%d/%m/%Y %H:%M') if nom.fecha_carga else '',
+                'total_empleados': detalle_nomina.objects.filter(nomina=nom).values('cedula').distinct().count(),
+                'total_conceptos': detalle_nomina.objects.filter(nomina=nom).count()
+            })
+        
+        # 7. Retornar respuesta estructurada
+        return JsonResponse({
+            'success': True,
+            'nominas': nominas_data,
+            'total': paginator.count,
+            'paginas': paginator.num_pages,
+            'actual': nominas_paginadas.number,
+            'params': {  # Para debugging
+                'tipo': tipo,
+                'mes': mes,
+                'anio': anio,
+                'orden': orden
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en listar_nominas: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al procesar la solicitud',
+            'detail': str(e)
+        }, status=500)
+
+@require_http_methods(["DELETE"])
+def eliminar_nomina(request, id_nomina):
+    """API para eliminar una nómina"""
+    try:
+        # Verificar si existe la nómina
+        nomina_obj = nomina.objects.get(id_nomina=id_nomina)
+        
+        # Eliminar (esto activará cascadas según las relaciones definidas)
+        nomina_obj.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Nómina eliminada correctamente'
+        })
+        
+    except nomina.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'La nómina no existe'
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Error en eliminar_nomina: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

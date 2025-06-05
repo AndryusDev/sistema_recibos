@@ -1,278 +1,273 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Gestión de Nóminas - Sistema Policial</title>
-        <link rel="stylesheet" href="{% static 'css/importar_nomina.css' %}">
-        <link rel="stylesheet" href="{% static 'css/recibo_pago.css' %}">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    </head>
-    <body>
-        <div class="titulo-pagina">
-            <h1>Gestión de Nóminas</h1>
-        </div>
-        
-        <div class="contenedor-tabla-recibos">
-            <!-- Panel de Búsqueda/Filtros -->
-            <div class="panel-busqueda">
-                <div class="busqueda-grupo">
-                    <div class="form-group">
-                        <label for="filtro-tipo"><i class="fas fa-filter"></i> Tipo:</label>
-                        <select id="filtro-tipo" class="busqueda-input">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Nóminas - Sistema Policial</title>
+    <link rel="stylesheet" href="{% static 'css/importar_nomina.css' %}">
+    <link rel="stylesheet" href="{% static 'css/recibo_pago.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+</head>
+<body>
+    <div class="titulo-pagina">
+        <h1>Gestión de Nóminas</h1>
+    </div>
+    
+    <div class="contenedor-tabla-recibos">
+        <!-- Panel de Búsqueda/Filtros -->
+        <div class="panel-busqueda">
+            <div class="busqueda-grupo">
+                <div class="form-group">
+                    <label for="filtro-tipo"><i class="fas fa-filter"></i> Tipo:</label>
+                    <select id="filtro-tipo" class="busqueda-input">
                         <option value="">Todos los tipos</option>
                         {% for tipo in tipos_nomina %}
                         <option value="{{ tipo }}">{{ tipo }}</option>
                         {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="filtro-mes"><i class="fas fa-calendar"></i> Mes:</label>
-                        <select id="filtro-mes" class="busqueda-input">
-                            <option value="">Todos los meses</option>
-                            {% for mes in mesess %}
-                            <option value="{{ mes }}">{{ mes }}</option>
-                            {% endfor %}
                     </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="filtro-anio"><i class="fas fa-calendar-alt"></i> Año:</label>
-                        <select id="filtro-anio" class="busqueda-input">
-                            <option value="">Todos los años</option>
-                            <option value="2023">2023</option>
-                            <option value="2024">2024</option>
-                        </select>
-                    </div>
-                    <button id="btn-aplicar-filtros" class="busqueda-boton">
-                        <i class="fas fa-search"></i> Buscar
-                    </button>
-                    <button id="btn-limpiar-filtros" class="busqueda-boton secundario">
-                        <i class="fas fa-broom"></i> Limpiar
-                    </button>
-                    <button class="busqueda-boton" style="background-color: #003366;" onclick="importarnominaModal__abrir()">
-                        <i class="fas fa-file-import"></i> Importar
-                    </button>
                 </div>
+                <div class="form-group">
+                    <label for="filtro-mes"><i class="fas fa-calendar"></i> Mes:</label>
+                    <select id="filtro-mes" class="busqueda-input">
+                        <option value="">Todos los meses</option>
+                        {% for mes in mesess %}
+                        <option value="{{ mes }}">{{ mes }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filtro-anio"><i class="fas fa-calendar-alt"></i> Año:</label>
+                    <select id="filtro-anio" class="busqueda-input">
+                        <option value="">Todos los años</option>
+                        {% for year in years_disponibles %}
+                        <option value="{{ year }}">{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filtro-orden"><i class="fas fa-sort"></i> Ordenar por:</label>
+                    <select id="filtro-orden" class="busqueda-input">
+                        <option value="-fecha_carga">Más reciente primero</option>
+                        <option value="fecha_carga">Más antiguo primero</option>
+                        <option value="tipo_nomina__tipo_nomina">Tipo (A-Z)</option>
+                        <option value="-tipo_nomina__tipo_nomina">Tipo (Z-A)</option>
+                        <option value="-fecha_cierre">Fecha cierre (reciente)</option>
+                        <option value="fecha_cierre">Fecha cierre (antigua)</option>
+                    </select>
+                </div>
+                <button id="btn-aplicar-filtros" class="busqueda-boton">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <button id="btn-limpiar-filtros" class="busqueda-boton secundario">
+                    <i class="fas fa-broom"></i> Limpiar
+                </button>
+                <button class="busqueda-boton" style="background-color: #003366;" onclick="importarnominaModal__abrir()">
+                    <i class="fas fa-file-import"></i> Importar
+                </button>
             </div>
-            
-            <!-- Tabla de Nóminas -->
-            <div class="tabla-recibo-linea">
-                <table class="tabla-recibos">
-                    <thead class="tabla-recibos__thead">
-                        <tr class="tabla-recibos__fila">
-                            <th class="tabla-recibos__columna">ID</th>
-                            <th class="tabla-recibos__columna">Tipo</th>
-                            <th class="tabla-recibos__columna">Período</th>
-                            <th class="tabla-recibos__columna">Secuencia</th>
-                            <th class="tabla-recibos__columna">Fecha Cierre</th>
-                            <th class="tabla-recibos__columna">Fecha Carga</th>
-                            <th class="tabla-recibos__columna">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="tabla-recibos__tbody">
-                    {% for nomina in nominas %}
+        </div>
+        
+        <!-- Tabla de Nóminas -->
+        <div class="tabla-recibo-linea">
+            <table class="tabla-recibos" id="tablaNominas">
+                <thead class="tabla-recibos__thead">
                     <tr class="tabla-recibos__fila">
-                        <td class="tabla-recibos__celda">{{ nomina.id_nomina }}</td>
-                        <td class="tabla-recibos__celda">{{ nomina.tipo_nomina.tipo_nomina }}</td>  <!-- Accede al campo a través de la relación -->
-                        <td class="tabla-recibos__celda">{{ nomina.periodo }}</td>  <!-- Usa el campo periodo directamente -->
-                        <td class="tabla-recibos__celda">{{ nomina.secuencia.nombre_secuencia }}</td>  <!-- Accede al nombre de la secuencia -->
-                        <td class="tabla-recibos__celda">
-                            <div class="fecha-cierre-container">
-                                <span class="fecha-cierre">{{ nomina.fecha_cierre|date:"d/m/Y" }}</span>
-                            </div>
-                        </td>
-                        <td class="tabla-recibos__celda">{{ nomina.fecha_carga|date:"d/m/Y H:i" }}</td>
-                        <td class="tabla-recibos__celda">
-                        <!-- <button class="tabla-recibos__boton">
-                                <i class="fas fa-eye"></i> Ver
-                            </button> -->
-                            <button class="tabla-recibos__boton" >
-                                <i class="fas fa-download"></i> Descargar
-                            </button>
-                            <button class="tabla-recibos__boton" style="background-color: #dc3545;">
-                                <i class="fas fa-trash"></i> Eliminar
-                            </button>
-                        </td>
+                        <th class="tabla-recibos__columna">ID</th>
+                        <th class="tabla-recibos__columna">Tipo</th>
+                        <th class="tabla-recibos__columna">Período</th>
+                        <th class="tabla-recibos__columna">Secuencia</th>
+                        <th class="tabla-recibos__columna">Fecha Cierre</th>
+                        <th class="tabla-recibos__columna">Fecha Carga</th>
+                        <th class="tabla-recibos__columna">Acciones</th>
                     </tr>
-                    {% empty %}
+                </thead>
+                <tbody class="tabla-recibos__tbody" id="cuerpoTablaNominas">
                     <tr>
-                        <td colspan="7" class="text-center">No hay nóminas registradas</td>
+                        <td colspan="7" class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando nóminas...
+                        </td>
                     </tr>
-                    {% endfor %}
                 </tbody>
-                </table>
+            </table>
+            <div id="sin-resultados" class="text-center" style="display: none;">
+                <p>No se encontraron nóminas con los filtros aplicados</p>
+            </div>
+            <div class="paginacion" id="paginacion">
+                <!-- Paginación dinámica -->
             </div>
         </div>
-        <div class="importarnomina-modal" id="importarnominaModal">
-            <div class="importarnomina-modal__contenido" id="contenidoImportarnomina">
-                        <div class="recibo-modal__contenido">
-            <div class="modal-header">
-                <h3><i class="fas fa-file-import"></i> Importar Nómina</h3>
-                <button class="btn-cerrar">&times;</button>
-            </div>
-            
-            <div class="modal-body">
-                <!-- Paso 1: Selección de tipo de nómina -->
-                <div class="paso-importacion activo" data-paso="1">
-                    <div class="form-group">
-                        <label for="modal-tipo-nomina"><i class="fas fa-list-check"></i> Tipo de Nómina:</label>
-                        <select id="modal-tipo-nomina" name="tipo_nomina" class="busqueda-input" required>
-                            <option value="">Seleccione un tipo</option>
-                            {% for tipo in tipos_nomina %}
-                                <option value="{{ tipo }}">{{ tipo }}</option>
-                            {% empty %}
-                                <option value="">No hay tipos disponibles</option>
-                            {% endfor %}
-                        </select>
+    </div>
+    
+    <!-- Modal de Importación -->
+    <div class="importarnomina-modal" id="importarnominaModal">
+        <div class="importarnomina-modal__contenido" id="contenidoImportarnomina">
+            <div class="recibo-modal__contenido">
+                <div class="modal-header">
+                    <h3><i class="fas fa-file-import"></i> Importar Nómina</h3>
+                    <button class="btn-cerrar" onclick="importarnominaModal__cerrar()">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <!-- Paso 1: Selección de tipo de nómina -->
+                    <div class="paso-importacion activo" data-paso="1">
+                        <div class="form-group">
+                            <label for="modal-tipo-nomina"><i class="fas fa-list-check"></i> Tipo de Nómina:</label>
+                            <select id="modal-tipo-nomina" name="tipo_nomina" class="busqueda-input" required>
+                                <option value="">Seleccione un tipo</option>
+                                {% for tipo in tipos_nomina %}
+                                    <option value="{{ tipo }}">{{ tipo }}</option>
+                                {% empty %}
+                                    <option value="">No hay tipos disponibles</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="info-ayuda">
+                            <i class="fas fa-info-circle"></i> Seleccione el tipo de nómina que desea importar
+                        </div>
                     </div>
                     
-                    <div class="info-ayuda">
-                        <i class="fas fa-info-circle"></i> Seleccione el tipo de nómina que desea importar
+                    <!-- Paso 2: Período, secuencia y fecha de cierre -->
+                    <div class="paso-importacion" data-paso="2">
+                        <div class="form-group">
+                            <label for="modal-mes"><i class="fas fa-calendar"></i> Mes:</label>
+                            <select id="modal-mes" name="mes" class="busqueda-input" required>
+                            <option value="">Seleccione un mes</option>
+                                {% for m in mesess %}
+                                    <option value="{{ m }}">{{ m }}</option>
+                                {% empty %}
+                                    <option value="">No hay meses disponibles</option>
+                                {% endfor %}
+                        </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="modal-anio"><i class="fas fa-calendar-alt"></i> Año:</label>
+                            <input type="number" id="modal-anio" class="busqueda-input" min="2020" max="2030" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="modal-secuencia"><i class="fas fa-sort-numeric-up"></i> Secuencia:</label>
+                            <select id="modal-secuencia" class="busqueda-input" required>
+                                <option value="">Seleccione la secuencia</option>
+                                {% for secuencia in secuencia_mes %}
+                                <option value="{{ secuencia }}">{{ secuencia }}</option>
+                                {% empty %}
+                                <option value="">No hay secuencias disponibles</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="modal-fecha-cierre"><i class="fas fa-calendar-check"></i> Fecha de Cierre:</label>
+                            <input 
+                                type="date" 
+                                id="modal-fecha-cierre" 
+                                class="busqueda-input" 
+                                required
+                                min="2020-01-01"
+                                max="2030-12-31"
+                            >
+                        </div>
+                        
+                        <div class="info-ayuda">
+                            <i class="fas fa-info-circle"></i> Especifique el período, secuencia y fecha de cierre de la nómina
+                        </div>
+                    </div>
+                    
+                    <!-- Paso 3: Carga de archivo -->
+                    <div class="paso-importacion" data-paso="3">
+                        <div class="dropzone-modal" id="dropzone-area">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Arrastra tu archivo Excel o CSV aquí</p>
+                            <p class="nombre-archivo" id="nombre-archivo"></p>
+                            <input type="file" id="archivo-nomina-modal" accept=".xlsx,.xls,.csv" required>
+                            <button class="busqueda-boton" id="btn-seleccionar-archivo">
+                                <i class="fas fa-folder-open"></i> Seleccionar archivo
+                            </button>
+                            
+                            <div class="info-archivo">
+                                <span>Formatos soportados: .xlsx, .xls, .csv (Máx. 10MB)</span>
+                                <a href="#" class="descargar-plantilla" id="descargar-plantilla">
+                                    <i class="fas fa-file-download"></i> Descargar plantilla
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="previsualizacion-datos" id="previsualizacion-datos">
+                            <!-- Vista previa de los datos -->
+                        </div>
+                    </div>
+                    
+                    <!-- Paso 4: Confirmación -->
+                    <div class="paso-importacion" data-paso="4">
+                        <div class="resumen-importacion">
+                            <h4><i class="fas fa-check-circle"></i> Resumen de Importación</h4>
+                            
+                            <div class="resumen-item">
+                                <span>Tipo de Nómina:</span>
+                                <strong id="resumen-tipo">-</strong>
+                            </div>
+                            
+                            <div class="resumen-item">
+                                <span>Período:</span>
+                                <strong id="resumen-periodo">-</strong>
+                            </div>
+                            
+                            <div class="resumen-item">
+                                <span>Archivo:</span>
+                                <strong id="resumen-archivo">-</strong>
+                            </div>
+                            
+                            <div class="resumen-item">
+                                <span>Fecha de Cierre:</span>
+                                <strong id="resumen-fecha-cierre">-</strong>
+                            </div>
+                            
+                            <div class="advertencia-importacion">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p>Revise cuidadosamente la información antes de confirmar. Esta acción no se puede deshacer.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Paso 2: Período, secuencia y fecha de cierre -->
-                <div class="paso-importacion" data-paso="2">
-                    <div class="form-group">
-                        <label for="modal-mes"><i class="fas fa-calendar"></i> Mes:</label>
-                        <select id="modal-mes" name="mes" class="busqueda-input" required>
-                        <option value="">Seleccione un mes</option>
-                            {% for m in mesess %}
-                                <option value="{{ m }}">{{ m }}</option>
-                            {% empty %}
-                                <option value="">No hay meses disponibles</option>
-                            {% endfor %}
-                    </select>
+                <div class="recibo-modal__acciones">
+                    <div class="indicador-pasos">
+                        <span class="paso" data-paso="1">1</span>
+                        <span class="paso" data-paso="2">2</span>
+                        <span class="paso" data-paso="3">3</span>
+                        <span class="paso" data-paso="4">4</span>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="modal-anio"><i class="fas fa-calendar-alt"></i> Año:</label>
-                        <input type="number" id="modal-anio" class="busqueda-input" min="2020" max="2030" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="modal-secuencia"><i class="fas fa-sort-numeric-up"></i> Secuencia:</label>
-                        <select id="modal-secuencia" class="busqueda-input" required>
-                            <option value="">Seleccione la secuencia</option>
-                            {% for secuencia in secuencia_mes %}
-                            <option value="{{ secuencia }}">{{ secuencia }}</option>
-                            {% empty %}
-                            <option value="">No hay secuencias disponibles</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <!-- Nuevo campo: Fecha de Cierre -->
-                    <div class="form-group">
-                        <label for="modal-fecha-cierre"><i class="fas fa-calendar-check"></i> Fecha de Cierre:</label>
-                        <input 
-                            type="date" 
-                            id="modal-fecha-cierre" 
-                            class="busqueda-input" 
-                            required
-                            min="2020-01-01"
-                            max="2030-12-31"
-                        >
-                    </div>
-                    
-                    <div class="info-ayuda">
-                        <i class="fas fa-info-circle"></i> Especifique el período, secuencia y fecha de cierre de la nómina
-                    </div>
-                </div>
-                
-                <!-- Paso 3: Carga de archivo -->
-                <div class="paso-importacion" data-paso="3">
-                    <div class="dropzone-modal" id="dropzone-area">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <p>Arrastra tu archivo Excel o CSV aquí</p>
-                        <p class="nombre-archivo" id="nombre-archivo"></p>
-                        <input type="file" id="archivo-nomina-modal" accept=".xlsx,.xls,.csv" required>
-                        <button class="busqueda-boton" id="btn-seleccionar-archivo">
-                            <i class="fas fa-folder-open"></i> Seleccionar archivo
+                    <div class="botones-navegacion">
+                        <button id="btn-anterior" class="recibo-modal__boton btn-anterior" disabled>
+                            <i class="fas fa-arrow-left"></i> Anterior
                         </button>
-                        
-                        <div class="info-archivo">
-                            <span>Formatos soportados: .xlsx, .xls, .csv (Máx. 5MB)</span>
-                            <a href="#" class="descargar-plantilla" id="descargar-plantilla">
-                                <i class="fas fa-file-download"></i> Descargar plantilla
-                            </a>
-                        </div>
+                        <button id="btn-siguiente" class="recibo-modal__boton btn-siguiente" style="background-color: #006666;">
+                            Siguiente <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button id="btn-importar" class="recibo-modal__boton btn-importar" style="background-color: #003366;">
+                            <i class="fas fa-check"></i> Confirmar Importación
+                        </button>
+                        <button id="btn-cancelar" class="recibo-modal__boton btn-cancelar" style="background-color: #6c757d;">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
                     </div>
-                    
-                    <div class="previsualizacion-datos" id="previsualizacion-datos">
-                        <!-- Aquí se mostrará una vista previa de los datos -->
-                    </div>
-                </div>
-                
-                <!-- Paso 4: Confirmación -->
-                <div class="paso-importacion" data-paso="4">
-                    <div class="resumen-importacion">
-                        <h4><i class="fas fa-check-circle"></i> Resumen de Importación</h4>
-                        
-                        <div class="resumen-item">
-                            <span>Tipo de Nómina:</span>
-                            <strong id="resumen-tipo">Administrativo</strong>
-                        </div>
-                        
-                        <div class="resumen-item">
-                            <span>Período:</span>
-                            <strong id="resumen-periodo">Marzo 2024 - Primera</strong>
-                        </div>
-                        
-                        <div class="resumen-item">
-                            <span>Archivo:</span>
-                            <strong id="resumen-archivo">nomina_administrativa_marzo.xlsx</strong>
-                        </div>
-                        
-                        <div class="resumen-item">
-                            <span>Registros detectados:</span>
-                            <strong id="resumen-registros">125</strong>
-                        </div>
-                        
-                        <!-- Nuevo campo en el resumen -->
-                        <div class="resumen-item">
-                            <span>Fecha de Cierre:</span>
-                            <strong id="resumen-fecha-cierre">No definida</strong>
-                        </div>
-                        
-                        <div class="advertencia-importacion">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <p>Revise cuidadosamente la información antes de confirmar. Esta acción no se puede deshacer.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="recibo-modal__acciones">
-                <div class="indicador-pasos">
-                    <span class="paso" data-paso="1">1</span>
-                    <span class="paso" data-paso="2">2</span>
-                    <span class="paso" data-paso="3">3</span>
-                    <span class="paso" data-paso="4">4</span>
-                </div>
-                
-                <div class="botones-navegacion">
-                    <button id="btn-anterior" class="recibo-modal__boton btn-anterior" disabled>
-                        <i class="fas fa-arrow-left"></i> Anterior
-                    </button>
-                    <button id="btn-siguiente" class="recibo-modal__boton btn-siguiente" style="background-color: #006666;">
-                        Siguiente <i class="fas fa-arrow-right"></i>
-                    </button>
-                    <button id="btn-importar" class="recibo-modal__boton btn-importar" style="background-color: #003366;">
-                        <i class="fas fa-check"></i> Confirmar Importación
-                    </button>
-                    <button id="btn-cancelar" class="recibo-modal__boton btn-cancelar" style="background-color: #6c757d;">
-                        <i class="fas fa-times"></i> Cancelar
-                    </button>
                 </div>
             </div>
         </div>
-            </div>
-        </div>
-        <script src="{% static 'javascript/menu_principal/subs_menus/importar_nomina.js' %}"></script>
-        <script>
-            console.log("Script cargado correctamente de importar nomina");
-        </script>
-    </body>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{% static 'javascript/menu_principal/subs_menus/importar_nomina.js' %}" defer></script>
+    <script>
+        // Configuración global
+        const CSRF_TOKEN = "{{ csrf_token }}";
+        const API_NOMINAS_URL = '/api/nominas/';  // O la ruta correcta a tu endpoint
+    </script>
+</body>
 </html>
