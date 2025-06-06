@@ -59,30 +59,41 @@
             <table class="tabla-datos">
                 <thead class="tabla-datos__thead">
                     <tr class="tabla-datos__fila">
-                        <th class="tabla-datos__columna">Cédula</th>
-                        <th class="tabla-datos__columna">Nombre Completo</th>
-                        <th class="tabla-datos__columna">Fecha de Nacimiento</th>
-                        <th class="tabla-datos__columna">Lugar de Nacimiento</th>
-                        <th class="tabla-datos__columna">Estado Civil</th>
-                        <th class="tabla-datos__columna">Grado de Instrucción</th>
-                        <th class="tabla-datos__columna">Email</th>
-                        <th class="tabla-datos__columna">Cargo</th>
-                        <th class="tabla-datos__columna">Estado</th>
-                        <th class="tabla-datos__columna">Acciones</th>
+                        <th class="tabla-datos__columna col-small">Tipo ID</th>
+                        <th class="tabla-datos__columna col-small">Cédula</th>
+                        <th class="tabla-datos__columna col-large">Nombre Completo</th>
+                        <th class="tabla-datos__columna col-medium">Fecha Nac.</th>
+                        <th class="tabla-datos__columna col-medium">Lugar Nac.</th>
+                        <th class="tabla-datos__columna col-small">Género</th>
+                        <th class="tabla-datos__columna col-small">Estado Civil</th>
+                        <th class="tabla-datos__columna col-medium">Fecha Ingreso</th>
+                        <th class="tabla-datos__columna col-large">Cargo</th>
+                        <th class="tabla-datos__columna col-medium">Tipo Trabajador</th>
+                        <th class="tabla-datos__columna col-medium">Instrucción</th>
+                        <th class="tabla-datos__columna col-medium">Teléfono</th>
+                        <th class="tabla-datos__columna col-medium">Teléfono 2</th>
+                        <th class="tabla-datos__columna col-large">Email</th>
+                        <th class="tabla-datos__columna col-large celda-wrap">Dirección</th>
+                        <th class="tabla-datos__columna col-xsmall">Hijos</th>
+                        <th class="tabla-datos__columna col-xsmall">Cónyuge</th>
+                        <th class="tabla-datos__columna col-medium">RIF</th>
+                        <th class="tabla-datos__columna col-xlarge celda-wrap">Cuentas Bancarias</th>
+                        <th class="tabla-datos__columna col-small">Estado</th>
+                        <th class="tabla-datos__columna col-xlarge">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="tabla-datos__tbody">
                     {% for usuario in usuarios %}
                     <tr class="tabla-datos__fila" data-usuario-id="{{ usuario.id }}">
+                        <td class="tabla-datos__celda">{{ usuario.empleado.get_tipo_identificacion_display }}</td>
                         <td class="tabla-datos__celda">{{ usuario.empleado.cedula }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.empleado.get_nombre_completo }}</td>
-                        <td class="tabla-datos__celda">
-                        {{ usuario.empleado.fecha_nacimiento|date:"d/m/Y" }}
-                        <td class="tabla-datos__celda">{{ usuario.empleado.lugar_nacimiento }}</td>
+                        <td class="tabla-datos__celda col-large">{{ usuario.empleado.get_nombre_completo }}</td>
+                        <td class="tabla-datos__celda">{{ usuario.empleado.fecha_nacimiento|date:"d/m/Y" }}</td>
+                        <td class="tabla-datos__celda celda-wrap">{{ usuario.empleado.lugar_nacimiento }}</td>
+                        <td class="tabla-datos__celda">{{ usuario.empleado.get_genero_display }}</td>
                         <td class="tabla-datos__celda">{{ usuario.empleado.get_estado_civil_display }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.empleado.grado_instruccion }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.email }}</td>
-                        <td class="tabla-datos__celda">
+                        <td class="tabla-datos__celda">{{ usuario.empleado.fecha_ingreso|date:"d/m/Y" }}</td>
+                        <td class="tabla-datos__celda celda-wrap">
                             {% if usuario.empleado.cargo %}
                                 {{ usuario.empleado.cargo.nombre_completo }}
                             {% else %}
@@ -90,11 +101,33 @@
                             {% endif %}
                         </td>
                         <td class="tabla-datos__celda">
+                            {% if usuario.empleado.tipo_trabajador %}
+                                {{ usuario.empleado.tipo_trabajador.nombre }}
+                            {% else %}
+                                Sin tipo asignado
+                            {% endif %}
+                        </td>
+                        <td class="tabla-datos__celda">{{ usuario.empleado.grado_instruccion }}</td>
+                        <td class="tabla-datos__celda">{{ usuario.empleado.telefono_principal }}</td>
+                        <td class="tabla-datos__celda">{{ usuario.empleado.telefono_secundario }}</td>
+                        <td class="tabla-datos__celda celda-wrap">{{ usuario.email }}</td>
+                        <td class="tabla-datos__celda celda-wrap">{{ usuario.empleado.direccion }}</td>
+                        <td class="tabla-datos__celda text-center">{{ usuario.empleado.hijos }}</td>
+                        <td class="tabla-datos__celda text-center">{{ usuario.empleado.conyuge|yesno:"Sí,No" }}</td>
+                        <td class="tabla-datos__celda">{{ usuario.empleado.rif }}</td>
+                        <td class="tabla-datos__celda celda-wrap">
+                            {% for cuenta in usuario.empleado.cuentas_bancarias.all %}
+                                {{ cuenta.banco.nombre }} ({{ cuenta.get_tipo_display }}) {{ cuenta.numero_cuenta }}<br>
+                            {% empty %}
+                                Sin cuentas
+                            {% endfor %}
+                        </td>
+                        <td class="tabla-datos__celda">
                             <span class="badge-estado {{ usuario.empleado.status|yesno:'activo,inactivo' }}">
                                 {{ usuario.empleado.status|yesno:'Activo,Inactivo' }}
                             </span>
                         </td>
-                        <td class="tabla-datos__celda">
+                        <td class="tabla-datos__celda acciones">
                             <button class="tabla-datos__boton btn-editar" data-idusuario="{{ usuario.id }}" onclick="editarUsuario(this)">
                                 <i class="fas fa-edit"></i> Editar
                             </button>
@@ -105,7 +138,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center">No hay usuarios registrados</td>
+                        <td colspan="21" class="text-center">No hay usuarios registrados</td>
                     </tr>
                     {% endfor %}
                 </tbody>

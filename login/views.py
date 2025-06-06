@@ -192,7 +192,9 @@ def crear_usuarios(request):
         'empleado__cargo__nivel',
         'empleado__tipo_trabajador'
     ).prefetch_related(
-        'rol'
+        'rol',
+        'empleado__cuentas_bancarias',  # Nuevo: para las cuentas bancarias
+        'empleado__cuentas_bancarias__banco'  # Nuevo: para la relación con banco
     ).all()
     
     # Obtener datos para el formulario

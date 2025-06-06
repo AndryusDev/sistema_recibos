@@ -39,6 +39,8 @@
 }
 
 .contenedor-tabla {
+    overflow-x: auto;
+    border: 1px solid #ddd;
     background-color: rgb(235, 235, 235);
     padding: 25px;
     border-radius: var(--border-radius);
@@ -124,43 +126,112 @@
 
 /* Tabla de Usuarios */ 
 .tabla-contenido {
-    overflow-x: auto;       /* Permite scroll horizontal si el contenido es muy ancho */
-    width: 100%;           /* Ocupa todo el ancho disponible */
-    max-height: 500px;     /* Altura máxima antes de aparecer scroll vertical */
-    overflow-y: auto;      /* Habilita scroll vertical cuando se necesita */
-    margin: 20px 0;        /* Margen arriba y abajo */
-    background-color: white; /* Fondo blanco */
-    border-radius: 8px;    /* Bordes redondeados */
-    box-shadow: var(--sombra-suave); /* Sombra suave (definida en otra parte) */
-    -webkit-overflow-scrolling: touch; /* Mejor desplazamiento en dispositivos táctiles */
+    overflow-x: auto;       /* Scroll horizontal */
+    width: 100%;           /* Ancho completo */
+    max-height: 500px;     /* Altura máxima con scroll vertical */
+    overflow-y: auto;      /* Scroll vertical cuando sea necesario */
+    margin: 20px 0;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: var(--sombra-suave);
+    -webkit-overflow-scrolling: touch;
+}
+
+
+.tabla-contenido {
+    min-width: 1200px; /* Ancho mínimo según tus necesidades */
+    width: 100%;
 }
 
 .tabla-datos {
-    width: 100%;          /* Ocupa todo el ancho del contenedor */
-    border-collapse: collapse; /* Elimina espacios entre celdas */
-    min-width: 1200px;    /* Ancho mínimo para evitar compresión excesiva */
-    table-layout: fixed;  /* Distribución fija de columnas (importante) */
+    width: auto;           /* Cambiado de 100% a auto */
+    min-width: 100%;       /* Asegura que ocupe todo el contenedor */
+    border-collapse: collapse;
+    table-layout: auto;    /* Cambiado a auto para mejor distribución */
 }
+
+.tabla-datos__thead {
+    background-color: var(--primary-color);
+    color: white;
+    position: sticky;
+    top: 0;
+}
+
 .tabla-datos th, .tabla-datos td {
     text-align: center;
+}
+.tabla-datos th {
+    width: 100%;
+    table-layout: fixed;
 }
 
 .tabla-datos__columna, 
 .tabla-datos__celda {
-    border: 1px solid #e0e0e0; /* Borde sutil */
-    padding: 0.5rem 0.3rem;   /* Espaciado interno */
-    text-align: center;       /* Alineación central */
-    vertical-align: middle;   /* Alineación vertical */
-    word-wrap: break-word;    /* Rompe palabras largas */
-    font-size: 0.85rem;      /* Tamaño de fuente reducido */
+    border: 1px solid #e0e0e0;
+    padding: 0.75rem 0.5rem; /* Aumenté el padding horizontal */
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.85rem;
 }
+
+
+.tabla-datos__columna {
+    font-weight: 500;
+    white-space: nowrap;   /* Evita salto de línea en headers */
+    min-width: 120px;     /* Ancho mínimo */
+    position: relative;
+}
+
+/* Clases utilitarias para columnas */
+.col-small {
+    width: 80px;
+    min-width: 80px;
+}
+
+.col-medium {
+    width: 150px;
+    min-width: 150px;
+}
+
+.col-large {
+    width: 220px;
+    min-width: 220px;
+}
+
+/* Para contenido largo */
+.celda-wrap {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Columnas congeladas (opcional) */
+.col-fixed {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tabla-datos__columna, 
+    .tabla-datos__celda {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.8rem;
+    }
+    
+    .col-medium {
+        width: 120px;
+        min-width: 120px;
+    }
+}
+
 .text-center{
     text-align: center;
 }
 
 .tabla-datos__thead {
     background-color: var(--primary-color);
-    color: white;
     position: sticky;
     top: 0;
 }
