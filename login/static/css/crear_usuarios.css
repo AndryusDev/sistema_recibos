@@ -52,10 +52,11 @@
 /* Panel de Búsqueda */
 .panel-busqueda {
     width: 100%;
-    padding: 10px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
     background-color: var(--light-gray);
     border-radius: var(--border-radius);
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
     overflow-x: auto; /* Muy importante para pantallas pequeñas */
 }
 

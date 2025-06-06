@@ -17,6 +17,7 @@
         <!-- Panel de Búsqueda/Filtros -->
         <div class="panel-busqueda">
             <div class="busqueda-grupo">
+
                 <div class="form-group">
                     <label for="filtro-estado"><i class="fas fa-filter"></i> Estado:</label>
                     <select id="filtro-estado" class="busqueda-input">
@@ -35,6 +36,39 @@
                         {% endfor %}
                     </select>
                 </div>
+
+                <div class="form-group">
+                    <label for="filtro-cargo"><i class="fas fa-briefcase"></i> Cargo:</label>
+                    <select id="filtro-cargo" class="busqueda-input">
+                        <option value="">Todos</option>
+                        {% for cargo in cargos %}
+                            <option value="{{ cargo.id }}">{{ cargo.nombre_completo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="filtro-tipo-trabajador"><i class="fas fa-user-md"></i> Tipo Trabajador:</label>
+                    <select id="filtro-tipo-trabajador" class="busqueda-input">
+                        <option value="">Todos</option>
+                        {% for tipo in tipos_trabajador %}
+                            <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+        
+                <div class="form-group">
+                    <label for="filtro-orden">Ordenar por:</label>
+                    <select id="filtro-orden" class="busqueda-input">
+                        <option value="primer_apellido">Apellido (A-Z)</option>
+                        <option value="-primer_apellido">Apellido (Z-A)</option>
+                        <option value="fecha_ingreso">Fecha Ingreso (Antiguos)</option>
+                        <option value="-fecha_ingreso">Fecha Ingreso (Recientes)</option>
+                        <option value="cedula">Cédula (Ascendente)</option>
+                        <option value="-cedula">Cédula (Descendente)</option>
+                    </select>
+                </div>
+                
                 
                 <div class="form-group">
                     <label for="filtro-busqueda"><i class="fas fa-search"></i> Buscar:</label>
@@ -51,6 +85,7 @@
                 <button class="busqueda-boton" style="background-color: #003366;" onclick="usuarioModal__abrir()">
                     <i class="fas fa-user-plus"></i> Crear Usuario
                 </button>
+                </div>
             </div>
         </div>
         

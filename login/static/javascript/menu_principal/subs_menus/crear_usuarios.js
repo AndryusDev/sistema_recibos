@@ -330,11 +330,6 @@ function cargarDatosUsuario(usuarioId) {
     }, 500);
 }
 
-function actualizarTablaUsuarios() {
-    // Simular recarga de datos (en producción sería una llamada AJAX)
-    console.log('Actualizando tabla de usuarios...');
-    // Aquí iría la lógica para actualizar la tabla
-}
 
 function mostrarNotificacion(mensaje, tipo) {
     // Implementación básica - puedes usar una librería como Toastr o SweetAlert
@@ -419,30 +414,219 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Funciones simuladas para obtener datos
-function obtenerFamiliasPorTipo(tipoId) {
-    const familias = {
-        '1': [
-            {id: '101', nombre: 'Administrativo'},
-            {id: '102', nombre: 'Técnico'}
-        ],
-        '2': [
-            {id: '201', nombre: 'Operativo'},
-            {id: '202', nombre: 'Especializado'}
-        ]
-    };
-    return familias[tipoId] || [];
+
+
+async function aplicarFiltrosEmpleados() {
+    const cuerpoTabla = document.querySelector('.tabla-datos__tbody');
+    if (!cuerpoTabla) return;
+
+    try {
+        // Mostrar estado de carga
+        cuerpoTabla.innerHTML = '<tr><td colspan="21" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando empleados...</td></tr>';
+
+        // Construir parámetros de filtrado
+        const params = new URLSearchParams({
+            estado: document.getElementById('filtro-estado')?.value || '',
+            cargo: document.getElementById('filtro-cargo')?.value || '',
+            tipo_trabajador: document.getElementById('filtro-tipo-trabajador')?.value || '',
+            orden: document.getElementById('filtro-orden')?.value || 'primer_apellido'
+        });
+
+        const response = await fetch(`${API_EMPLEADOS_URL}?${params.toString()}`, {
+            headers: {
+                'X-CSRFToken': CSRF_TOKEN,
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            if (data.empleados && data.empleados.length > 0) {
+                actualizarTablaEmpleados(data.empleados);
+            } else {
+                cuerpoTabla.innerHTML = '<tr><td colspan="21" class="text-center">No se encontraron empleados con los filtros aplicados</td></tr>';
+            }
+        } else {
+            throw new Error(data.error || 'Error desconocido al obtener empleados');
+        }
+    } catch (error) {
+        console.error('Error al aplicar filtros:', error);
+        cuerpoTabla.innerHTML = `<tr><td colspan="21" class="text-center error">Error al cargar datos: ${error.message}</td></tr>`;
+        mostrarNotificacion('Error al cargar empleados: ' + error.message, 'error');
+    }
 }
 
-function obtenerCargosPorFamilia(familiaId) {
-    const cargos = {
-        '101': [
-            {id: '1001', nombre_completo: 'Administrativo I'},
-            {id: '1002', nombre_completo: 'Administrativo II'}
-        ],
-        '102': [
-            {id: '2001', nombre_completo: 'Técnico I'},
-            {id: '2002', nombre_completo: 'Técnico II'}
-        ]
-    };
-    return cargos[familiaId] || [];
+function limpiarFiltrosEmpleados() {
+    document.getElementById('filtro-estado').value = '';
+    document.getElementById('filtro-cargo').value = '';
+    document.getElementById('filtro-tipo-trabajador').value = '';
+    document.getElementById('filtro-orden').value = 'primer_apellido';
+    aplicarFiltrosEmpleados();
 }
+
+// ===== ACTUALIZACIÓN DE TABLA =====
+function actualizarTablaEmpleados(empleados) {
+    const tbody = document.querySelector('.tabla-datos__tbody');
+    if (!tbody) return;
+
+    if (empleados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="21" class="text-center">No hay empleados registrados</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = empleados.map(empleado => `
+        <tr class="tabla-datos__fila" data-usuario-id="${empleado.id}">
+            <td class="tabla-datos__celda">${empleado.tipo_identificacion || 'V'}</td>
+            <td class="tabla-datos__celda">${empleado.cedula || ''}</td>
+            <td class="tabla-datos__celda col-fixed">${empleado.nombre_completo || ''}</td>
+            <td class="tabla-datos__celda">${empleado.fecha_nacimiento ? formatDate(empleado.fecha_nacimiento) : ''}</td>
+            <td class="tabla-datos__celda celda-wrap">${empleado.lugar_nacimiento || ''}</td>
+            <td class="tabla-datos__celda">${empleado.genero || ''}</td>
+            <td class="tabla-datos__celda">${empleado.estado_civil || ''}</td>
+            <td class="tabla-datos__celda">${empleado.fecha_ingreso ? formatDate(empleado.fecha_ingreso) : ''}</td>
+            <td class="tabla-datos__celda celda-wrap">${empleado.cargo || 'Sin cargo'}</td>
+            <td class="tabla-datos__celda">${empleado.tipo_trabajador || ''}</td>
+            <td class="tabla-datos__celda">${empleado.grado_instruccion || ''}</td>
+            <td class="tabla-datos__celda">${empleado.telefono_principal || ''}</td>
+            <td class="tabla-datos__celda">${empleado.telefono_secundario || ''}</td>
+            <td class="tabla-datos__celda celda-wrap">${empleado.email || ''}</td>
+            <td class="tabla-datos__celda celda-wrap">${empleado.direccion || ''}</td>
+            <td class="tabla-datos__celda text-center">${empleado.hijos || 0}</td>
+            <td class="tabla-datos__celda text-center">${empleado.conyuge ? 'Sí' : 'No'}</td>
+            <td class="tabla-datos__celda">${empleado.rif || ''}</td>
+            <td class="tabla-datos__celda celda-wrap">
+                ${empleado.cuentas_bancarias ? empleado.cuentas_bancarias.map(cuenta => 
+                    `${cuenta.banco} (${cuenta.tipo}) ${cuenta.numero}`).join('<br>') : 'Sin cuentas'}
+            </td>
+            <td class="tabla-datos__celda">
+                <span class="badge-estado ${empleado.status ? 'activo' : 'inactivo'}">
+                    ${empleado.status ? 'Activo' : 'Inactivo'}
+                </span>
+            </td>
+            <td class="tabla-datos__celda acciones">
+                <button class="tabla-datos__boton btn-editar" data-idusuario="${empleado.id}" onclick="editarUsuario(this)">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                <button class="tabla-datos__boton btn-eliminar" data-usuarioid="${empleado.id}" onclick="confirmarEliminarUsuario(this)">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// ===== FUNCIONES DE EDICIÓN Y ELIMINACIÓN =====
+async function editarUsuario(btn) {
+    const usuarioId = btn.getAttribute('data-idusuario');
+    // Implementar lógica de edición
+    console.log('Editando usuario ID:', usuarioId);
+    mostrarNotificacion('Función de edición en desarrollo', 'info');
+}
+
+async function confirmarEliminarUsuario(btn) {
+    const usuarioId = btn.getAttribute('data-usuarioid');
+    
+    const confirmacion = await Swal.fire({
+        title: '¿Estás seguro?',
+        html: `Esta acción eliminará al empleado con ID: ${usuarioId}`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirmacion.isConfirmed) return;
+
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+
+        const response = await fetch(`/api/empleados/${usuarioId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': CSRF_TOKEN,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || `Error ${response.status}`);
+        }
+
+        await Swal.fire({
+            title: '¡Eliminado!',
+            text: data.message,
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+        });
+
+        await aplicarFiltrosEmpleados();
+
+    } catch (error) {
+        console.error('Error eliminando empleado:', error);
+        mostrarNotificacion(`Error al eliminar empleado: ${error.message}`, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-trash"></i> Eliminar';
+    }
+}
+
+// ===== FUNCIONALIDAD DE EXPORTACIÓN =====
+function exportarEmpleados() {
+    const tipoExportacion = document.getElementById('exportar-formato')?.value || 'excel';
+    const params = new URLSearchParams({
+        estado: document.getElementById('filtro-estado')?.value || '',
+        cargo: document.getElementById('filtro-cargo')?.value || '',
+        tipo_trabajador: document.getElementById('filtro-tipo-trabajador')?.value || '',
+        formato: tipoExportacion
+    });
+
+    window.open(`${API_EMPLEADOS_URL}exportar/?${params.toString()}`, '_blank');
+}
+
+// ===== INICIALIZACIÓN =====
+function inicializarEventosEmpleados() {
+    // Filtros
+    document.getElementById('btn-aplicar-filtros-empleados')?.addEventListener('click', aplicarFiltrosEmpleados);
+    document.getElementById('btn-limpiar-filtros-empleados')?.addEventListener('click', limpiarFiltrosEmpleados);
+    
+    // Exportación
+    document.getElementById('btn-exportar-empleados')?.addEventListener('click', exportarEmpleados);
+    
+    // Permitir búsqueda con Enter
+    document.querySelectorAll('.filtro-empleado').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') aplicarFiltrosEmpleados();
+        });
+    });
+}
+
+// ===== FUNCIONES AUXILIARES =====
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES');
+}
+
+// Inicialización al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarEventosEmpleados();
+    aplicarFiltrosEmpleados();
+});
+
+// Exportar funciones globales
+window.aplicarFiltrosEmpleados = aplicarFiltrosEmpleados;
+window.limpiarFiltrosEmpleados = limpiarFiltrosEmpleados;
+window.editarUsuario = editarUsuario;
+window.confirmarEliminarUsuario = confirmarEliminarUsuario;
+window.exportarEmpleados = exportarEmpleados;
