@@ -28,7 +28,6 @@ urlpatterns = [
     path('api/nominas/', views.listar_nominas, name='listar_nominas'),
     path('api/nominas/<int:pk>/', views.eliminar_nomina, name='eliminar_nomina'),
     
-    path('gestion_nomina/', views.gestion_nomina, name= 'gestion_nomina'),
     path('ver_prenomina/', views.ver_prenomina, name= 'ver_prenomina'),
     path('gestion_respaldo/', views.gestion_respaldo, name= 'gestion_respaldo'),
     path('crear_usuarios/', views.crear_usuarios, name= 'crear_usuarios'),
