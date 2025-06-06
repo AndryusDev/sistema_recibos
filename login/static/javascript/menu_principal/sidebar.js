@@ -59,7 +59,6 @@ document.addEventListener('DOMContentLoaded', function() {
             'constancia_trabajo.html': ['/static/javascript/menu_principal/subs_menus/constancia_trabajo.js'],
             'arc.html': ['/static/javascript/menu_principal/subs_menus/arc.js'],
             'importar_nomina.html': ['/static/javascript/menu_principal/subs_menus/importar_nomina.js'],
-            'gestion_nomina.html': ['/static/javascript/menu_principal/subs_menus/gestion_nomina.js'],
             'ver_prenomina.html': ['/static/javascript/menu_principal/subs_menus/ver_prenomina.js'],
             'crear_usuarios.html': ['/static/javascript/menu_principal/subs_menus/crear_usuarios.js'],
             'gestion_respaldo.html': ['/static/javascript/menu_principal/subs_menus/gestion_respaldo.js'],
@@ -94,7 +93,6 @@ async function loadTemplate(templateName) {
             case "recibos_pagos.html": url = "/recibos_pagos"; break;
             case "constancia_trabajo.html": url = "/constancia_trabajo/"; break;
             case "arc.html": url = "/arc/"; break;
-            case "gestion_nomina.html": url = "/gestion_nomina/"; break;
             case "noticias.html": url = "/noticias/"; break;
             case "ver_prenomina.html": url = "/ver_prenomina"; break;
             case "crear_usuarios.html": url = "/crear_usuarios"; break;

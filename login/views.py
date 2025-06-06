@@ -164,9 +164,6 @@ def importar_nomina(request):
         'tipos_nomina': tipos_nomina, 'mesess': mesess, 'secuencia_mes': secuencia_mes, 'nominas': nominas
     })
 
-def gestion_nomina(request):
-    return render(request, 'menu_principal/subs_menus/gestion_nomina.html')
-
 def ver_prenomina(request):
     prenominas = prenomina.objects.all().prefetch_related('detalles', 'nomina')
     

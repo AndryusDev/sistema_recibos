@@ -26,7 +26,6 @@ function loadRegularTemplate(templateName) {
         "recibos_pagos.html": "/recibos_pagos",
         "constancia_trabajo.html": "/constancia_trabajo/",
         "arc.html": "/arc/",
-        "gestion_nomina.html": "/gestion_nomina/",
         "noticias.html": "/noticias/",
         "ver_prenomina.html": "/ver_prenomina",
         "crear_usuarios.html": "/crear_usuarios"
