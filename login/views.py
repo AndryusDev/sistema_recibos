@@ -152,17 +152,13 @@ def arc(request):
 
 def importar_nomina(request):
     tipos_nomina = tipo_nomina.objects.values_list('tipo_nomina', flat=True).distinct()
-
     mesess = meses.objects.values_list('nombre_mes', flat=True).distinct()
-
     secuencia_mes = secuencia.objects.values_list('nombre_secuencia', flat=True).distinct()
-
     nominas = nomina.objects.select_related('tipo_nomina', 'secuencia').all().order_by('-fecha_carga')
-
-    print("Tipos de nómina encontrados:", list(tipos_nomina))  # Debug
-    return render(request, 'menu_principal/subs_menus/importar_nomina.html', {
-        'tipos_nomina': tipos_nomina, 'mesess': mesess, 'secuencia_mes': secuencia_mes, 'nominas': nominas
+    return render(request, 'menu_principal/subs_menus/importar_nomina.html', {   
+            'tipos_nomina': tipos_nomina, 'mesess': mesess, 'secuencia_mes': secuencia_mes, 'nominas': nominas
     })
+    
 
 def ver_prenomina(request):
     prenominas = prenomina.objects.all().prefetch_related('detalles', 'nomina')
@@ -185,17 +181,15 @@ def ver_prenomina(request):
 
 def crear_usuarios(request):
     # Obtener todos los usuarios con sus relaciones
-    usuarios = usuario.objects.select_related(
-        'empleado',
-        'empleado__cargo',
-        'empleado__cargo__familia',
-        'empleado__cargo__nivel',
-        'empleado__tipo_trabajador'
+    usuarios = empleado.objects.select_related(
+        'cargo',
+        'cargo__familia',
+        'cargo__nivel',
+        'tipo_trabajador'
     ).prefetch_related(
-        'rol',
-        'empleado__cuentas_bancarias',  # Nuevo: para las cuentas bancarias
-        'empleado__cuentas_bancarias__banco'  # Nuevo: para la relación con banco
-    ).all()
+        'cuentas_bancarias',
+        'cuentas_bancarias__banco'
+    )
     
     # Obtener datos para el formulario
     tipos_trabajador_list = tipo_trabajador.objects.all()
@@ -1031,3 +1025,159 @@ def eliminar_nomina(request, pk):
     return JsonResponse({
         'error': 'Método no permitido'
     }, status=405)
+
+
+#   /////////////// Importar nominas al panel ///////////////
+
+@require_http_methods(["GET"])
+def listar_empleados(request):
+    """API para listar empleados con todos los campos requeridos"""
+    try:
+        # 1. Obtener y validar parámetros de filtrado
+        cedula = request.GET.get('cedula', '').strip()
+        nombre = request.GET.get('nombre', '').strip()
+        apellido = request.GET.get('apellido', '').strip()
+        cargo = request.GET.get('cargo', '').strip()
+        tipo_trabajador = request.GET.get('tipo_trabajador', '').strip()
+        status = request.GET.get('status', '').strip()
+        orden = request.GET.get('orden', '-fecha_ingreso')
+        
+        # 2. Construir consulta base optimizada
+        queryset = empleado.objects.select_related(
+            'cargo',
+            'tipo_trabajador'
+        ).prefetch_related(
+            'cuentas_bancarias',
+            'cuentas_bancarias__banco'
+        ).all()
+        
+        # 3. Aplicar filtros
+        filters = Q()
+        
+        if cedula:
+            filters &= Q(cedula__icontains=cedula)
+        
+        if nombre:
+            filters &= (Q(primer_nombre__icontains=nombre) | 
+                        Q(segundo_nombre__icontains=nombre))
+        
+        if apellido:
+            filters &=  (Q(primer_apellido__icontains=apellido) | 
+                        Q(segundo_apellido__icontains=apellido))
+        
+        if cargo:
+            filters &= Q(cargo__nombre_cargo__icontains=cargo)
+        
+        if tipo_trabajador:
+            filters &= Q(tipo_trabajador__tipo_trabajador__icontains=tipo_trabajador)
+        
+        if status:
+            if status.lower() == 'true':
+                filters &= Q(status=True)
+            elif status.lower() == 'false':
+                filters &= Q(status=False)
+        
+        queryset = queryset.filter(filters)
+        
+        # 4. Validar y aplicar ordenamiento
+        campos_orden_validos = [
+            '-fecha_ingreso', 'fecha_ingreso',
+            'primer_apellido', '-primer_apellido',
+            'cargo__nombre_cargo', '-cargo__nombre_cargo',
+            'cedula', '-cedula',
+            'fecha_nacimiento', '-fecha_nacimiento'
+        ]
+        
+        if orden not in campos_orden_validos:
+            orden = '-fecha_ingreso'
+            
+        queryset = queryset.order_by(orden)
+        
+        # 5. Paginación
+        page_number = request.GET.get('page', 1)
+        paginator = Paginator(queryset, 25)  # 25 items por página
+        
+        try:
+            empleados_paginados = paginator.page(page_number)
+        except:
+            empleados_paginados = paginator.page(1)
+        
+        # 6. Preparar datos con TODOS los campos requeridos
+        empleados_data = []
+        for emp in empleados_paginados:
+            # Formatear cuentas bancarias
+            cuentas_info = []
+            for cuenta in emp.cuentas_bancarias.all():
+                if cuenta.activa:
+                    cuentas_info.append(
+                        f"{cuenta.banco.nombre} ({cuenta.get_tipo_display()}): {cuenta.numero_cuenta}"
+                    )
+            
+            empleados_data.append({
+                # Identificación
+                'tipo_id': emp.get_tipo_identificacion_display(),
+                'cedula': emp.cedula,
+                
+                # Nombres
+                'nombre_completo': f"{emp.primer_nombre} {emp.segundo_nombre or ''} {emp.primer_apellido} {emp.segundo_apellido or ''}".strip(),
+                
+                # Datos personales
+                'fecha_nacimiento': emp.fecha_nacimiento.strftime('%d/%m/%Y') if emp.fecha_nacimiento else '',
+                'lugar_nacimiento': emp.lugar_nacimiento or '',
+                'genero': emp.get_genero_display() if emp.genero else '',
+                'estado_civil': emp.get_estado_civil_display() if emp.estado_civil else '',
+                
+                # Datos laborales
+                'fecha_ingreso': emp.fecha_ingreso.strftime('%d/%m/%Y') if emp.fecha_ingreso else '',
+                'cargo': emp.cargo.nombre_cargo if emp.cargo else '',
+                'tipo_trabajador': emp.tipo_trabajador.tipo_trabajador if emp.tipo_trabajador else '',
+                'grado_instruccion': emp.grado_instruccion or '',
+                
+                # Contacto
+                'telefono_principal': emp.telefono_principal or '',
+                'telefono_secundario': emp.telefono_secundario or '',
+                'email': emp.email or '',
+                'direccion': emp.direccion or '',
+                
+                # Datos familiares
+                'hijos': emp.hijos,
+                'conyuge': 'Sí' if emp.conyuge else 'No',
+                
+                # Información adicional
+                'rif': emp.rif or '',
+                
+                # Cuentas bancarias (formateadas como texto)
+                'cuentas_bancarias': "\n".join(cuentas_info) if cuentas_info else 'Sin cuentas activas',
+                
+                # Estado
+                'status': 'Activo' if emp.status else 'Inactivo',
+                
+                # ID para acciones
+                'id': emp.cedula
+            })
+        
+        # 7. Retornar respuesta
+        return JsonResponse({
+            'success': True,
+            'empleados': empleados_data,
+            'total': paginator.count,
+            'paginas': paginator.num_pages,
+            'actual': empleados_paginados.number,
+            'params': {
+                'cedula': cedula,
+                'nombre': nombre,
+                'apellido': apellido,
+                'cargo': cargo,
+                'tipo_trabajador': tipo_trabajador,
+                'status': status,
+                'orden': orden
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en listar_empleados: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al procesar la solicitud',
+            'detail': str(e)
+        }, status=500)
