@@ -16,8 +16,10 @@ urlpatterns = [
     path('crear_cuenta_empleado/', views.crear_cuenta_empleado, name='crear_cuenta_empleado'),
     path('login_empleado/', views.login_empleado, name='login_empleado'),
     path('completar_registro/', views.completar_registro, name='completar_registro'),\
+    
     path('dashboard/', views.dashboard, name='dashboard'),
     path('api/nominas/chart-data/', views.chart_data, name='chart_data'),
+
     path('perfil_usuario/', views.perfil_usuario, name= 'perfil_usuario'),
     path('noticias/', views.noticias, name= 'noticias'),
     path('recibos_pagos/', views.recibos_pagos, name= 'recibos_pagos'),
@@ -27,13 +29,17 @@ urlpatterns = [
     path('importar_nomina/', views.importar_nomina, name= 'importar_nomina'),
     path('api/nominas/', views.listar_nominas, name='listar_nominas'),
     path('api/nominas/<int:pk>/', views.eliminar_nomina, name='eliminar_nomina'),
-    
+    path('api/nominas/importar/', views.importar_nominas, name= 'importar_nominas'),
+
     path('ver_prenomina/', views.ver_prenomina, name= 'ver_prenomina'),
     path('gestion_respaldo/', views.gestion_respaldo, name= 'gestion_respaldo'),
+    
     path('crear_usuarios/', views.crear_usuarios, name= 'crear_usuarios'),
+    path('api/empleados/', views.listar_empleados, name= 'listar_empleados'),
+
     path('roles_usuarios/', views.roles_usuarios, name='roles_usuarios'),
     path('crear_roles/', views.crear_roles, name='crear_roles'),
-    path('api/nominas/importar/', views.importar_nominas, name='importar_nominas'),
+    
 
     path('recibos/', login_required(listado_recibos), name='listado_recibos'),
     path('api/recibos/<int:recibo_id>/', views.obtener_datos_recibo, name='obtener_datos_recibo'),

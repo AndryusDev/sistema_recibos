@@ -120,47 +120,27 @@
                 <tbody class="tabla-datos__tbody">
                     {% for usuario in usuarios %}
                     <tr class="tabla-datos__fila" data-usuario-id="{{ usuario.id }}">
-                        <td class="tabla-datos__celda">{{ usuario.empleado.get_tipo_identificacion_display }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.empleado.cedula }}</td>
-                        <td class="tabla-datos__celda col-large">{{ usuario.empleado.get_nombre_completo }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.empleado.fecha_nacimiento|date:"d/m/Y" }}</td>
-                        <td class="tabla-datos__celda celda-wrap">{{ usuario.empleado.lugar_nacimiento }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.empleado.get_genero_display }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.empleado.get_estado_civil_display }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.empleado.fecha_ingreso|date:"d/m/Y" }}</td>
-                        <td class="tabla-datos__celda celda-wrap">
-                            {% if usuario.empleado.cargo %}
-                                {{ usuario.empleado.cargo.nombre_completo }}
-                            {% else %}
-                                Sin cargo asignado
-                            {% endif %}
-                        </td>
+                        <td class="tabla-datos__celda"></td>
+                        <td class="tabla-datos__celda"></td>
+                        <td class="tabla-datos__celda col-large"></td>
+                        <td class="tabla-datos__celda"></td>
+                        <td class="tabla-datos__celda celda-wrap"></td>
+                        <td class="tabla-datos__celda"></td>
+                        <td class="tabla-datos__celda"></td>
+                        <td class="tabla-datos__celda"></td>
+                        <td class="tabla-datos__celda celda-wrap"></td>
+                        <td class="tabla-datos__celda"></td>
+                        <td class="tabla-datos__celda"></td>
+                        <td class="tabla-datos__celda"></td>
+                        <td class="tabla-datos__celda"></td>
+                        <td class="tabla-datos__celda celda-wrap"></td>
+                        <td class="tabla-datos__celda celda-wrap"></td>
+                        <td class="tabla-datos__celda text-center"></td>
+                        <td class="tabla-datos__celda text-center"></td>
+                        <td class="tabla-datos__celda"></td>
+                        <td class="tabla-datos__celda celda-wrap"></td>
                         <td class="tabla-datos__celda">
-                            {% if usuario.empleado.tipo_trabajador %}
-                                {{ usuario.empleado.tipo_trabajador.nombre }}
-                            {% else %}
-                                Sin tipo asignado
-                            {% endif %}
-                        </td>
-                        <td class="tabla-datos__celda">{{ usuario.empleado.grado_instruccion }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.empleado.telefono_principal }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.empleado.telefono_secundario }}</td>
-                        <td class="tabla-datos__celda celda-wrap">{{ usuario.email }}</td>
-                        <td class="tabla-datos__celda celda-wrap">{{ usuario.empleado.direccion }}</td>
-                        <td class="tabla-datos__celda text-center">{{ usuario.empleado.hijos }}</td>
-                        <td class="tabla-datos__celda text-center">{{ usuario.empleado.conyuge|yesno:"Sí,No" }}</td>
-                        <td class="tabla-datos__celda">{{ usuario.empleado.rif }}</td>
-                        <td class="tabla-datos__celda celda-wrap">
-                            {% for cuenta in usuario.empleado.cuentas_bancarias.all %}
-                                {{ cuenta.banco.nombre }} ({{ cuenta.get_tipo_display }}) {{ cuenta.numero_cuenta }}<br>
-                            {% empty %}
-                                Sin cuentas
-                            {% endfor %}
-                        </td>
-                        <td class="tabla-datos__celda">
-                            <span class="badge-estado {{ usuario.empleado.status|yesno:'activo,inactivo' }}">
-                                {{ usuario.empleado.status|yesno:'Activo,Inactivo' }}
-                            </span>
+                            <span class="badge-estado {{ usuario.empleado.status|yesno:'activo,inactivo' }}"></span>
                         </td>
                         <td class="tabla-datos__celda acciones">
                             <button class="tabla-datos__boton btn-editar" data-idusuario="{{ usuario.id }}" onclick="editarUsuario(this)">

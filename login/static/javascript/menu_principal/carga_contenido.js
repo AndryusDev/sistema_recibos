@@ -80,7 +80,7 @@ function loadDashboardContent() {
 function loadTemplateScripts(templateName) {
     const templateScripts = {
         "importar_nomina.html": "/static/javascript/menu_principal/subs_menus/importar_nomina.js",
-        // Agrega otros templates según sea necesario
+        "crear_usuarios.html": "/static/javascript/menu_principal/subs_menus/crear_usuarios.js"
     };
 
     if (templateScripts[templateName]) {
@@ -88,24 +88,44 @@ function loadTemplateScripts(templateName) {
         const existingScript = document.querySelector(`script[src="${scriptUrl}"]`);
         
         if (!existingScript) {
-            const script = document.createElement('script');
-            script.src = scriptUrl;
-            script.onload = () => {
-                setTimeout(() => {
-                    if (templateName === "importar_nomina.html" && window.initializeImportarNomina) {
-                        initializeImportarNomina();
-                        aplicarFiltros();
-                    }
-                }, 100);
-            };
-            document.head.appendChild(script);
-        } else if (templateName === "importar_nomina.html" && window.initializeImportarNomina) {
+            return new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = scriptUrl;
+                script.onload = () => {
+                    setTimeout(() => {
+                        if (templateName === "importar_nomina.html" && window.initializeImportarNomina) {
+                            initializeImportarNomina();
+                            if (window.aplicarFiltros) aplicarFiltros();
+                        }
+                        if (templateName === "crear_usuarios.html") {
+                            if (window.inicializarEventosEmpleados) inicializarEventosEmpleados();
+                            if (window.aplicarFiltrosEmpleados) aplicarFiltrosEmpleados();
+                        }
+                        resolve();
+                    }, 300); // Aumentar el tiempo de espera
+                };
+                script.onerror = () => {
+                    console.error(`Error al cargar el script: ${scriptUrl}`);
+                    resolve();
+                };
+                document.head.appendChild(script);
+            });
+        } else {
+            // Si el script ya está cargado, ejecutar las funciones directamente
             setTimeout(() => {
-                initializeImportarNomina();
-                aplicarFiltros();
+                if (templateName === "importar_nomina.html" && window.initializeImportarNomina) {
+                    initializeImportarNomina();
+                    if (window.aplicarFiltros) aplicarFiltros();
+                }
+                if (templateName === "crear_usuarios.html") {
+                    if (window.inicializarEventosEmpleados) inicializarEventosEmpleados();
+                    if (window.aplicarFiltrosEmpleados) aplicarFiltrosEmpleados();
+                }
             }, 100);
+            return Promise.resolve();
         }
     }
+    return Promise.resolve();
 }
 
 // Funciones para cargar Chart.js y Dashboard.js (mantén las originales)

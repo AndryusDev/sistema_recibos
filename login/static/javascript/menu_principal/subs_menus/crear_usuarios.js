@@ -1,4 +1,5 @@
 // Variables globales
+const API_EMPLEADOS_URL = '/api/empleados/';
 let pasoActual = 1;
 const totalPasos = 4;
 let usuarioActualId = null;
@@ -213,6 +214,7 @@ function validarPasoActual() {
 
 function actualizarResumen() {
     const elementosResumen = {
+        // Información Personal
         'resumen-nombre-completo': () => {
             const primerNombre = document.getElementById('modal-primer-nombre').value;
             const segundoNombre = document.getElementById('modal-segundo-nombre').value;
@@ -220,26 +222,63 @@ function actualizarResumen() {
             const segundoApellido = document.getElementById('modal-segundo-apellido').value;
             return `${primerApellido} ${segundoApellido || ''} ${primerNombre} ${segundoNombre || ''}`.replace(/\s+/g, ' ').trim();
         },
-        'resumen-cedula': () => {
+        'resumen-identificacion': () => {
             const tipo = document.getElementById('modal-tipo-identificacion');
             const cedula = document.getElementById('modal-cedula').value;
-            return tipo ? `${tipo.options[tipo.selectedIndex].text}: ${cedula}` : cedula;
+            const rif = document.getElementById('modal-rif').value;
+            
+            if (cedula) {
+                return tipo ? `${tipo.options[tipo.selectedIndex].text}: ${cedula}` : cedula;
+            } else if (rif) {
+                return `RIF: ${rif}`;
+            }
+            return 'No especificado';
         },
-        'resumen-email': () => document.getElementById('modal-email').value || 'No especificado',
+        'resumen-fecha-nacimiento': () => {
+            const fecha = document.getElementById('modal-fecha-nacimiento').value;
+            return fecha ? formatDate(fecha) : 'No especificada';
+        },
+        
+        // Información Laboral
         'resumen-cargo': () => {
-            const cargo = document.getElementById('modal-cargo');
+            const cargo = document.getElementById('cargo');
             return cargo ? cargo.options[cargo.selectedIndex].text : 'No especificado';
         },
-        'resumen-fecha-ingreso': () => document.getElementById('modal-fecha-ingreso').value || 'No especificada',
-        'resumen-nombre-usuario': () => document.getElementById('modal-nombre-usuario').value || 'No especificado',
-        'resumen-roles': () => {
-            const rolesSeleccionados = Array.from(document.querySelectorAll('input[name="roles"]:checked'))
-                .map(checkbox => checkbox.nextElementSibling.querySelector('.rol-nombre').textContent)
-                .join(', ');
-            return rolesSeleccionados || 'Ningún rol asignado';
-        }
+        'resumen-tipo-trabajador': () => {
+            const tipo = document.getElementById('tipo-trabajador');
+            return tipo ? tipo.options[tipo.selectedIndex].text : 'No especificado';
+        },
+        'resumen-fecha-ingreso': () => {
+            const fecha = document.getElementById('fecha-ingreso').value;
+            return fecha ? formatDate(fecha) : 'No especificada';
+        },
+        
+        // Datos Bancarios
+        'resumen-banco': () => {
+            const banco = document.getElementById('banco');
+            return banco ? banco.options[banco.selectedIndex].text : 'No especificado';
+        },
+        'resumen-tipo-cuenta': () => {
+            const tipo = document.getElementById('tipo-cuenta');
+            return tipo ? (tipo.value === 'C' ? 'Corriente' : 'Ahorro') : 'No especificado';
+        },
+        'resumen-numero-cuenta': () => {
+            const cuenta = document.getElementById('numero-cuenta').value;
+            return cuenta || 'No especificado';
+        },
+        
+        // Configuración de Usuario (si es necesario)
+        'resumen-email-usuario': () => document.getElementById('email').value || 'No especificado'
     };
 
+    // Función auxiliar para formatear fechas
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    // Actualizar todos los elementos del resumen
     Object.entries(elementosResumen).forEach(([id, fn]) => {
         const elemento = document.getElementById(id);
         if (elemento) elemento.textContent = fn();
@@ -266,74 +305,37 @@ function resetearFormulario() {
     modal.querySelector('#modal-cargo').disabled = true;
 }
 
-function cargarDatosUsuario(usuarioId) {
-    // Simulación de carga de datos - en producción sería una llamada AJAX
-    setTimeout(() => {
-        const usuarioEjemplo = {
-            tipo_identificacion: 'V',
-            cedula: '12345678',
-            primer_nombre: 'Juan',
-            segundo_nombre: 'Carlos',
-            primer_apellido: 'Pérez',
-            segundo_apellido: 'González',
-            fecha_ingreso: '2020-01-15',
-            tipo_trabajador: '1',
-            familia_cargo: '101',
-            cargo: '1001',
-            email: 'juan.perez@example.com',
-            telefono_principal: '04141234567',
-            telefono_secundario: '',
-            nombre_usuario: 'jperez',
-            roles: [1, 3]
-        };
-        
-        const modal = document.getElementById("usuarioModal");
-        if (!modal) return;
-        
-        // Llenar campos básicos
-        modal.querySelector('#modal-tipo-identificacion').value = usuarioEjemplo.tipo_identificacion;
-        modal.querySelector('#modal-cedula').value = usuarioEjemplo.cedula;
-        modal.querySelector('#modal-primer-nombre').value = usuarioEjemplo.primer_nombre;
-        modal.querySelector('#modal-segundo-nombre').value = usuarioEjemplo.segundo_nombre;
-        modal.querySelector('#modal-primer-apellido').value = usuarioEjemplo.primer_apellido;
-        modal.querySelector('#modal-segundo-apellido').value = usuarioEjemplo.segundo_apellido;
-        modal.querySelector('#modal-fecha-ingreso').value = usuarioEjemplo.fecha_ingreso;
-        modal.querySelector('#modal-email').value = usuarioEjemplo.email;
-        modal.querySelector('#modal-telefono').value = usuarioEjemplo.telefono_principal;
-        modal.querySelector('#modal-telefono-secundario').value = usuarioEjemplo.telefono_secundario;
-        modal.querySelector('#modal-nombre-usuario').value = usuarioEjemplo.nombre_usuario;
-        
-        // Seleccionar roles
-        usuarioEjemplo.roles.forEach(rolId => {
-            const checkbox = modal.querySelector(`#modal-rol-${rolId}`);
-            if (checkbox) checkbox.checked = true;
-        });
-        
-        // Simular selección de tipo de trabajador, familia y cargo
-        const tipoTrabajadorSelect = modal.querySelector('#modal-tipo-trabajador');
-        if (tipoTrabajadorSelect) {
-            tipoTrabajadorSelect.value = usuarioEjemplo.tipo_trabajador;
-            tipoTrabajadorSelect.dispatchEvent(new Event('change'));
-            
-            setTimeout(() => {
-                const familiaCargoSelect = modal.querySelector('#modal-familia-cargo');
-                if (familiaCargoSelect) {
-                    familiaCargoSelect.value = usuarioEjemplo.familia_cargo;
-                    familiaCargoSelect.dispatchEvent(new Event('change'));
-                    
-                    setTimeout(() => {
-                        modal.querySelector('#modal-cargo').value = usuarioEjemplo.cargo;
-                    }, 500);
-                }
-            }, 500);
-        }
-    }, 500);
-}
-
-
 function mostrarNotificacion(mensaje, tipo) {
     // Implementación básica - puedes usar una librería como Toastr o SweetAlert
     alert(`${tipo.toUpperCase()}: ${mensaje}`);
+}
+
+async function enviarDatosEmpleado(formData) {
+    try {
+        const response = await fetch('/api/empleados/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCSRFToken(), // Necesario para Django
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Error al crear el empleado');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}
+
+function getCSRFToken() {
+    const cookie = document.cookie.match(/csrftoken=([^ ;]+)/);
+    return cookie ? cookie[1] : '';
 }
 
 // Inicialización cuando el DOM esté listo
@@ -414,50 +416,93 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Funciones simuladas para obtener datos
+    async function actualizarTablaEmpleados(empleados = null) {
+    const tbody = document.querySelector('.tabla-datos__tbody');
+    const sinResultados = document.getElementById('sin-resultados-empleados');
 
+    if (empleados === null) {
+        try {
+            const response = await fetch(`${API_EMPLEADOS_URL}?${params.toString()}`);
+            if (!response.ok) throw new Error("Error en la respuesta del servidor");
+            
+            const data = await response.json();
+            empleados = data.empleados || [];
+        } catch (error) {
+            console.error("Error al obtener empleados:", error);
+            tbody.innerHTML = `<tr><td colspan="21">Error al cargar datos: ${error.message}</td></tr>`;
+            return;
+        }
+    }
 
+    if (!Array.isArray(empleados)) {
+        console.error("Datos de empleados no son un array:", empleados);
+        empleados = [];
+    }
+
+    if (empleados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="21">No hay empleados registrados</td></tr>';
+        if (sinResultados) sinResultados.style.display = 'block';
+    } else {
+        tbody.innerHTML = empleados.map(empleado => `
+            <tr data-id="${empleado.id}">
+                <td class="tabla-datos__columna col-small">${empleado.tipo_id || 'No especificado'}</td>
+                <td class="tabla-datos__columna col-small">${empleado.cedula || ''}</td>
+                <td class="tabla-datos__columna col-large">${empleado.nombre_completo || ''}</td>
+                <td class="tabla-datos__columna col-medium">${empleado.fecha_nacimiento || 'No especificada'}</td>
+                <td class="tabla-datos__columna col-medium">${empleado.lugar_nacimiento || ''}</td>
+                <td class="tabla-datos__columna col-small">${empleado.genero || ''}</td>
+                <td class="tabla-datos__columna col-small">${empleado.estado_civil || ''}</td>
+                <td class="tabla-datos__columna col-medium">${empleado.fecha_ingreso || 'No especificada'}</td>
+                <td class="tabla-datos__columna col-large">${empleado.cargo || 'Sin cargo'}</td>
+                <td class="tabla-datos__columna col-medium">${empleado.tipo_trabajador || ''}</td>
+                <td class="tabla-datos__columna col-medium">${empleado.grado_instruccion || ''}</td>
+                <td class="tabla-datos__columna col-medium">${empleado.telefono_principal || ''}</td>
+                <td class="tabla-datos__columna col-medium">${empleado.telefono_secundario || ''}</td>
+                <td class="tabla-datos__columna col-large">${empleado.email || ''}</td>
+                <td class="tabla-datos__columna col-large celda-wrap">${empleado.direccion || ''}</td>
+                <td class="tabla-datos__columna col-xsmall">${empleado.hijos || 0}</td>
+                <td class="tabla-datos__columna col-xsmall">${empleado.conyuge || 'No'}</td>
+                <td class="tabla-datos__columna col-medium">${empleado.rif || ''}</td>
+                <td class="tabla-datos__columna celda-wrap">
+                    ${empleado.cuentas_bancarias || 'No hay cuentas bancarias'}
+                </td>
+                <td class="tabla-datos__columna col-small">${empleado.status || 'Inactivo'}</td>
+                <td class="tabla-datos__columna col-xlarge">
+                    <button class="btn btn-editar" onclick="editarEmpleado('${empleado.cedula}')">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button class="btn btn-ver" onclick="verDetalleEmpleado('${empleado.cedula}')">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
+                    ${empleado.status === 'Activo' ? 
+                        `<button class="btn btn-desactivar" onclick="cambiarEstadoEmpleado('${empleado.cedula}', false)">
+                            <i class="fas fa-user-times"></i> Desactivar
+                        </button>` : 
+                        `<button class="btn btn-activar" onclick="cambiarEstadoEmpleado('${empleado.cedula}', true)">
+                            <i class="fas fa-user-check"></i> Activar
+                        </button>`
+                    }
+                </td>
+            </tr>
+        `).join('');
+    }
+}
+
+// Función para aplicar filtros (similar a tu aplicarFiltrosEmpleados)
 async function aplicarFiltrosEmpleados() {
-    const cuerpoTabla = document.querySelector('.tabla-datos__tbody');
-    if (!cuerpoTabla) return;
-
     try {
-        // Mostrar estado de carga
-        cuerpoTabla.innerHTML = '<tr><td colspan="21" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando empleados...</td></tr>';
-
-        // Construir parámetros de filtrado
+        // Asegurarse de que los parámetros estén definidos
         const params = new URLSearchParams({
             estado: document.getElementById('filtro-estado')?.value || '',
             cargo: document.getElementById('filtro-cargo')?.value || '',
             tipo_trabajador: document.getElementById('filtro-tipo-trabajador')?.value || '',
             orden: document.getElementById('filtro-orden')?.value || 'primer_apellido'
         });
-
-        const response = await fetch(`${API_EMPLEADOS_URL}?${params.toString()}`, {
-            headers: {
-                'X-CSRFToken': CSRF_TOKEN,
-                'Accept': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success) {
-            if (data.empleados && data.empleados.length > 0) {
-                actualizarTablaEmpleados(data.empleados);
-            } else {
-                cuerpoTabla.innerHTML = '<tr><td colspan="21" class="text-center">No se encontraron empleados con los filtros aplicados</td></tr>';
-            }
-        } else {
-            throw new Error(data.error || 'Error desconocido al obtener empleados');
-        }
+        
+        await actualizarTablaEmpleados();
     } catch (error) {
-        console.error('Error al aplicar filtros:', error);
-        cuerpoTabla.innerHTML = `<tr><td colspan="21" class="text-center error">Error al cargar datos: ${error.message}</td></tr>`;
-        mostrarNotificacion('Error al cargar empleados: ' + error.message, 'error');
+        console.error("Error aplicando filtros:", error);
+        mostrarNotificacion(`Error al aplicar filtros: ${error.message}`, 'error');
     }
 }
 
@@ -469,67 +514,96 @@ function limpiarFiltrosEmpleados() {
     aplicarFiltrosEmpleados();
 }
 
-// ===== ACTUALIZACIÓN DE TABLA =====
-function actualizarTablaEmpleados(empleados) {
+// ===== ACTUALIZACIÓN DE TABLA (MODIFICADA PARA INTEGRAR) =====
+async function actualizarTablaEmpleados(empleados = null, filtros = {}) {
     const tbody = document.querySelector('.tabla-datos__tbody');
-    if (!tbody) return;
-
-    if (empleados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="21" class="text-center">No hay empleados registrados</td></tr>';
+    const sinResultados = document.getElementById('sin-resultados-empleados');
+    
+    if (!tbody) {
+        console.error("No se encontró el elemento tbody en la tabla");
         return;
     }
 
-    tbody.innerHTML = empleados.map(empleado => `
-        <tr class="tabla-datos__fila" data-usuario-id="${empleado.id}">
-            <td class="tabla-datos__celda">${empleado.tipo_identificacion || 'V'}</td>
-            <td class="tabla-datos__celda">${empleado.cedula || ''}</td>
-            <td class="tabla-datos__celda col-fixed">${empleado.nombre_completo || ''}</td>
-            <td class="tabla-datos__celda">${empleado.fecha_nacimiento ? formatDate(empleado.fecha_nacimiento) : ''}</td>
-            <td class="tabla-datos__celda celda-wrap">${empleado.lugar_nacimiento || ''}</td>
-            <td class="tabla-datos__celda">${empleado.genero || ''}</td>
-            <td class="tabla-datos__celda">${empleado.estado_civil || ''}</td>
-            <td class="tabla-datos__celda">${empleado.fecha_ingreso ? formatDate(empleado.fecha_ingreso) : ''}</td>
-            <td class="tabla-datos__celda celda-wrap">${empleado.cargo || 'Sin cargo'}</td>
-            <td class="tabla-datos__celda">${empleado.tipo_trabajador || ''}</td>
-            <td class="tabla-datos__celda">${empleado.grado_instruccion || ''}</td>
-            <td class="tabla-datos__celda">${empleado.telefono_principal || ''}</td>
-            <td class="tabla-datos__celda">${empleado.telefono_secundario || ''}</td>
-            <td class="tabla-datos__celda celda-wrap">${empleado.email || ''}</td>
-            <td class="tabla-datos__celda celda-wrap">${empleado.direccion || ''}</td>
-            <td class="tabla-datos__celda text-center">${empleado.hijos || 0}</td>
-            <td class="tabla-datos__celda text-center">${empleado.conyuge ? 'Sí' : 'No'}</td>
-            <td class="tabla-datos__celda">${empleado.rif || ''}</td>
-            <td class="tabla-datos__celda celda-wrap">
-                ${empleado.cuentas_bancarias ? empleado.cuentas_bancarias.map(cuenta => 
-                    `${cuenta.banco} (${cuenta.tipo}) ${cuenta.numero}`).join('<br>') : 'Sin cuentas'}
-            </td>
-            <td class="tabla-datos__celda">
-                <span class="badge-estado ${empleado.status ? 'activo' : 'inactivo'}">
-                    ${empleado.status ? 'Activo' : 'Inactivo'}
-                </span>
-            </td>
-            <td class="tabla-datos__celda acciones">
-                <button class="tabla-datos__boton btn-editar" data-idusuario="${empleado.id}" onclick="editarUsuario(this)">
-                    <i class="fas fa-edit"></i> Editar
-                </button>
-                <button class="tabla-datos__boton btn-eliminar" data-usuarioid="${empleado.id}" onclick="confirmarEliminarUsuario(this)">
-                    <i class="fas fa-trash"></i> Eliminar
-                </button>
-            </td>
-        </tr>
-    `).join('');
-}
+    try {
+        // Si no se pasó el parámetro o es null, hacer fetch
+        if (empleados === null) {
+            // Crear los parámetros de búsqueda
+            const params = new URLSearchParams();
+            
+            // Agregar filtros si existen
+            if (filtros.estado) params.append('estado', filtros.estado);
+            if (filtros.cargo) params.append('cargo', filtros.cargo);
+            if (filtros.tipo_trabajador) params.append('tipo_trabajador', filtros.tipo_trabajador);
+            if (filtros.orden) params.append('orden', filtros.orden);
 
-// ===== FUNCIONES DE EDICIÓN Y ELIMINACIÓN =====
-async function editarUsuario(btn) {
-    const usuarioId = btn.getAttribute('data-idusuario');
-    // Implementar lógica de edición
-    console.log('Editando usuario ID:', usuarioId);
-    mostrarNotificacion('Función de edición en desarrollo', 'info');
-}
+            const response = await fetch(`${API_EMPLEADOS_URL}?${params.toString()}`);
+            if (!response.ok) throw new Error("Error en la respuesta del servidor");
+            
+            const data = await response.json();
+            empleados = data.empleados || []; // Asegurar que sea array
+        }
 
-async function confirmarEliminarUsuario(btn) {
-    const usuarioId = btn.getAttribute('data-usuarioid');
+        // Validación robusta del array
+        if (!Array.isArray(empleados)) {
+            console.error("Datos de empleados no son un array:", empleados);
+            empleados = []; // Forzar array vacío
+        }
+
+        if (empleados.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="21" class="text-center">No hay usuarios registrados</td></tr>';
+            if (sinResultados) sinResultados.style.display = 'block';
+        } else {
+            tbody.innerHTML = empleados.map(empleado => `
+                <tr class="tabla-datos__fila" data-usuario-id="${empleado.id}">
+                    <td class="tabla-datos__celda">${empleado.tipo_id || ''}</td>
+                    <td class="tabla-datos__celda">${empleado.cedula || ''}</td>
+                    <td class="tabla-datos__celda col-large">${empleado.nombre_completo || ''}</td>
+                    <td class="tabla-datos__celda">${empleado.fecha_nacimiento || ''}</td>
+                    <td class="tabla-datos__celda celda-wrap">${empleado.lugar_nacimiento || ''}</td>
+                    <td class="tabla-datos__celda">${empleado.genero || ''}</td>
+                    <td class="tabla-datos__celda">${empleado.estado_civil || ''}</td>
+                    <td class="tabla-datos__celda">${empleado.fecha_ingreso || ''}</td>
+                    <td class="tabla-datos__celda celda-wrap">${empleado.cargo || 'Sin cargo asignado'}</td>
+                    <td class="tabla-datos__celda">${empleado.tipo_trabajador || 'Sin tipo asignado'}</td>
+                    <td class="tabla-datos__celda">${empleado.grado_instruccion || ''}</td>
+                    <td class="tabla-datos__celda">${empleado.telefono_principal || ''}</td>
+                    <td class="tabla-datos__celda">${empleado.telefono_secundario || ''}</td>
+                    <td class="tabla-datos__celda celda-wrap">${empleado.email || ''}</td>
+                    <td class="tabla-datos__celda celda-wrap">${empleado.direccion || ''}</td>
+                    <td class="tabla-datos__celda text-center">${empleado.hijos || 0}</td>
+                    <td class="tabla-datos__celda text-center">${empleado.conyuge || 'No'}</td>
+                    <td class="tabla-datos__celda">${empleado.rif || ''}</td>
+                    <td class="tabla-datos__celda celda-wrap">
+                        ${empleado.cuentas_bancarias && empleado.cuentas_bancarias !== 'Sin cuentas activas' ? 
+                            empleado.cuentas_bancarias.replace(/\(([^)]+)\):/g, '($1)') : 
+                            'Sin cuentas'}
+                    </td>
+                    <td class="tabla-datos__celda">
+                        <span class="badge-estado ${empleado.status === 'Activo' ? 'activo' : 'inactivo'}">
+                            ${empleado.status || 'Inactivo'}
+                        </span>
+                    </td>
+                    <td class="tabla-datos__celda acciones">
+                        <button class="tabla-datos__boton btn-editar" data-idusuario="${empleado.id}" onclick="editarUsuario(this)">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="tabla-datos__boton btn-eliminar" data-usuarioid="${empleado.id}" onclick="confirmarEliminarUsuario(this)">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            if (sinResultados) sinResultados.style.display = 'none';
+        }
+    } catch (error) {
+        console.error("Error al obtener empleados:", error);
+        tbody.innerHTML = '<tr><td colspan="21" class="text-center">Error al cargar datos</td></tr>';
+    }
+}
+// ===== FUNCIONES DE ELIMINACIÓN (MODIFICADAS PARA INTEGRAR) =====
+async function confirmarEliminarUsuario(boton) {
+    const usuarioId = boton.getAttribute('data-usuarioid');
     
     const confirmacion = await Swal.fire({
         title: '¿Estás seguro?',
@@ -545,8 +619,8 @@ async function confirmarEliminarUsuario(btn) {
     if (!confirmacion.isConfirmed) return;
 
     try {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+        boton.disabled = true;
+        boton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
 
         const response = await fetch(`/api/empleados/${usuarioId}/`, {
             method: 'DELETE',
@@ -576,12 +650,12 @@ async function confirmarEliminarUsuario(btn) {
         console.error('Error eliminando empleado:', error);
         mostrarNotificacion(`Error al eliminar empleado: ${error.message}`, 'error');
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-trash"></i> Eliminar';
+        boton.disabled = false;
+        boton.innerHTML = '<i class="fas fa-trash"></i> Eliminar';
     }
 }
 
-// ===== FUNCIONALIDAD DE EXPORTACIÓN =====
+// ===== FUNCIONALIDAD DE EXPORTACIÓN (NUEVO) =====
 function exportarEmpleados() {
     const tipoExportacion = document.getElementById('exportar-formato')?.value || 'excel';
     const params = new URLSearchParams({
@@ -594,7 +668,14 @@ function exportarEmpleados() {
     window.open(`${API_EMPLEADOS_URL}exportar/?${params.toString()}`, '_blank');
 }
 
-// ===== INICIALIZACIÓN =====
+// ===== FUNCIONES AUXILIARES (NUEVAS) =====
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES');
+}
+
+// ===== INICIALIZACIÓN (MODIFICADA PARA INTEGRAR) =====
 function inicializarEventosEmpleados() {
     // Filtros
     document.getElementById('btn-aplicar-filtros-empleados')?.addEventListener('click', aplicarFiltrosEmpleados);
@@ -611,22 +692,39 @@ function inicializarEventosEmpleados() {
     });
 }
 
-// ===== FUNCIONES AUXILIARES =====
-function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES');
-}
-
 // Inicialización al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
     inicializarEventosEmpleados();
     aplicarFiltrosEmpleados();
+    
+    // Mantener tus eventos existentes
+    document.querySelectorAll('.toggle-password').forEach(icono => {
+        icono.addEventListener('click', function() {
+            const input = this.previousElementSibling;
+            if (input) {
+                input.type = input.type === 'password' ? 'text' : 'password';
+                this.classList.toggle('fa-eye-slash');
+            }
+        });
+    });
+
+    // ... (el resto de tu código de inicialización existente)
 });
 
-// Exportar funciones globales
+// Exportar funciones globales (manteniendo las tuyas y añadiendo nuevas)
 window.aplicarFiltrosEmpleados = aplicarFiltrosEmpleados;
 window.limpiarFiltrosEmpleados = limpiarFiltrosEmpleados;
+window.exportarEmpleados = exportarEmpleados;
+
+// Al final de gestion_empleados.js
+window.usuarioModal__abrir = usuarioModal__abrir;
+window.usuarioModal__cerrar = usuarioModal__cerrar;
 window.editarUsuario = editarUsuario;
 window.confirmarEliminarUsuario = confirmarEliminarUsuario;
+window.eliminarUsuarioConfirmado = eliminarUsuarioConfirmado;
+window.cerrarModalConfirmacion = cerrarModalConfirmacion;
+window.guardarUsuario = guardarUsuario;
+window.navegarPaso = navegarPaso;
+window.aplicarFiltrosEmpleados = aplicarFiltrosEmpleados;
+window.limpiarFiltrosEmpleados = limpiarFiltrosEmpleados;
 window.exportarEmpleados = exportarEmpleados;

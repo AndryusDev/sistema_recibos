@@ -1045,6 +1045,8 @@ def listar_empleados(request):
         # 2. Construir consulta base optimizada
         queryset = empleado.objects.select_related(
             'cargo',
+            'cargo__familia',
+            'cargo__nivel',
             'tipo_trabajador'
         ).prefetch_related(
             'cuentas_bancarias',
@@ -1058,7 +1060,7 @@ def listar_empleados(request):
             filters &= Q(cedula__icontains=cedula)
         
         if nombre:
-            filters &= (Q(primer_nombre__icontains=nombre) | 
+            filters &=  (Q(primer_nombre__icontains=nombre) | 
                         Q(segundo_nombre__icontains=nombre))
         
         if apellido:
@@ -1066,10 +1068,12 @@ def listar_empleados(request):
                         Q(segundo_apellido__icontains=apellido))
         
         if cargo:
-            filters &= Q(cargo__nombre_cargo__icontains=cargo)
+            # Buscar en familia.nombre o nivel.nivel
+            filters &=  (Q(cargo__familia__nombre__icontains=cargo) |
+                        Q(cargo__nivel__nivel__icontains=cargo))
         
         if tipo_trabajador:
-            filters &= Q(tipo_trabajador__tipo_trabajador__icontains=tipo_trabajador)
+            filters &= Q(tipo_trabajador__descripcion__icontains=tipo_trabajador)
         
         if status:
             if status.lower() == 'true':
@@ -1083,7 +1087,8 @@ def listar_empleados(request):
         campos_orden_validos = [
             '-fecha_ingreso', 'fecha_ingreso',
             'primer_apellido', '-primer_apellido',
-            'cargo__nombre_cargo', '-cargo__nombre_cargo',
+            'cargo__familia__nombre', '-cargo__familia__nombre',
+            'cargo__nivel__orden_jerarquico', '-cargo__nivel__orden_jerarquico',
             'cedula', '-cedula',
             'fecha_nacimiento', '-fecha_nacimiento'
         ]
@@ -1113,6 +1118,11 @@ def listar_empleados(request):
                         f"{cuenta.banco.nombre} ({cuenta.get_tipo_display()}): {cuenta.numero_cuenta}"
                     )
             
+            # Obtener nombre del cargo (familia + nivel)
+            nombre_cargo = ""
+            if emp.cargo:
+                nombre_cargo = f"{emp.cargo.familia.nombre} - Nivel {emp.cargo.nivel.nivel}"
+            
             empleados_data.append({
                 # Identificación
                 'tipo_id': emp.get_tipo_identificacion_display(),
@@ -1129,8 +1139,8 @@ def listar_empleados(request):
                 
                 # Datos laborales
                 'fecha_ingreso': emp.fecha_ingreso.strftime('%d/%m/%Y') if emp.fecha_ingreso else '',
-                'cargo': emp.cargo.nombre_cargo if emp.cargo else '',
-                'tipo_trabajador': emp.tipo_trabajador.tipo_trabajador if emp.tipo_trabajador else '',
+                'cargo': nombre_cargo,  # Usamos la combinación familia + nivel
+                'tipo_trabajador': emp.tipo_trabajador.descripcion if emp.tipo_trabajador else '',
                 'grado_instruccion': emp.grado_instruccion or '',
                 
                 # Contacto
