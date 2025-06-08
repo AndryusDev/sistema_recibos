@@ -509,7 +509,7 @@ async function confirmarEliminarUsuario(boton) {
     
     const confirmacion = await Swal.fire({
         title: '¿Estás seguro?',
-        html: `Esta acción eliminará al empleado con ID: ${usuarioId}`,
+        html: `Esta acción eliminará al empleado con ID: ${usuarioId} y todas sus cuentas bancarias asociadas`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
@@ -524,7 +524,7 @@ async function confirmarEliminarUsuario(boton) {
         boton.disabled = true;
         boton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
 
-        const response = await fetch(`/api/empleados/${usuarioId}/`, {
+        const response = await fetch(`/api/empleado/${usuarioId}/`, {
             method: 'DELETE',
             headers: {
                 'X-CSRFToken': CSRF_TOKEN,

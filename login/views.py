@@ -6,7 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 import pandas as pd
 from django.http import JsonResponse
-from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria
+from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, empleado
 from datetime import datetime
 import os
 from django.conf import settings
@@ -1415,3 +1415,40 @@ def api_cargos_por_tipo(request):
         return JsonResponse(cargos_data, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+
+    from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+import json
+@require_http_methods(["DELETE"])
+@csrf_exempt
+def eliminar_empleado(request, pk):
+    if request.method == 'DELETE':
+        try:
+            # Buscar el empleado a eliminar (usando minúsculas como está definido)
+            empleado_obj = empleado.objects.get(pk=pk)
+            
+            # Eliminar primero las cuentas bancarias asociadas
+            cuenta_bancaria.objects.filter(empleado=empleado_obj).delete()
+            
+            # Eliminar el empleado
+            empleado_obj.delete()
+            
+            # Respuesta de éxito
+            return JsonResponse({
+                'message': 'Empleado y cuentas bancarias asociadas eliminadas correctamente',
+                'status': 'success'
+            }, status=200)
+            
+        except empleado.DoesNotExist:
+            return JsonResponse({
+                'error': 'El empleado no existe',
+                'status': 'error'
+            }, status=404)
+            
+        except Exception as e:
+            return JsonResponse({
+                'error': str(e),
+                'status': 'error'
+            }, status=500)
