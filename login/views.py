@@ -202,7 +202,8 @@ def crear_usuarios(request):
     niveles_cargo = nivel_cargo.objects.all().order_by('orden_jerarquico')
     
     # Obtener todos los cargos con su información completa
-    cargos_completos = cargo.objects.select_related('familia', 'nivel').all()
+    #cargos_completos = cargo.objects.select_related('familia', 'nivel').all()
+    cargos = cargo.objects.select_related('familia', 'nivel').all()
     
     return render(request, 'menu_principal/subs_menus/crear_usuarios.html', {
         'usuarios': usuarios,
@@ -210,7 +211,7 @@ def crear_usuarios(request):
         'bancos': bancos_list,
         'familias_cargo': familias_cargo,
         'niveles_cargo': niveles_cargo,
-        'cargos_completos': cargos_completos,
+        'cargos_completos':cargos,
         'empleado': empleado
     })
 
@@ -1208,57 +1209,27 @@ def listar_empleados(request):
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
-import json
-from django.http import JsonResponse
-from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
-from django.db import transaction
-from django.core.exceptions import ValidationError
-from django.db import IntegrityError
-from datetime import datetime
-from django.utils import timezone
-
 def empleado_view(request):
     """
     Vista para renderizar el formulario de creación de empleados
     """
     tipos_trabajador = tipo_trabajador.objects.all().order_by('descripcion')
-    familias_cargo = familia_cargo.objects.all().order_by('nombre')
-    niveles_cargo = nivel_cargo.objects.all().order_by('orden_jerarquico')
+    cargos_completos = cargo.objects.select_related('familia', 'nivel').filter(activo=True).order_by('familia__nombre', 'nivel__orden_jerarquico')
     bancos = banco.objects.all().order_by('nombre')
 
     context = {
         'tipos_trabajador': tipos_trabajador,
-        'familias_cargo': familias_cargo,
-        'niveles_cargo': niveles_cargo,
+        'cargos_completos': cargos_completos,
         'bancos': bancos
     }
     
     return render(request, 'empleados/crear_empleado.html', context)
 
-def api_familias_cargo(request):
-    """
-    API para obtener familias de cargo filtradas por tipo de trabajador
-    """
-    tipo_trabajador_id = request.GET.get('tipo_trabajador')
-    
-    if not tipo_trabajador_id:
-        return JsonResponse([], safe=False)
-    
-    try:
-        familias = familia_cargo.objects.filter(
-            tipo_trabajador_id=tipo_trabajador_id
-        ).order_by('nombre').values('codigo_familiacargo', 'nombre')
-        
-        return JsonResponse(list(familias), safe=False)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
 @csrf_exempt
 @transaction.atomic
 def api_empleadoss(request):
     """
-    API para crear nuevos empleados con manejo de transacciones
+    API para crear nuevos empleados usando cargos existentes
     """
     if request.method == 'POST':
         try:
@@ -1275,7 +1246,7 @@ def api_empleadoss(request):
             required_fields = [
                 'tipo_identificacion', 'cedula', 'primer_nombre',
                 'primer_apellido', 'fecha_ingreso', 'tipo_trabajador',
-                'familia_cargo', 'nivel_cargo'
+                'cargo_id'
             ]
             
             missing_fields = [field for field in required_fields if field not in data]
@@ -1289,7 +1260,7 @@ def api_empleadoss(request):
             try:
                 data['cedula'] = int(data['cedula'])
                 data['tipo_trabajador'] = int(data['tipo_trabajador'])
-                data['familia_cargo'] = int(data['familia_cargo'])
+                data['cargo_id'] = int(data['cargo_id'])
                 data['hijos'] = int(data.get('hijos', 0))
                 
                 # Formatear fechas
@@ -1309,36 +1280,26 @@ def api_empleadoss(request):
                     'error': 'El tipo de trabajador especificado no existe'
                 }, status=400)
 
-            # Obtener o crear el cargo
+            # Obtener el cargo existente
             try:
-                familia = familia_cargo.objects.get(codigo_familiacargo=data['familia_cargo'])
-                nivel = nivel_cargo.objects.get(nivel=data['nivel_cargo'])
+                cargo_obj = cargo.objects.get(id=data['cargo_id'])
                 
-                # Verificar que la familia de cargo corresponda al tipo de trabajador
-                if familia.tipo_trabajador.codigo_trabajador != data['tipo_trabajador']:
+                # Verificar que el cargo corresponda al tipo de trabajador
+                if cargo_obj.familia.tipo_trabajador.codigo_trabajador != data['tipo_trabajador']:
                     return JsonResponse({
                         'success': False,
-                        'error': 'La familia de cargo no corresponde al tipo de trabajador seleccionado'
+                        'error': 'El cargo no corresponde al tipo de trabajador seleccionado'
                     }, status=400)
                 
-                cargo_obj, created = cargo.objects.get_or_create(
-                    familia=familia,
-                    nivel=nivel,
-                    defaults={'activo': True}
-                )
-                
-                if not created and not cargo_obj.activo:
+                # Activar el cargo si estaba inactivo
+                if not cargo_obj.activo:
                     cargo_obj.activo = True
                     cargo_obj.save()
-            except familia_cargo.DoesNotExist:
+                    
+            except cargo.DoesNotExist:
                 return JsonResponse({
                     'success': False,
-                    'error': 'La familia de cargo especificada no existe'
-                }, status=400)
-            except nivel_cargo.DoesNotExist:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'El nivel de cargo especificado no existe'
+                    'error': 'El cargo especificado no existe'
                 }, status=400)
 
             # Verificar unicidad de cédula y email
@@ -1428,3 +1389,29 @@ def api_empleadoss(request):
     return JsonResponse({
         'error': 'Método no permitido'
     }, status=405)
+
+def api_cargos_por_tipo(request):
+    """
+    API para obtener cargos filtrados por tipo de trabajador
+    """
+    tipo_trabajador_id = request.GET.get('tipo_trabajador')
+    
+    if not tipo_trabajador_id:
+        return JsonResponse([], safe=False)
+    
+    try:
+        cargos = cargo.objects.filter(
+            familia__tipo_trabajador_id=tipo_trabajador_id,
+            activo=True
+        ).select_related('familia', 'nivel').order_by('familia__nombre', 'nivel__orden_jerarquico')
+        
+        cargos_data = [{
+            'id': c.id,
+            'familia_nombre': c.familia.nombre,
+            'nivel_nombre': c.nivel.nombre,
+            'codigo': f"{c.familia.nombre} - {c.nivel.nombre}"
+        } for c in cargos]
+        
+        return JsonResponse(cargos_data, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

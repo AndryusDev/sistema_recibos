@@ -278,8 +278,7 @@ async function guardarUsuario() {
                 grado_instruccion: modal.querySelector('#modal-grado-instruccion').value || '',
                 fecha_ingreso: modal.querySelector('#fecha-ingreso').value,
                 tipo_trabajador: parseInt(modal.querySelector('#tipo-trabajador').value),
-                familia_cargo: parseInt(modal.querySelector('#familia-cargo').value),
-                nivel_cargo: modal.querySelector('#nivel-cargo').value,
+                cargo_id: parseInt(modal.querySelector('#nivel-cargo').value), // Cambiado a cargo_id
                 telefono_principal: modal.querySelector('#telefono-principal').value || '',
                 telefono_secundario: modal.querySelector('#telefono-secundario').value || '',
                 email: modal.querySelector('#email').value || '',
@@ -292,13 +291,13 @@ async function guardarUsuario() {
             };
 
             // Validación adicional
-            if (isNaN(formData.tipo_trabajador) || isNaN(formData.familia_cargo)) {
-                throw new Error('Seleccione valores válidos para tipo trabajador y familia de cargo');
+            if (isNaN(formData.tipo_trabajador) || isNaN(formData.cargo_id)) {
+                throw new Error('Seleccione valores válidos para tipo trabajador y cargo');
             }
 
             console.log('Datos a enviar:', formData);
 
-            // 1. Primero guardamos el empleado
+            // Enviar datos al servidor
             const guardarResponse = await fetch('/api/empleadoss/', {
                 method: 'POST',
                 headers: {
@@ -314,18 +313,8 @@ async function guardarUsuario() {
                 throw new Error(empleadoData.error || empleadoData.detail || 'Error al guardar empleado');
             }
 
-            // 2. Luego obtenemos las familias de cargo (si es necesario)
-            const tipoTrabajadorId = formData.tipo_trabajador;
-            const familiasResponse = await fetch(`/api/familias-cargo/?tipo_trabajador=${tipoTrabajadorId}`);
-            const familiasData = await familiasResponse.json();
-
-            if (!familiasResponse.ok) {
-                console.error("Error al obtener familias de cargo:", familiasData);
-                // No lanzamos error porque esto no es crítico para guardar el empleado
-            }
-
             mostrarNotificacion(empleadoData.message || 'Empleado creado correctamente', 'success');
-            await actualizarTablaUsuarios();
+            await actualizarTablaEmpleados();
             setTimeout(usuarioModal__cerrar, 1500);
 
         } catch (error) {
@@ -347,12 +336,6 @@ function editarUsuario(boton) {
     usuarioModal__abrir(usuarioId);
 }
 
-// Función para actualizar la tabla de usuarios
-async function actualizarTablaUsuarios() {
-    // Implementa esta función según cómo manejas la visualización de usuarios
-    console.log('Actualizando tabla de usuarios...');
-    // Aquí iría el código para refrescar la tabla después de crear un usuario
-}
 
 document.getElementById('tipo-trabajador').addEventListener('change', function() {
     const tipoTrabajadorId = this.value;
@@ -403,7 +386,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorMsg.remove();
             }
             
-            // Resto de tu lógica para cargar opciones...
         });
     }
 });
@@ -564,7 +546,7 @@ async function confirmarEliminarUsuario(boton) {
             showConfirmButton: false
         });
 
-        await aplicarFiltrosEmpleados();
+        await actualizarTablaEmpleados();
 
     } catch (error) {
         console.error('Error eliminando empleado:', error);
@@ -627,6 +609,34 @@ document.addEventListener('DOMContentLoaded', function() {
             // Lógica para cargar cargos según familia
         });
     }
+});
+
+document.getElementById('tipo-trabajador').addEventListener('change', function() {
+    const tipoTrabajadorId = this.value;
+    const cargoSelect = document.getElementById('nivel-cargo');
+    
+    if (!tipoTrabajadorId) {
+        // Resetear el select si no hay tipo seleccionado
+        cargoSelect.innerHTML = '<option value="">Seleccione tipo de trabajador primero</option>';
+        return;
+    }
+    
+    // Obtener cargos filtrados por tipo de trabajador
+    fetch(`/api/cargos_tipo/?tipo_trabajador=${tipoTrabajadorId}`)
+        .then(response => response.json())
+        .then(data => {
+            cargoSelect.innerHTML = '<option value="">Seleccione...</option>';
+            data.forEach(cargo => {
+                const option = document.createElement('option');
+                option.value = cargo.id;
+                option.textContent = `${cargo.familia_nombre} - ${cargo.nivel_nombre}`;
+                cargoSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar cargos:', error);
+            cargoSelect.innerHTML = '<option value="">Error al cargar cargos</option>';
+        });
 });
 
 // Exportar funciones globales (manteniendo las tuyas y añadiendo nuevas)

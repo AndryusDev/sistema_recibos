@@ -291,26 +291,14 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="familia-cargo"><i class="fas fa-sitemap"></i> Familia de Cargo:</label>
-                            <select id="familia-cargo" name="familia_cargo" class="form-input" required>
-                                <option value="">Seleccione...</option>
-                                {% for familia in familias_cargo %}
-                                    <option value="{{ familia.codigo_familiacargo }}" 
-                                            data-tipo-trabajador="{{ familia.tipo_trabajador.codigo_trabajador }}">
-                                        {{ familia.nombre }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        
-                        <div class="form-group">
                             <label for="nivel-cargo"><i class="fas fa-user-tag"></i> Nivel:</label>
                             <select id="nivel-cargo" name="nivel_cargo" class="form-input" required>
                                 <option value="">Seleccione...</option>
-                                {% for nivel in niveles_cargo %}
-                                    <option value="{{ nivel.nivel }}">{{ nivel.nombre }}</option>
-                                {% endfor %}
+                                    {% for cargo in cargos_completos %}
+                                <option value="{{ cargo.id }}">
+                                    {{ cargo.familia.nombre }} - {{ cargo.nivel.nombre }}
+                                </option>
+                                    {% endfor %}
                             </select>
                         </div>
                     </div>

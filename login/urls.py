@@ -37,8 +37,9 @@ urlpatterns = [
     path('crear_usuarios/', views.crear_usuarios, name= 'crear_usuarios'),
     path('api/empleados/', views.listar_empleados, name= 'listar_empleados'),
     path('api/empleadoss/', views.api_empleadoss, name='api_empleadoss'),
-    path('api/familias-cargo/', views.api_familias_cargo, name='api_familias_cargo'),
+    path('api/cargos_tipo/', views.api_cargos_por_tipo, name='api_cargos_por_tipo'),
     path('empleados/nuevo/', views.empleado_view, name='crear_empleado'),
+    #path('api/empleado/<int:pk>/', views.eliminar_empleado, name='eliminar_empleado'),
 
     path('roles_usuarios/', views.roles_usuarios, name='roles_usuarios'),
     path('crear_roles/', views.crear_roles, name='crear_roles'),
