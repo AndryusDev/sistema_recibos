@@ -42,7 +42,9 @@ urlpatterns = [
     path('api/empleado/<int:pk>/', views.eliminar_empleado, name='eliminar_empleado'),
 
     path('roles_usuarios/', views.roles_usuarios, name='roles_usuarios'),
+    path('api/usuarios/', views.listar_usuarios, name='listar_usuarios'),
     path('crear_roles/', views.crear_roles, name='crear_roles'),
+    
     
 
     path('recibos/', login_required(listado_recibos), name='listado_recibos'),

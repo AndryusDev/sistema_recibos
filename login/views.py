@@ -59,7 +59,7 @@ def serve_js(request, script_name):
     # Lista blanca de scripts permitidos
     allowed_scripts = ['noticias.js', 'perfil_usuario.js','recibos_pagos.js',
                         'constancia_trabajo.js', 'arc.js', 'importar_nomina.js',
-                        'ver_prenomina.js', 'crear_usuarios.js', 'gestion_respaldo.js', 'dashboard.js', 'roles_usuarios', 'crear_roles.js']  # Añade todos tus scripts aquí
+                        'ver_prenomina.js', 'crear_usuarios.js', 'gestion_respaldo.js', 'dashboard.js', 'roles_usuarios.js', 'crear_roles.js']  # Añade todos tus scripts aquí
     
     if script_name not in allowed_scripts:
         return HttpResponseNotFound('Script no permitido')
@@ -282,7 +282,12 @@ def chart_data(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 def roles_usuarios(request):
-    return render(request, 'menu_principal/subs_menus/rol_usuario.html')
+    # Verificar si el archivo JS existe (para debugging)
+    js_path = os.path.join(settings.STATIC_ROOT, 'javascript', 'menu_principal', 'subs_menus', 'roles_usuarios.js')
+    print(f"Ruta del JS: {js_path}")
+    print(f"Existe el archivo?: {os.path.exists(js_path)}")
+    
+    return render(request, 'menu_principal/subs_menus/roles_usuarios.html')
 
 def crear_roles(request):
     return render(request, 'menu_principal/subs_menus/crear_roles.html')
@@ -982,14 +987,8 @@ def listar_nominas(request):
             'detail': str(e)
         }, status=500)
 
-logger = logging.getLogger(__name__)
-
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-
 logger = logging.getLogger(__name__)
-
-
 
 @csrf_exempt
 @transaction.atomic
@@ -1039,8 +1038,7 @@ def eliminar_nomina(request, pk):
         'error': 'Método no permitido'
     }, status=405)
 
-
-#   /////////////// Importar nominas al panel ///////////////
+#   /////////////// Importar empleados al panel ///////////////
 
 @require_http_methods(["GET"])
 def listar_empleados(request):
@@ -1452,3 +1450,78 @@ def eliminar_empleado(request, pk):
                 'error': str(e),
                 'status': 'error'
             }, status=500)
+        
+
+#   /////////////// Panel de roles ///////////////
+
+@require_http_methods(["GET"])
+def listar_usuarios(request):
+    """API para listar usuarios con sus roles y filtros"""
+    try:
+        # 1. Obtener parámetros
+        nombre = request.GET.get('nombre', '').strip()
+        email = request.GET.get('email', '').strip()
+        rol_filter = request.GET.get('rol', '').strip()
+        estado = request.GET.get('estado', '').strip()
+        orden = request.GET.get('orden', '-fecha_registro')
+        page = request.GET.get('page', 1)
+        
+        # 2. Construir consulta base
+        queryset = usuario.objects.select_related('empleado', 'rol').all()
+        
+        # 3. Aplicar filtros
+        if nombre:
+            queryset = queryset.filter(empleado__nombre__icontains=nombre)
+        if email:
+            queryset = queryset.filter(email__icontains=email)
+        if rol_filter:
+            queryset = queryset.filter(rol__nombre_rol__icontains=rol_filter)
+        if estado:
+            # Filtro por estado (activo/inactivo)
+            queryset = queryset.filter(activo=(estado.lower() == 'activo'))
+        
+        # 4. Ordenamiento
+        orden_validos = ['-fecha_registro', 'fecha_registro', 'empleado__nombre', 
+                        '-empleado__nombre', 'email', '-email', 'rol__nombre_rol', 
+                        '-rol__nombre_rol', '-ultimo_login', 'ultimo_login']
+        orden = orden if orden in orden_validos else '-fecha_registro'
+        queryset = queryset.order_by(orden)
+        
+        # 5. Paginación
+        paginator = Paginator(queryset, 25)
+        try:
+            usuarios_paginados = paginator.page(page)
+        except:
+            usuarios_paginados = paginator.page(1)
+        
+        # 6. Preparar respuesta
+        usuarios_data = []
+        for user in usuarios_paginados:
+            usuarios_data.append({
+                'id': user.id,
+                'nombre': getattr(user.empleado, 'nombre', 'Sin nombre'),
+                'email': user.email,
+                'rol': {
+                    'codigo': user.rol.codigo_rol if user.rol else None,
+                    'nombre': getattr(user.rol, 'nombre_rol', 'Sin rol')
+                },
+                'activo': user.activo,  # Ahora este campo existe
+                'ultimo_login': user.ultimo_login.strftime('%d/%m/%Y %H:%M') if user.ultimo_login else 'Nunca',
+                'fecha_registro': user.fecha_registro.strftime('%d/%m/%Y %H:%M') if user.fecha_registro else ''
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'usuarios': usuarios_data,
+            'total': paginator.count,
+            'paginas': paginator.num_pages,
+            'actual': usuarios_paginados.number
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en listar_usuarios: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al procesar la solicitud',
+            'detail': str(e)
+        }, status=500)

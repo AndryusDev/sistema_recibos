@@ -290,6 +290,7 @@ class usuario(models.Model):
     ultimo_login = models.DateTimeField(null=True, blank=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
     rol = models.ForeignKey(rol, on_delete=models.PROTECT)
+    activo = models.BooleanField(default=True)
     
     class Meta:
         db_table = 'usuarios'

@@ -1,4 +1,3 @@
-
 let currentTemplate = null;
 
 
@@ -96,6 +95,7 @@ async function loadTemplate(templateName) {
             case "noticias.html": url = "/noticias/"; break;
             case "ver_prenomina.html": url = "/ver_prenomina"; break;
             case "crear_usuarios.html": url = "/crear_usuarios"; break;
+            case "roles_usuarios.html": url = "/roles_usuarios"; break;
             /*case "dashboard.html": 
                 url = "/dashboard";*/
                 // Manejo especial para dashboard como en tu primer enfoque

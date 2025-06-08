@@ -27,12 +27,12 @@
                                 <i class="fas fa-search"></i>
                                 <input type="text" placeholder="Buscar usuarios...">
                             </div>
-                            <button class="btn btn-primary" id="btn-nuevo-usuario">
+                            <button class="btn btn-primary" id="btn-buscar-usuarios">
                                 <i class="fas fa-magnifying-glass"></i> Buscar
                             </button>
                         </div>
                         <div class="card-actions">
-                            <select class="filter-select">
+                            <select class="filter-select" id="filtro-rol">
                                 <option value="all">Todos los usuarios</option>
                                 <option value="admin">Administradores</option>
                                 <option value="consultor">Consultores</option>
@@ -52,78 +52,10 @@
                                         <th class="tabla-recibos__columna">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody class="tabla-recibos__tbody">
-                                    <tr class="tabla-recibos__fila">
-                                        <td class="tabla-recibos__celda">
-                                            <div class="user-avatar">
-                                                <img src="https://ui-avatars.com/api/?name=Admin+User" alt="Admin User">
-                                            </div>
-                                            <span>Admin User</span>
-                                        </td>
-                                        <td class="tabla-recibos__celda">admin@empresa.com</td>
-                                        <td class="tabla-recibos__celda">
-                                            <span class="">Administrador</span>
-                                        </td>
-                                        <td class="tabla-recibos__celda">
-                                            <span class="">Activo</span>
-                                        </td>
-                                        <td class="tabla-recibos__celda">Hoy, 10:45 AM</td>
-                                        <td class="tabla-recibos__celda">
-                                            <button class="btn-action btn-edit" title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn-action btn-delete" title="Eliminar">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
+                                <tbody class="tabla-recibos__tbody" id="cuerpo-tabla-usuarios">
+                                    <!-- Los datos se cargarán dinámicamente -->
                                     <tr>
-                                        <td>
-                                            <div class="user-avatar">
-                                                <img src="https://ui-avatars.com/api/?name=Consultor+1" alt="Consultor 1">
-                                            </div>
-                                            <span>Consultor 1</span>
-                                        </td>
-                                        <td>consultor1@empresa.com</td>
-                                        <td>
-                                            <span class="">Consultor</span>
-                                        </td>
-                                        <td>
-                                            <span class="">Activo</span>
-                                        </td>
-                                        <td>Ayer, 3:20 PM</td>
-                                        <td>
-                                            <button class="btn-action btn-edit" title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn-action btn-delete" title="Eliminar">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div class="user-avatar">
-                                                <img src="https://ui-avatars.com/api/?name=Consultor+2" alt="Consultor 2">
-                                            </div>
-                                            <span>Consultor 2</span>
-                                        </td>
-                                        <td>consultor2@empresa.com</td>
-                                        <td>
-                                            <span class="">Consultor</span>
-                                        </td>
-                                        <td>
-                                            <span class="">Inactivo</span>
-                                        </td>
-                                        <td>05/10/2023</td>
-                                        <td>
-                                            <button class="btn-action btn-edit" title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn-action btn-delete" title="Eliminar">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </td>
+                                        <td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando usuarios...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -134,63 +66,60 @@
         </main>
     </div>
 
-    <!-- Modal para Editar/Crear Usuario -->
     <!-- Modal para Editar Usuario y Rol -->
-<div class="modal" id="edit-user-modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3><i class="fas fa-user-edit"></i> <span id="modal-title">Editar Usuario</span></h3>
-            <button class="btn-close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <form id="edit-user-form">
-                <!-- Información del Usuario -->
-                <div class="form-section">
-                    <h4><i class="fas fa-user"></i> Información del Usuario</h4>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="edit-user-name">Nombre completo</label>
-                            <input type="text" id="edit-user-name" class="form-control" readonly>
+    <div class="modal" id="edit-user-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-edit"></i> <span id="modal-title">Editar Usuario</span></h3>
+                <button class="btn-close" id="btn-cerrar-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-user-form">
+                    <!-- Información del Usuario -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-user"></i> Información del Usuario</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-user-name">Nombre completo</label>
+                                <input type="text" id="edit-user-name" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-user-email">Email</label>
+                                <input type="email" id="edit-user-email" class="form-control" required>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Asignación de Rol -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-user-tag"></i> Asignación de Rol</h4>
                         <div class="form-group">
-                            <label for="edit-user-email">Email</label>
-                            <input type="email" id="edit-user-email" class="form-control" required>
+                            <label for="edit-user-role">Rol</label>
+                            <select id="edit-user-role" class="form-control" required>
+                                <option value="">Seleccionar rol...</option>
+                                <!-- Los roles se cargarán dinámicamente -->
+                            </select>
                         </div>
                     </div>
-                </div>
 
-                <!-- Asignación de Rol -->
-                <div class="form-section">
-                    <h4><i class="fas fa-user-tag"></i> Asignación de Rol</h4>
-                    <div class="form-group">
-                        <label for="edit-user-role">Rol</label>
-                        <select id="edit-user-role" class="form-control" required>
-                            <option value="">Seleccionar rol...</option>
-                            {% for rol in roles %}
-                            <option value="{{ rol.codigo_rol }}">{{ rol.nombre_rol }}</option>
-                            {% endfor %}
-                        </select>
+                    <!-- Cambio de Contraseña (Opcional) -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-lock"></i> Seguridad</h4>
+                        <div class="form-group">
+                            <label for="edit-user-password">Nueva Contraseña</label>
+                            <input type="password" id="edit-user-password" class="form-control" placeholder="Dejar en blanco para no cambiar">
+                            <small class="form-text">Mínimo 8 caracteres</small>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Cambio de Contraseña (Opcional) -->
-                <div class="form-section">
-                    <h4><i class="fas fa-lock"></i> Seguridad</h4>
-                    <div class="form-group">
-                        <label for="edit-user-password">Nueva Contraseña</label>
-                        <input type="password" id="edit-user-password" class="form-control" placeholder="Dejar en blanco para no cambiar">
-                        <small class="form-text">Mínimo 8 caracteres</small>
-                    </div>
-                </div>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary btn-cancel">Cancelar</button>
-            <button class="btn btn-primary btn-save">Guardar Cambios</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btn-cancelar-edicion">Cancelar</button>
+                <button class="btn btn-primary" id="btn-guardar-usuario">Guardar Cambios</button>
+            </div>
         </div>
     </div>
-</div>
 
-    <script src="{% static 'static/javascript/menu_principal/subs_menus/roles_usuarios.js' %}"></script>
+    <script src="{% static 'javascript/menu_principal/subs_menus/roles_usuarios.js' %}"></script>
 </body>
 </html>

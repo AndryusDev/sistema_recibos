@@ -789,7 +789,6 @@ if (typeof window.Swal !== 'undefined') {
     script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
     script.onload = () => {
         Swal = window.Swal;
-        console.log('SweetAlert2 cargado dinámicamente');
     };
     document.head.appendChild(script);
 }
