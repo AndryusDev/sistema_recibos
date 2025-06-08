@@ -7,8 +7,10 @@
     <title>Gestión de Usuarios - Sistema Policial</title>
     <link rel="stylesheet" href="{% static 'css/crear_usuarios.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 </head>
 <body>
+    
     <div class="titulo-pagina">
         <h1><i class="fas fa-users-cog"></i> Gestión de Usuarios</h1>
     </div>
@@ -39,10 +41,12 @@
 
                 <div class="form-group">
                     <label for="filtro-cargo"><i class="fas fa-briefcase"></i> Cargo:</label>
-                    <select id="filtro-cargo" class="busqueda-input">
+                    <select id="filtro-cargo" name="cargo" class="busqueda-input">
                         <option value="">Todos</option>
-                        {% for cargo in cargos %}
-                            <option value="{{ cargo.id }}">{{ cargo.nombre_completo }}</option>
+                        {% for cargo in cargos_completos %}
+                            <option value="{{ cargo.id }}">
+                                {{ cargo.familia.nombre }} - {{ cargo.nivel.nombre }}
+                            </option>
                         {% endfor %}
                     </select>
                 </div>
@@ -278,7 +282,7 @@
                         
                         <div class="form-group">
                             <label for="tipo-trabajador"><i class="fas fa-user-tie"></i> Tipo de Trabajador:</label>
-                            <select id="tipo-trabajador" name="tipo_trabajador" class="form-input" >
+                            <select id="tipo-trabajador" name="tipo_trabajador" class="form-input" required>
                                 <option value="">Seleccione...</option>
                                 {% for trabajador in tipos_trabajador %}
                                     <option value="{{ trabajador.codigo_trabajador }}">{{ trabajador.descripcion }}</option>
@@ -288,15 +292,25 @@
                         
                         <div class="form-group">
                             <label for="familia-cargo"><i class="fas fa-sitemap"></i> Familia de Cargo:</label>
-                            <select id="familia-cargo" name="familia_cargo" class="form-input" >
-                                <option value="">Seleccione tipo de trabajador primero</option>
+                            <select id="familia-cargo" name="familia_cargo" class="form-input" required>
+                                <option value="">Seleccione...</option>
+                                {% for familia in familias_cargo %}
+                                    <option value="{{ familia.codigo_familiacargo }}" 
+                                            data-tipo-trabajador="{{ familia.tipo_trabajador.codigo_trabajador }}">
+                                        {{ familia.nombre }}
+                                    </option>
+                                {% endfor %}
                             </select>
                         </div>
+
                         
                         <div class="form-group">
-                            <label for="cargo"><i class="fas fa-user-tag"></i> Cargo:</label>
-                            <select id="cargo" name="cargo" class="form-input" >
-                                <option value="">Seleccione familia de cargo primero</option>
+                            <label for="nivel-cargo"><i class="fas fa-user-tag"></i> Nivel:</label>
+                            <select id="nivel-cargo" name="nivel_cargo" class="form-input" required>
+                                <option value="">Seleccione...</option>
+                                {% for nivel in niveles_cargo %}
+                                    <option value="{{ nivel.nivel }}">{{ nivel.nombre }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                     </div>
@@ -408,7 +422,7 @@
                         <div class="resumen-seccion">
                             <h5>Información Laboral</h5>
                             <div class="resumen-item">
-                                <span>Cargo:</span>
+                                <span>Nivel:</span>
                                 <strong id="resumen-cargo"></strong>
                             </div>
                             <div class="resumen-item">
@@ -506,6 +520,7 @@
         </div>
     </div>
 
-    <script src="{% static 'menu_principal/subs_menus/crear_usuarios.js' %}"></script>
+    <script src="{% static 'menu_principal/subs_menus/crear_usuarios.js' %}" defer></script>
+    
 </body>
 </html>

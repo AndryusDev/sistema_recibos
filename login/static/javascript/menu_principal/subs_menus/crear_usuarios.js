@@ -4,7 +4,16 @@ let pasoActual = 1;
 const totalPasos = 4;
 let usuarioActualId = null;
 
-// Función global para abrir el modal
+// Función para obtener el CSRF token
+function getCSRFToken() {
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+    return cookieValue || '';
+}
+
+// Función para abrir el modal
 function usuarioModal__abrir(usuarioId = null) {
     const modal = document.getElementById("usuarioModal");
     if (modal) {
@@ -19,14 +28,10 @@ function usuarioModal__abrir(usuarioId = null) {
                 ? '<i class="fas fa-user-edit"></i> Editar Usuario' 
                 : '<i class="fas fa-user-plus"></i> Crear Nuevo Usuario';
         }
-        
-        if (usuarioId) {
-            cargarDatosUsuario(usuarioId);
-        }
     }
 }
 
-// Función global para cerrar el modal
+// Función para cerrar el modal
 function usuarioModal__cerrar() {
     const modal = document.getElementById("usuarioModal");
     if (modal) modal.style.display = 'none';
@@ -34,8 +39,8 @@ function usuarioModal__cerrar() {
 
 // Función para navegar entre pasos
 function navegarPaso(direccion) {
-    if (direccion === 'siguiente') {
-        if (validarPasoActual() && pasoActual < totalPasos) {
+    if (direccion === 'siguiente' && pasoActual < totalPasos) {
+        if (validarPasoActual()) {
             pasoActual++;
             actualizarPasos();
         }
@@ -45,166 +50,84 @@ function navegarPaso(direccion) {
     }
 }
 
-// Función para editar usuario
-function editarUsuario(boton) {
-    const usuarioId = boton.getAttribute('data-idusuario');
-    usuarioModal__abrir(usuarioId);
-}
-
-// Función para confirmar eliminación
-function confirmarEliminarUsuario(boton) {
-    const modalConfirmacion = document.getElementById("confirmacionModal");
-    if (modalConfirmacion) {
-        usuarioActualId = boton.getAttribute('data-usuarioid');
-        modalConfirmacion.style.display = 'flex';
-    }
-}
-
-// Función para cerrar modal de confirmación
-function cerrarModalConfirmacion() {
-    const modalConfirmacion = document.getElementById("confirmacionModal");
-    if (modalConfirmacion) modalConfirmacion.style.display = 'none';
-}
-
-// Función para eliminar usuario confirmado
-function eliminarUsuarioConfirmado() {
-    if (usuarioActualId) {
-        console.log('Eliminando usuario:', usuarioActualId);
-        // Aquí iría la llamada AJAX para eliminar el usuario
-        mostrarNotificacion('Usuario eliminado correctamente', 'success');
-        cerrarModalConfirmacion();
-        actualizarTablaUsuarios();
-    }
-}
-
-// Función para guardar usuario
-function guardarUsuario() {
-    if (validarPasoActual()) {
-        const btnGuardar = document.getElementById('btn-guardar');
-        if (btnGuardar) {
-            btnGuardar.disabled = true;
-            btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-            
-            // Simular envío de datos
-            setTimeout(() => {
-                mostrarNotificacion(
-                    usuarioActualId 
-                        ? 'Usuario actualizado correctamente' 
-                        : 'Usuario creado correctamente',
-                    'success'
-                );
-                
-                cerrarModalUsuario();
-                btnGuardar.disabled = false;
-                btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar';
-                actualizarTablaUsuarios();
-            }, 1500);
-        }
-    }
-}
-
-// Funciones de apoyo
-function reiniciarPasos() {
-    pasoActual = 1;
-    actualizarPasos();
-}
-
+// Función para actualizar la visualización de pasos
 function actualizarPasos() {
+    const modal = document.getElementById("usuarioModal");
+    if (!modal) return;
+
     // Ocultar todos los pasos
-    document.querySelectorAll('.paso-formulario').forEach(paso => {
+    modal.querySelectorAll('.paso-formulario').forEach(paso => {
         paso.classList.remove('activo');
     });
 
     // Mostrar paso actual
-    const pasoActivo = document.querySelector(`.paso-formulario[data-paso="${pasoActual}"]`);
+    const pasoActivo = modal.querySelector(`.paso-formulario[data-paso="${pasoActual}"]`);
     if (pasoActivo) pasoActivo.classList.add('activo');
 
     // Actualizar indicadores
-    document.querySelectorAll('.indicador-pasos .paso').forEach((paso, index) => {
-        if (paso) {
-            paso.classList.toggle('completado', index < pasoActual - 1);
-            paso.classList.toggle('activo', index === pasoActual - 1);
-        }
+    modal.querySelectorAll('.indicador-pasos .paso').forEach((paso, index) => {
+        paso.classList.toggle('completado', index < pasoActual - 1);
+        paso.classList.toggle('activo', index === pasoActual - 1);
     });
 
     // Actualizar botones
-    const btnAnterior = document.getElementById('btn-anterior');
-    const btnSiguiente = document.getElementById('btn-siguiente');
-    const btnGuardar = document.getElementById('btn-guardar');
+    const btnAnterior = modal.querySelector('#btn-anterior');
+    const btnSiguiente = modal.querySelector('#btn-siguiente');
+    const btnGuardar = modal.querySelector('#btn-guardar');
 
     if (btnAnterior) btnAnterior.disabled = pasoActual === 1;
-    if (btnSiguiente) btnSiguiente.style.display = pasoActual < totalPasos ? 'flex' : 'none';
-    if (btnGuardar) btnGuardar.style.display = pasoActual === totalPasos ? 'flex' : 'none';
-
-    // Actualizar resumen si es el último paso
-    if (pasoActual === totalPasos) {
-        actualizarResumen();
+    if (btnSiguiente) btnSiguiente.style.display = pasoActual < totalPasos ? 'block' : 'none';
+    if (btnGuardar) {
+        btnGuardar.style.display = pasoActual === totalPasos ? 'block' : 'none';
+        if (pasoActual === totalPasos) {
+            actualizarResumen();
+        }
     }
 }
 
+// Función para validar el paso actual
 function validarPasoActual() {
-    const paso = document.querySelector(`.paso-formulario[data-paso="${pasoActual}"]`);
+    const modal = document.getElementById("usuarioModal");
+    if (!modal) return false;
+
+    const paso = modal.querySelector(`.paso-formulario[data-paso="${pasoActual}"]`);
     if (!paso) return false;
 
     let valido = true;
     
-    // Seleccionar todos los campos requeridos excepto segundo nombre y apellido
-    const camposRequeridos = paso.querySelectorAll('[required]:not(#modal-segundo-nombre):not(#modal-segundo-apellido)');
+    // Campos requeridos por paso
+    const camposRequeridos = {
+        1: ['modal-tipo-identificacion', 'modal-cedula', 'modal-primer-nombre', 'modal-primer-apellido', 'modal-fecha-nacimiento'],
+        2: ['fecha-ingreso', 'tipo-trabajador', 'email'],
+        3: ['banco', 'tipo-cuenta', 'numero-cuenta']
+    };
 
-    camposRequeridos.forEach(campo => {
-        if (!campo.value.trim()) {
-            campo.classList.add('invalido');
-            valido = false;
-            
-            // Opcional: agregar mensaje de error
-            if (!campo.nextElementSibling || !campo.nextElementSibling.classList.contains('error-mensaje')) {
-                const errorMsg = document.createElement('span');
-                errorMsg.className = 'error-mensaje';
-                errorMsg.textContent = 'Este campo es requerido';
-                campo.parentNode.insertBefore(errorMsg, campo.nextSibling);
+    // Validar campos del paso actual
+    if (camposRequeridos[pasoActual]) {
+        camposRequeridos[pasoActual].forEach(id => {
+            const campo = modal.querySelector(`#${id}`);
+            if (campo && !campo.value.trim()) {
+                marcarCampoInvalido(campo, 'Este campo es requerido');
+                valido = false;
             }
-        } else {
-            campo.classList.remove('invalido');
-            // Remover mensaje de error si existe
-            const errorMsg = campo.nextElementSibling;
-            if (errorMsg && errorMsg.classList.contains('error-mensaje')) {
-                errorMsg.remove();
-            }
-        }
-    });
+        });
+    }
 
-    // Validaciones adicionales para campos específicos
+    // Validaciones específicas
     if (pasoActual === 1) {
-        // Validar que la cédula sea numérica
-        const cedula = document.getElementById('modal-cedula');
+        const cedula = modal.querySelector('#modal-cedula');
         if (cedula && cedula.value && isNaN(cedula.value)) {
-            cedula.classList.add('invalido');
+            marcarCampoInvalido(cedula, 'La cédula debe ser numérica');
             valido = false;
-            
-            if (!cedula.nextElementSibling || !cedula.nextElementSibling.classList.contains('error-mensaje')) {
-                const errorMsg = document.createElement('span');
-                errorMsg.className = 'error-mensaje';
-                errorMsg.textContent = 'La cédula debe ser numérica';
-                cedula.parentNode.insertBefore(errorMsg, cedula.nextSibling);
-            }
         }
-        
-        // Validar formato de fecha de nacimiento si existe
-        const fechaNacimiento = document.getElementById('modal-fecha-nacimiento');
+
+        const fechaNacimiento = modal.querySelector('#modal-fecha-nacimiento');
         if (fechaNacimiento && fechaNacimiento.value) {
             const fecha = new Date(fechaNacimiento.value);
             const hoy = new Date();
-            
             if (fecha > hoy) {
-                fechaNacimiento.classList.add('invalido');
+                marcarCampoInvalido(fechaNacimiento, 'La fecha no puede ser futura');
                 valido = false;
-                
-                if (!fechaNacimiento.nextElementSibling || !fechaNacimiento.nextElementSibling.classList.contains('error-mensaje')) {
-                    const errorMsg = document.createElement('span');
-                    errorMsg.className = 'error-mensaje';
-                    errorMsg.textContent = 'La fecha no puede ser futura';
-                    fechaNacimiento.parentNode.insertBefore(errorMsg, fechaNacimiento.nextSibling);
-                }
             }
         }
     }
@@ -212,79 +135,76 @@ function validarPasoActual() {
     return valido;
 }
 
+// Función para marcar campo como inválido
+function marcarCampoInvalido(campo, mensaje) {
+    campo.classList.add('invalido');
+    let errorMsg = campo.nextElementSibling;
+    if (!errorMsg || !errorMsg.classList.contains('error-mensaje')) {
+        errorMsg = document.createElement('span');
+        errorMsg.className = 'error-mensaje';
+        campo.parentNode.insertBefore(errorMsg, campo.nextSibling);
+    }
+    errorMsg.textContent = mensaje;
+}
+
+// Función para actualizar el resumen
 function actualizarResumen() {
+    const modal = document.getElementById("usuarioModal");
+    if (!modal) return;
+
     const elementosResumen = {
-        // Información Personal
         'resumen-nombre-completo': () => {
-            const primerNombre = document.getElementById('modal-primer-nombre').value;
-            const segundoNombre = document.getElementById('modal-segundo-nombre').value;
-            const primerApellido = document.getElementById('modal-primer-apellido').value;
-            const segundoApellido = document.getElementById('modal-segundo-apellido').value;
+            const primerNombre = modal.querySelector('#modal-primer-nombre').value;
+            const segundoNombre = modal.querySelector('#modal-segundo-nombre').value;
+            const primerApellido = modal.querySelector('#modal-primer-apellido').value;
+            const segundoApellido = modal.querySelector('#modal-segundo-apellido').value;
             return `${primerApellido} ${segundoApellido || ''} ${primerNombre} ${segundoNombre || ''}`.replace(/\s+/g, ' ').trim();
         },
         'resumen-identificacion': () => {
-            const tipo = document.getElementById('modal-tipo-identificacion');
-            const cedula = document.getElementById('modal-cedula').value;
-            const rif = document.getElementById('modal-rif').value;
+            const tipo = modal.querySelector('#modal-tipo-identificacion');
+            const cedula = modal.querySelector('#modal-cedula').value;
+            const rif = modal.querySelector('#modal-rif').value;
             
             if (cedula) {
                 return tipo ? `${tipo.options[tipo.selectedIndex].text}: ${cedula}` : cedula;
-            } else if (rif) {
-                return `RIF: ${rif}`;
             }
-            return 'No especificado';
+            return rif ? `RIF: ${rif}` : 'No especificado';
         },
-        'resumen-fecha-nacimiento': () => {
-            const fecha = document.getElementById('modal-fecha-nacimiento').value;
-            return fecha ? formatDate(fecha) : 'No especificada';
-        },
-        
-        // Información Laboral
-        'resumen-cargo': () => {
-            const cargo = document.getElementById('cargo');
-            return cargo ? cargo.options[cargo.selectedIndex].text : 'No especificado';
-        },
+        'resumen-fecha-nacimiento': () => formatDate(modal.querySelector('#modal-fecha-nacimiento').value),
+        'resumen-cargo': () => modal.querySelector('#cargo').options[modal.querySelector('#cargo').selectedIndex].text,
         'resumen-tipo-trabajador': () => {
-            const tipo = document.getElementById('tipo-trabajador');
+            const tipo = modal.querySelector('#tipo-trabajador');
             return tipo ? tipo.options[tipo.selectedIndex].text : 'No especificado';
         },
-        'resumen-fecha-ingreso': () => {
-            const fecha = document.getElementById('fecha-ingreso').value;
-            return fecha ? formatDate(fecha) : 'No especificada';
-        },
-        
-        // Datos Bancarios
+        'resumen-fecha-ingreso': () => formatDate(modal.querySelector('#fecha-ingreso').value),
         'resumen-banco': () => {
-            const banco = document.getElementById('banco');
+            const banco = modal.querySelector('#banco');
             return banco ? banco.options[banco.selectedIndex].text : 'No especificado';
         },
         'resumen-tipo-cuenta': () => {
-            const tipo = document.getElementById('tipo-cuenta');
+            const tipo = modal.querySelector('#tipo-cuenta');
             return tipo ? (tipo.value === 'C' ? 'Corriente' : 'Ahorro') : 'No especificado';
         },
-        'resumen-numero-cuenta': () => {
-            const cuenta = document.getElementById('numero-cuenta').value;
-            return cuenta || 'No especificado';
-        },
-        
-        // Configuración de Usuario (si es necesario)
-        'resumen-email-usuario': () => document.getElementById('email').value || 'No especificado'
+        'resumen-numero-cuenta': () => modal.querySelector('#numero-cuenta').value || 'No especificado',
+        'resumen-email-usuario': () => modal.querySelector('#email').value || 'No especificado'
     };
 
-    // Función auxiliar para formatear fechas
-    function formatDate(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    }
-
-    // Actualizar todos los elementos del resumen
     Object.entries(elementosResumen).forEach(([id, fn]) => {
-        const elemento = document.getElementById(id);
-        if (elemento) elemento.textContent = fn();
+        const elemento = modal.querySelector(`#${id}`);
+        if (elemento) {
+            elemento.textContent = fn() || 'No especificado';
+        }
     });
 }
 
+// Función para formatear fechas
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+// Función para resetear el formulario
 function resetearFormulario() {
     const modal = document.getElementById("usuarioModal");
     if (!modal) return;
@@ -298,195 +218,195 @@ function resetearFormulario() {
         checkbox.checked = false;
     });
     
-    modal.querySelector('#modal-familia-cargo').innerHTML = '<option value="">Seleccione tipo de trabajador primero</option>';
-    modal.querySelector('#modal-familia-cargo').disabled = true;
+    // Resetear selects dependientes
+    /*const familiaCargo = modal.querySelector('#familia-cargo');
+    const cargo = modal.querySelector('#cargo');
     
-    modal.querySelector('#modal-cargo').innerHTML = '<option value="">Seleccione familia de cargo primero</option>';
-    modal.querySelector('#modal-cargo').disabled = true;
+    if (familiaCargo) {
+        familiaCargo.innerHTML = '<option value="">Seleccione tipo de trabajador primero</option>';
+        familiaCargo.disabled = true;
+    }
+    
+    if (cargo) {
+        cargo.innerHTML = '<option value="">Seleccione familia de cargo primero</option>';
+        cargo.disabled = true;
+    }*/
+    
+    reiniciarPasos();
 }
 
-function mostrarNotificacion(mensaje, tipo) {
-    // Implementación básica - puedes usar una librería como Toastr o SweetAlert
+// Función para reiniciar pasos
+function reiniciarPasos() {
+    pasoActual = 1;
+    actualizarPasos();
+}
+
+// Función para mostrar notificaciones
+function mostrarNotificacion(mensaje, tipo = 'success') {
+    // Implementación simple con alert - puedes reemplazar por algo más elegante
     alert(`${tipo.toUpperCase()}: ${mensaje}`);
 }
 
-async function enviarDatosEmpleado(formData) {
-    try {
-        const response = await fetch('/api/empleados/', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': getCSRFToken(), // Necesario para Django
-                'Accept': 'application/json'
+// Función principal para guardar usuario
+// Función principal para guardar usuario (versión corregida)
+async function guardarUsuario() {
+    const btnGuardar = document.getElementById('btn-guardar');
+    const modal = document.getElementById("usuarioModal");
+    
+    if (!validarPasoActual()) {
+        mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+        return;
+    }
+
+    if (btnGuardar && modal) {
+        btnGuardar.disabled = true;
+        btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+        try {
+            const formData = {
+                tipo_identificacion: modal.querySelector('#modal-tipo-identificacion').value,
+                cedula: parseInt(modal.querySelector('#modal-cedula').value),
+                rif: modal.querySelector('#modal-rif').value || '',
+                primer_nombre: modal.querySelector('#modal-primer-nombre').value,
+                segundo_nombre: modal.querySelector('#modal-segundo-nombre').value || '',
+                primer_apellido: modal.querySelector('#modal-primer-apellido').value,
+                segundo_apellido: modal.querySelector('#modal-segundo-apellido').value || '',
+                fecha_nacimiento: modal.querySelector('#modal-fecha-nacimiento').value,
+                lugar_nacimiento: modal.querySelector('#modal-lugar-nacimiento').value || '',
+                genero: modal.querySelector('#modal-genero').value || '',
+                estado_civil: modal.querySelector('#modal-estado-civil').value || '',
+                grado_instruccion: modal.querySelector('#modal-grado-instruccion').value || '',
+                fecha_ingreso: modal.querySelector('#fecha-ingreso').value,
+                tipo_trabajador: parseInt(modal.querySelector('#tipo-trabajador').value),
+                familia_cargo: parseInt(modal.querySelector('#familia-cargo').value),
+                nivel_cargo: modal.querySelector('#nivel-cargo').value,
+                telefono_principal: modal.querySelector('#telefono-principal').value || '',
+                telefono_secundario: modal.querySelector('#telefono-secundario').value || '',
+                email: modal.querySelector('#email').value || '',
+                direccion: modal.querySelector('#direccion').value || '',
+                hijos: parseInt(modal.querySelector('#hijos').value) || 0,
+                conyuge: modal.querySelector('#conyuge').checked,
+                banco: modal.querySelector('#banco').value || '',
+                tipo_cuenta: modal.querySelector('#tipo-cuenta').value || '',
+                numero_cuenta: modal.querySelector('#numero-cuenta').value || ''
+            };
+
+            // Validación adicional
+            if (isNaN(formData.tipo_trabajador) || isNaN(formData.familia_cargo)) {
+                throw new Error('Seleccione valores válidos para tipo trabajador y familia de cargo');
             }
-        });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Error al crear el empleado');
+            console.log('Datos a enviar:', formData);
+
+            // 1. Primero guardamos el empleado
+            const guardarResponse = await fetch('/api/empleadoss/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const empleadoData = await guardarResponse.json();
+            
+            if (!guardarResponse.ok) {
+                throw new Error(empleadoData.error || empleadoData.detail || 'Error al guardar empleado');
+            }
+
+            // 2. Luego obtenemos las familias de cargo (si es necesario)
+            const tipoTrabajadorId = formData.tipo_trabajador;
+            const familiasResponse = await fetch(`/api/familias-cargo/?tipo_trabajador=${tipoTrabajadorId}`);
+            const familiasData = await familiasResponse.json();
+
+            if (!familiasResponse.ok) {
+                console.error("Error al obtener familias de cargo:", familiasData);
+                // No lanzamos error porque esto no es crítico para guardar el empleado
+            }
+
+            mostrarNotificacion(empleadoData.message || 'Empleado creado correctamente', 'success');
+            await actualizarTablaUsuarios();
+            setTimeout(usuarioModal__cerrar, 1500);
+
+        } catch (error) {
+            console.error("Error completo:", error);
+            mostrarNotificacion(
+                `Error al guardar empleado: ${error.message}`,
+                'error'
+            );
+        } finally {
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar';
         }
-
-        return await response.json();
-    } catch (error) {
-        console.error('Error:', error);
-        throw error;
     }
 }
 
-function getCSRFToken() {
-    const cookie = document.cookie.match(/csrftoken=([^ ;]+)/);
-    return cookie ? cookie[1] : '';
+// Función editarUsuario que faltaba
+function editarUsuario(boton) {
+    const usuarioId = boton.getAttribute('data-id');
+    usuarioModal__abrir(usuarioId);
 }
+
+// Función para actualizar la tabla de usuarios
+async function actualizarTablaUsuarios() {
+    // Implementa esta función según cómo manejas la visualización de usuarios
+    console.log('Actualizando tabla de usuarios...');
+    // Aquí iría el código para refrescar la tabla después de crear un usuario
+}
+
+document.getElementById('tipo-trabajador').addEventListener('change', function() {
+    const tipoTrabajadorId = this.value;
+    const familiaOptions = document.querySelectorAll('#familia-cargo option');
+    
+    familiaOptions.forEach(option => {
+        if (option.value === "") {
+            option.hidden = false;
+            return;
+        }
+        
+        const optionTipoTrabajador = option.dataset.tipoTrabajador;
+        option.hidden = tipoTrabajadorId !== optionTipoTrabajador;
+    });
+    
+    // Resetear selección
+    document.getElementById('familia-cargo').value = "";
+});
 
 // Inicialización cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
-    // Eventos para mostrar/ocultar contraseña
-    document.querySelectorAll('.toggle-password').forEach(icono => {
-        icono.addEventListener('click', function() {
-            const input = this.previousElementSibling;
-            if (input) {
-                input.type = input.type === 'password' ? 'text' : 'password';
-                this.classList.toggle('fa-eye-slash');
-            }
-        });
-    });
-
-    // Carga dinámica de familias de cargo y cargos
-    const tipoTrabajadorSelect = document.getElementById('modal-tipo-trabajador');
-    if (tipoTrabajadorSelect) {
-        tipoTrabajadorSelect.addEventListener('change', function() {
-            const tipoTrabajadorId = this.value;
-            const familiaCargoSelect = document.getElementById('modal-familia-cargo');
-            const cargoSelect = document.getElementById('modal-cargo');
+    const tipoTrabajador = document.getElementById('tipo-trabajador');
+    const familiaCargo = document.getElementById('familia-cargo');
+    const cargo = document.getElementById('cargo');
+    
+    if (tipoTrabajador && familiaCargo && cargo) {
+        tipoTrabajador.addEventListener('change', function() {
+            // Limpiar estado de invalidación
+            familiaCargo.classList.remove('invalido');
+            cargo.classList.remove('invalido');
             
-            if (familiaCargoSelect && cargoSelect) {
-                familiaCargoSelect.innerHTML = '<option value="">Cargando...</option>';
-                familiaCargoSelect.disabled = true;
-                
-                cargoSelect.innerHTML = '<option value="">Seleccione familia de cargo primero</option>';
-                cargoSelect.disabled = true;
-                
-                if (tipoTrabajadorId) {
-                    setTimeout(() => {
-                        const familias = obtenerFamiliasPorTipo(tipoTrabajadorId);
-                        
-                        familiaCargoSelect.innerHTML = '<option value="">Seleccione...</option>';
-                        familias.forEach(familia => {
-                            const option = document.createElement('option');
-                            option.value = familia.id;
-                            option.textContent = familia.nombre;
-                            familiaCargoSelect.appendChild(option);
-                        });
-                        
-                        familiaCargoSelect.disabled = false;
-                    }, 500);
-                }
+            // Limpiar mensajes de error
+            const errorMsg = familiaCargo.nextElementSibling;
+            if (errorMsg && errorMsg.classList.contains('error-mensaje')) {
+                errorMsg.remove();
             }
-        });
-    }
-
-    const familiaCargoSelect = document.getElementById('modal-familia-cargo');
-    if (familiaCargoSelect) {
-        familiaCargoSelect.addEventListener('change', function() {
-            const familiaId = this.value;
-            const cargoSelect = document.getElementById('modal-cargo');
             
-            if (cargoSelect) {
-                cargoSelect.innerHTML = '<option value="">Cargando...</option>';
-                cargoSelect.disabled = true;
-                
-                if (familiaId) {
-                    setTimeout(() => {
-                        const cargos = obtenerCargosPorFamilia(familiaId);
-                        
-                        cargoSelect.innerHTML = '<option value="">Seleccione...</option>';
-                        cargos.forEach(cargo => {
-                            const option = document.createElement('option');
-                            option.value = cargo.id;
-                            option.textContent = cargo.nombre_completo;
-                            cargoSelect.appendChild(option);
-                        });
-                        
-                        cargoSelect.disabled = false;
-                    }, 500);
-                }
+            // Resto de tu lógica para cargar opciones...
+        });
+        
+        familiaCargo.addEventListener('change', function() {
+            // Limpiar estado de invalidación
+            cargo.classList.remove('invalido');
+            
+            // Limpiar mensaje de error
+            const errorMsg = cargo.nextElementSibling;
+            if (errorMsg && errorMsg.classList.contains('error-mensaje')) {
+                errorMsg.remove();
             }
+            
+            // Resto de tu lógica para cargar opciones...
         });
     }
 });
-
-// Funciones simuladas para obtener datos
-    async function actualizarTablaEmpleados(empleados = null) {
-    const tbody = document.querySelector('.tabla-datos__tbody');
-    const sinResultados = document.getElementById('sin-resultados-empleados');
-
-    if (empleados === null) {
-        try {
-            const response = await fetch(`${API_EMPLEADOS_URL}?${params.toString()}`);
-            if (!response.ok) throw new Error("Error en la respuesta del servidor");
-            
-            const data = await response.json();
-            empleados = data.empleados || [];
-        } catch (error) {
-            console.error("Error al obtener empleados:", error);
-            tbody.innerHTML = `<tr><td colspan="21">Error al cargar datos: ${error.message}</td></tr>`;
-            return;
-        }
-    }
-
-    if (!Array.isArray(empleados)) {
-        console.error("Datos de empleados no son un array:", empleados);
-        empleados = [];
-    }
-
-    if (empleados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="21">No hay empleados registrados</td></tr>';
-        if (sinResultados) sinResultados.style.display = 'block';
-    } else {
-        tbody.innerHTML = empleados.map(empleado => `
-            <tr data-id="${empleado.id}">
-                <td class="tabla-datos__columna col-small">${empleado.tipo_id || 'No especificado'}</td>
-                <td class="tabla-datos__columna col-small">${empleado.cedula || ''}</td>
-                <td class="tabla-datos__columna col-large">${empleado.nombre_completo || ''}</td>
-                <td class="tabla-datos__columna col-medium">${empleado.fecha_nacimiento || 'No especificada'}</td>
-                <td class="tabla-datos__columna col-medium">${empleado.lugar_nacimiento || ''}</td>
-                <td class="tabla-datos__columna col-small">${empleado.genero || ''}</td>
-                <td class="tabla-datos__columna col-small">${empleado.estado_civil || ''}</td>
-                <td class="tabla-datos__columna col-medium">${empleado.fecha_ingreso || 'No especificada'}</td>
-                <td class="tabla-datos__columna col-large">${empleado.cargo || 'Sin cargo'}</td>
-                <td class="tabla-datos__columna col-medium">${empleado.tipo_trabajador || ''}</td>
-                <td class="tabla-datos__columna col-medium">${empleado.grado_instruccion || ''}</td>
-                <td class="tabla-datos__columna col-medium">${empleado.telefono_principal || ''}</td>
-                <td class="tabla-datos__columna col-medium">${empleado.telefono_secundario || ''}</td>
-                <td class="tabla-datos__columna col-large">${empleado.email || ''}</td>
-                <td class="tabla-datos__columna col-large celda-wrap">${empleado.direccion || ''}</td>
-                <td class="tabla-datos__columna col-xsmall">${empleado.hijos || 0}</td>
-                <td class="tabla-datos__columna col-xsmall">${empleado.conyuge || 'No'}</td>
-                <td class="tabla-datos__columna col-medium">${empleado.rif || ''}</td>
-                <td class="tabla-datos__columna celda-wrap">
-                    ${empleado.cuentas_bancarias || 'No hay cuentas bancarias'}
-                </td>
-                <td class="tabla-datos__columna col-small">${empleado.status || 'Inactivo'}</td>
-                <td class="tabla-datos__columna col-xlarge">
-                    <button class="btn btn-editar" onclick="editarEmpleado('${empleado.cedula}')">
-                        <i class="fas fa-edit"></i> Editar
-                    </button>
-                    <button class="btn btn-ver" onclick="verDetalleEmpleado('${empleado.cedula}')">
-                        <i class="fas fa-eye"></i> Ver
-                    </button>
-                    ${empleado.status === 'Activo' ? 
-                        `<button class="btn btn-desactivar" onclick="cambiarEstadoEmpleado('${empleado.cedula}', false)">
-                            <i class="fas fa-user-times"></i> Desactivar
-                        </button>` : 
-                        `<button class="btn btn-activar" onclick="cambiarEstadoEmpleado('${empleado.cedula}', true)">
-                            <i class="fas fa-user-check"></i> Activar
-                        </button>`
-                    }
-                </td>
-            </tr>
-        `).join('');
-    }
-}
 
 // Función para aplicar filtros (similar a tu aplicarFiltrosEmpleados)
 async function aplicarFiltrosEmpleados() {
@@ -692,23 +612,21 @@ function inicializarEventosEmpleados() {
     });
 }
 
-// Inicialización al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
-    inicializarEventosEmpleados();
-    aplicarFiltrosEmpleados();
+    // Configurar eventos para los selects dependientes
+    const tipoTrabajador = document.getElementById('tipo-trabajador');
+    const familiaCargo = document.getElementById('familia-cargo');
+    const cargo = document.getElementById('cargo');
     
-    // Mantener tus eventos existentes
-    document.querySelectorAll('.toggle-password').forEach(icono => {
-        icono.addEventListener('click', function() {
-            const input = this.previousElementSibling;
-            if (input) {
-                input.type = input.type === 'password' ? 'text' : 'password';
-                this.classList.toggle('fa-eye-slash');
-            }
+    if (tipoTrabajador && familiaCargo && cargo) {
+        tipoTrabajador.addEventListener('change', function() {
+            // Lógica para cargar familias de cargo según tipo de trabajador
         });
-    });
-
-    // ... (el resto de tu código de inicialización existente)
+        
+        familiaCargo.addEventListener('change', function() {
+            // Lógica para cargar cargos según familia
+        });
+    }
 });
 
 // Exportar funciones globales (manteniendo las tuyas y añadiendo nuevas)
