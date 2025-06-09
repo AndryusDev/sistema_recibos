@@ -186,13 +186,6 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.prenomina-modal.active {
-  display: flex;
-  opacity: 1;
 }
 
 .prenomina-modal__contenido {

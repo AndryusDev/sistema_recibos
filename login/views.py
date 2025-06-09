@@ -38,10 +38,28 @@ def recuperar_contraseña(request):
 
 # <-----Estrucutra del menu ------->
 
+from login.models import rol_permisos
+
 def menu(request):
     if 'usuario_id' not in request.session:
         return redirect('/login/')  # Redirigir si no hay sesión
-    return render(request, 'menu_principal/menu.html')
+    
+    usuario_id = request.session['usuario_id']
+    try:
+        usuario_instance = usuario.objects.select_related('rol').get(id=usuario_id)
+        rol_usuario = usuario_instance.rol
+        permisos_qs = rol_permisos.objects.filter(rol=rol_usuario).select_related('permiso')
+        permisos_usuario = [perm.permiso.codigo for perm in permisos_qs]
+        print("User permissions:", permisos_usuario)
+
+    except usuario.DoesNotExist:
+        return redirect('/login/')
+    
+    context = {
+        'usuario': usuario_instance,
+        'permisos_usuario': permisos_usuario,
+    }
+    return render(request, 'menu_principal/menu.html', context)
 
 def load_template(request, template_name):
     allowed_templates = ['noticias.html', 'perfil_usuario.html', 'recibos_pagos.html',

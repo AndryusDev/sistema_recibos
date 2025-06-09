@@ -29,23 +29,28 @@
                     <span>Notificaciones</span>
                 </a>
             </li>
+            {% if '1' in permisos_usuario %}
             <li class="menu-link menu-item-dropdown OpcMenu" data-template="dashboard.html">
                 <a href="#" class="menu-link">
                     <i class="fa-solid chart-line">&#xF201</i>
                     <span>Dashboard</span>
                 </a>
             </li>
+            {% endif %}
         </ul>
     </div>
     <div class="menu-container">
         <ul class="menu">
+            {% if '2' in permisos_usuario %}
             <li class="menu-link menu-item-dropdown OpcMenu" data-template="perfil_usuario.html">
                 <a href="#" class="menu-link OpcMenu">
                     <i class="fa-solid user-large">&#xF406</i>
                     <span>Perfil Usuario</span>
                 </a>
             </li>
+            {% endif %}
         
+            {% if '3' in permisos_usuario %}
             <li class="menu-item menu-item-dropdown OpcMenu">
                 <a href="#" class="menu-link">
                     <i class="fa-solid print">&#x2399</i>
@@ -60,7 +65,9 @@
                     <li><a href="#" class="sub-menu-link OpcMenu">Relación de Aguinaldos</a></li>
                 </ul>
             </li>
+            {% endif %}
 
+            {% if '4' in permisos_usuario %}
             <li class="menu-item menu-item-dropdown OpcMenu">
                 <a href="#" class="menu-link">
                     <i class="fa-solid computer">&#xE4E5</i>
@@ -72,8 +79,10 @@
                     <li><a href="#" class="sub-menu-link OpcMenu">Set completo papelería</a></li>
                 </ul>
             </li>
+            {% endif %}
 
-            <li class="menu-item menu-item-dropdown OpcMenu">
+            
+            <!--<li class="menu-item menu-item-dropdown OpcMenu">
                 <a href="#" class="menu-link">
                     <i class="fa-solid file-invoice-dollar">&#xF571</i>
                     <span>Reportes Financieros</span>
@@ -85,8 +94,10 @@
                     <li><a href="#" class="sub-menu-link OpcMenu">Relación Arch. TXT Ccs.</a></li>
                     <li><a href="#" class="sub-menu-link OpcMenu">Relación Arch. TXT Gob.</a></li>
                 </ul>
-            </li>
+            </li>-->
+            
 
+            {% if '5' in permisos_usuario %}
             <li class="menu-item menu-item-dropdown OpcMenu">
                 <a href="#" class="menu-link">
                     <i class="fa-solid chart-bar">&#xF080</i>
@@ -98,8 +109,9 @@
                     <li><a href="#" class="sub-menu-link OpcMenu">Pie de Fuerza</a></li>
                 </ul>
             </li>
+            {% endif %}
 
-            <li class="menu-item menu-item-dropdown OpcMenu">
+            <!--<li class="menu-item menu-item-dropdown OpcMenu">
                 <a href="#" class="menu-link">
                     <i class="fa-solid boxes-packing">&#xE4C7</i>
                     <span>Oficios Externos</span>
@@ -147,8 +159,9 @@
                 <ul class="sub-menu">
                     <li><a href="#" class="sub-menu-link OpcMenu">Pensión Alimenticia</a></li>
                 </ul>
-            </li>
+            </li>-->
 
+            {% if '6' in permisos_usuario %}
             <li class="menu-item menu-item-dropdown OpcMenu">
                 <a href="#" class="menu-link">
                     <i class="fa-solid user-shield">&#xF505</i>
@@ -161,16 +174,20 @@
                     <li><a href="#" class="sub-menu-link OpcMenu" data-template="crear_roles.html">Crear Rol</a></li>
                 </ul>
             </li>
+            {% endif %}
+            {% if '7' in permisos_usuario %}
             <li class="menu-item menu-item-dropdown OpcMenu">
                 <a href="#" class="menu-link" data-template="gestion_respaldo.html">
                     <i class="fa-solid fa-database"></i>
                     <span>Gestión de respaldo</span>
                 </a>
             </li>
+            {% endif %}
         </ul>
     </div>
     <div class="footer-menu">
         <ul class="menu">
+            {% if '8' in permisos_usuario %}
             <li class="menu-item menu-item-dropdown">
                 <a href="#" class="menu-link">
                     <i class="fa-solid user-cog">&#xF4FE</i>
@@ -182,8 +199,10 @@
                     <li><a href="#" class="sub-menu-link OpcMenu" data-template="preguntas_secretas.html">Preguntas Secretas</a></li>
                 </ul>
             </li>
+            {% endif %}
         </ul>
-        <ul class="menu">
+
+        <!--<ul class="menu">
             <li class="menu-item menu-item-dropdown">
                 <a href="#" class="menu-link">
                     <i class="fa-solid passport">&#xF5AB</i>
@@ -195,11 +214,11 @@
                     <li><a href="#" class="sub-menu-link">Contraloría Gral. Estado</a></li>
                 </ul>
             </li>  
-        </ul>
+        </ul>-->
         <div class="sidebar-footer">
             <a href="#" id="logout-button" class="menu-exit">
                 <i class="fas fa-sign-out-alt"></i>
-                <span>Cerrar sesión</span>
+                <span> Cerrar sesión</span>
             </a>
         </div>
     </div>
