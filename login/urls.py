@@ -43,6 +43,9 @@ urlpatterns = [
 
     path('roles_usuarios/', views.roles_usuarios, name='roles_usuarios'),
     path('api/usuarios/', views.listar_usuarios, name='listar_usuarios'),
+    path('api/usuarios/<int:usuario_id>/', views.manejar_usuario, name='manejar_usuario'),
+    path('api/roles/', views.listar_roles, name='listar_roles'),
+
     path('crear_roles/', views.crear_roles, name='crear_roles'),
     
     

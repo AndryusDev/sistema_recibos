@@ -96,6 +96,8 @@ async function loadTemplate(templateName) {
             case "ver_prenomina.html": url = "/ver_prenomina"; break;
             case "crear_usuarios.html": url = "/crear_usuarios"; break;
             case "roles_usuarios.html": url = "/roles_usuarios"; break;
+            case "crear_roles.html": url = "/crear_roles"; break;
+            case "gestion_respaldo.html": url = "/gestion_respaldo"; break;
             /*case "dashboard.html": 
                 url = "/dashboard";*/
                 // Manejo especial para dashboard como en tu primer enfoque

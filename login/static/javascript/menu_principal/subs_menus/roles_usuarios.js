@@ -5,60 +5,45 @@ const API_ROLES_URL = '/api/roles/';
 
 // ===== FUNCIONES PRINCIPALES =====
 
-async function testAPI() {
-    try {
-        const response = await fetch(API_USUARIOS_URL);
-        const data = await response.json();
-        console.log("Respuesta de la API:", data);
-        return data;
-    } catch (error) {
-        console.error("Error al conectar con la API:", error);
-        return null;
-    }
-}
-
-// Llama esta función al inicio para verificar
-testAPI().then(data => {
-    if (!data) {
-        mostrarNotificacion("Error al conectar con el servidor", "error");
-    }
-});
-
 // Función para cargar y mostrar la lista de usuarios
-async function cargarUsuarios(filtro = 'all', pagina = 1) {
+async function cargarUsuarios(filtro = 'all', pagina = 1, busqueda = '') {
     const tbody = document.getElementById('cuerpo-tabla-usuarios');
-    const loadingIndicator = '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando usuarios...</td></tr>';
+    const loadingIndicator = `
+        <tr>
+            <td colspan="6" class="text-center">
+                <i class="fas fa-spinner fa-spin"></i> Cargando usuarios...
+            </td>
+        </tr>
+    `;
     
     tbody.innerHTML = loadingIndicator;
     
     try {
-        // Construir parámetros de búsqueda
         const params = new URLSearchParams({
             page: pagina,
             rol: filtro === 'all' ? '' : filtro,
-            // Puedes añadir más parámetros según los filtros que tengas
+            search: busqueda
         });
         
         const response = await fetch(`${API_USUARIOS_URL}?${params.toString()}`, {
             headers: {
-                'X-CSRFToken': CSRF_TOKEN,
+                'X-CSRFToken': getCSRFToken(),
                 'Accept': 'application/json'
             }
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`Error HTTP! estado: ${response.status}`);
         }
         
         const data = await response.json();
         
         if (data.success && data.usuarios && data.usuarios.length > 0) {
-            // Actualizar la tabla con los datos
             tbody.innerHTML = data.usuarios.map(usuario => `
                 <tr class="tabla-recibos__fila" data-id="${usuario.id}">
                     <td class="tabla-recibos__celda">
                         <div class="user-avatar">
-                            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nombre || '')}&background=random" alt="${usuario.nombre || ''}">
+                            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nombre || '')}&background=random" alt="${usuario.nombre}">
                         </div>
                         <span>${usuario.nombre || 'Sin nombre'}</span>
                     </td>
@@ -74,7 +59,7 @@ async function cargarUsuarios(filtro = 'all', pagina = 1) {
                         </span>
                     </td>
                     <td class="tabla-recibos__celda">
-                        ${usuario.ultimo_login || 'Nunca'}
+                        ${formatearFecha(usuario.ultimo_login) || 'Nunca'}
                     </td>
                     <td class="tabla-recibos__celda">
                         <button class="btn-action btn-edit" title="Editar" onclick="abrirModalEditarUsuario(${usuario.id})">
@@ -86,143 +71,191 @@ async function cargarUsuarios(filtro = 'all', pagina = 1) {
                     </td>
                 </tr>
             `).join('');
+            
+            // Actualizar paginación si está disponible
+            if (data.paginacion) {
+                actualizarPaginacion(data.paginacion);
+            }
         } else {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron usuarios</td></tr>';
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center">No se encontraron usuarios</td>
+                </tr>
+            `;
         }
     } catch (error) {
         console.error('Error al cargar usuarios:', error);
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center error">Error al cargar usuarios: ${error.message}</td></tr>`;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center error">
+                    Error al cargar usuarios: ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Función auxiliar para formatear fechas (opcional)
+function formatearFecha(fecha) {
+    if (!fecha) return null;
+    try {
+        const date = new Date(fecha);
+        return date.toLocaleString();
+    } catch (e) {
+        console.error('Error formateando fecha:', e);
+        return fecha; // Devuelve la fecha original si no se puede formatear
     }
 }
 
 // Función para abrir el modal de edición de usuario
-async function abrirModalEditarUsuario(idUsuario) {
-    const modal = document.getElementById('edit-user-modal');
-    const titulo = document.getElementById('modal-title');
-    const form = document.getElementById('edit-user-form');
-    
-    // Configurar el modal para edición
-    titulo.textContent = idUsuario ? 'Editar Usuario' : 'Nuevo Usuario';
-    modal.setAttribute('data-user-id', idUsuario || '');
-    
+async function abrirModalEditarUsuario(usuarioId) {
     try {
-        if (idUsuario) {
-            // Cargar datos del usuario
-            const response = await fetch(`${API_USUARIOS_URL}${idUsuario}/`, {
-                headers: {
-                    'X-CSRFToken': CSRF_TOKEN,
-                    'Accept': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+        // Obtener datos del usuario
+        const response = await fetch(`${API_USUARIOS_URL}${usuarioId}/`, {
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Accept': 'application/json'
             }
-            
-            const usuario = await response.json();
-            
-            // Llenar el formulario
-            document.getElementById('edit-user-name').value = usuario.nombre || '';
-            document.getElementById('edit-user-email').value = usuario.email || '';
-            
-            // Cargar roles y seleccionar el actual
-            await cargarRolesSelect(usuario.rol?.codigo);
-        } else {
-            // Nuevo usuario - limpiar formulario
-            form.reset();
-            await cargarRolesSelect();
-        }
+        });
+        
+        if (!response.ok) throw new Error('Error al cargar usuario');
+        
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error || 'Error en la respuesta');
+        
+        // Guardar usuario que estamos editando
+        usuarioEditando = data.usuario;
+        
+        // Verificar que existan los elementos del DOM
+        const elementosRequeridos = [
+            'edit-user-name', 
+            'edit-user-email',
+            'edit-user-active',
+            'edit-user-role'
+        ];
+        
+        elementosRequeridos.forEach(id => {
+            if (!document.getElementById(id)) {
+                throw new Error(`Elemento con ID ${id} no encontrado`);
+            }
+        });
+        
+        // Llenar el formulario
+        document.getElementById('edit-user-name').value = data.usuario.nombre || '';
+        document.getElementById('edit-user-email').value = data.usuario.email || '';
+        document.getElementById('edit-user-active').checked = data.usuario.activo || false;
+        
+        // Cargar roles
+        await cargarRoles(data.usuario.rol?.id || null);
         
         // Mostrar el modal
-        modal.style.display = 'block';
+        document.getElementById('edit-user-modal').style.display = 'flex';
+        
     } catch (error) {
-        console.error('Error al cargar usuario:', error);
-        mostrarNotificacion(`Error al cargar usuario: ${error.message}`, 'error');
+        console.error('Error al abrir modal:', error);
+        mostrarError(error.message || 'No se pudo cargar el usuario');
     }
 }
 
+function mostrarError(mensaje) {
+    mostrarNotificacion(mensaje, 'error');
+}
+
 // Función para cargar los roles en el select
-async function cargarRolesSelect(rolSeleccionado = null) {
-    const select = document.getElementById('edit-user-role');
-    
+async function cargarRoles(rolSeleccionadoId = null) {
     try {
         const response = await fetch(API_ROLES_URL, {
             headers: {
-                'X-CSRFToken': CSRF_TOKEN,
+                'X-CSRFToken': getCSRFToken(),
                 'Accept': 'application/json'
             }
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`Error HTTP! estado: ${response.status}`);
         }
         
         const data = await response.json();
-        select.innerHTML = '<option value="">Seleccionar rol...</option>';
+        if (!data.success) throw new Error(data.error || 'Error al cargar roles');
         
-        if (data.success && data.roles && data.roles.length > 0) {
-            data.roles.forEach(rol => {
-                const option = document.createElement('option');
-                option.value = rol.codigo_rol;
-                option.textContent = rol.nombre_rol;
-                if (rolSeleccionado && rol.codigo_rol == rolSeleccionado) {
-                    option.selected = true;
-                }
-                select.appendChild(option);
-            });
-        }
+        const selectRol = document.getElementById('edit-user-role');
+        selectRol.innerHTML = '<option value="">Seleccionar rol...</option>';
+        
+        data.roles.forEach(rol => {
+            const option = document.createElement('option');
+            option.value = rol.id;
+            option.textContent = rol.nombre;
+            option.selected = rol.id == rolSeleccionadoId;
+            selectRol.appendChild(option);
+        });
     } catch (error) {
         console.error('Error al cargar roles:', error);
-        mostrarNotificacion(`Error al cargar roles: ${error.message}`, 'error');
+        mostrarError('Error al cargar roles: ' + error.message);
+        
+        // Opción de respaldo en caso de error
+        const selectRol = document.getElementById('edit-user-role');
+        selectRol.innerHTML = `
+            <option value="">Error cargando roles</option>
+            <option value="1">Administrador</option>
+            <option value="2">Usuario</option>
+        `;
+        
+        if (rolSeleccionadoId) {
+            selectRol.value = rolSeleccionadoId;
+        }
     }
 }
 
+
 // Función para guardar los cambios del usuario
-async function guardarUsuario(idUsuario) {
-    const form = document.getElementById('edit-user-form');
-    const btnGuardar = document.getElementById('btn-guardar-usuario');
-    
-    if (!form.checkValidity()) {
-        form.reportValidity();
+async function guardarCambiosUsuario() {
+    const email = document.getElementById('edit-user-email').value.trim();
+    const rolId = document.getElementById('edit-user-role').value;
+    const activo = document.getElementById('edit-user-active').checked;
+
+    // Validación más robusta
+    if (!email) {
+        mostrarError('El email es un campo obligatorio');
         return;
     }
-    
-    const datos = {
-        email: document.getElementById('edit-user-email').value,
-        rol: document.getElementById('edit-user-role').value,
-        password: document.getElementById('edit-user-password').value || undefined
-    };
-    
-    btnGuardar.disabled = true;
-    btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-    
+
+    if (!rolId) {
+        mostrarError('Debe seleccionar un rol');
+        return;
+    }
+
+        const datos = {
+            email: email,
+            rol: { id: parseInt(rolId) },  // Enviar como objeto con propiedad id
+            activo: activo
+        };
+
     try {
-        const response = await fetch(idUsuario ? `${API_USUARIOS_URL}${idUsuario}/` : API_USUARIOS_URL, {
-            method: idUsuario ? 'PUT' : 'POST',
+        const response = await fetch(`${API_USUARIOS_URL}${usuarioEditando.id}/`, {
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': CSRF_TOKEN
+                'X-CSRFToken': getCSRFToken()
             },
             body: JSON.stringify(datos)
         });
+
+        const responseData = await response.json();
         
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Error ${response.status}`);
+            throw new Error(responseData.error || `Error HTTP! estado: ${response.status}`);
         }
-        
-        const resultado = await response.json();
-        mostrarNotificacion(resultado.message || 'Operación exitosa', 'success');
-        cerrarModalUsuario();
-        await cargarUsuarios(document.getElementById('filtro-rol').value);
+
+        mostrarNotificacion('Usuario actualizado correctamente', 'success');
+        cerrarModalEdicion();
+        cargarUsuarios(document.getElementById('filtro-rol').value, paginaActual);
     } catch (error) {
-        console.error('Error al guardar usuario:', error);
-        mostrarNotificacion(`Error al guardar usuario: ${error.message}`, 'error');
-    } finally {
-        btnGuardar.disabled = false;
-        btnGuardar.textContent = 'Guardar Cambios';
+        console.error('Error:', error);
+        mostrarError(error.message || 'Error al actualizar usuario');
     }
 }
+
+
 
 // Función para eliminar un usuario
 async function eliminarUsuario(idUsuario) {
@@ -246,7 +279,7 @@ async function eliminarUsuario(idUsuario) {
         const response = await fetch(`${API_USUARIOS_URL}${idUsuario}/`, {
             method: 'DELETE',
             headers: {
-                'X-CSRFToken': CSRF_TOKEN
+                'X-CSRFToken': getCSRFToken()
             }
         });
         
@@ -261,6 +294,30 @@ async function eliminarUsuario(idUsuario) {
         console.error('Error eliminando usuario:', error);
         mostrarNotificacion(`Error al eliminar usuario: ${error.message}`, 'error');
     }
+}
+function formatearFecha(fecha) {
+    if (!fecha) return null;
+    try {
+        const date = new Date(fecha);
+        return date.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        console.error('Error formateando fecha:', e);
+        return fecha;
+    }
+}
+function mostrarNotificacion(mensaje, tipo) {
+    Swal.fire({
+        title: tipo === 'success' ? 'Éxito' : 'Error',
+        text: mensaje,
+        icon: tipo,
+        confirmButtonText: 'Aceptar'
+    });
 }
 
 // Función para cerrar el modal
@@ -324,8 +381,7 @@ function inicializarModuloUsuarios() {
                     cerrarModalUsuario();
                 }
                 if (e.target && e.target.id === 'btn-guardar-usuario') {
-                    const idUsuario = document.getElementById('edit-user-modal')?.getAttribute('data-user-id') || null;
-                    guardarUsuario(idUsuario);
+                    guardarCambiosUsuario(); // Usa la función que sí existe
                 }
             });
         };

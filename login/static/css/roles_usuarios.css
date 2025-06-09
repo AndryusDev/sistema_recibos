@@ -531,3 +531,15 @@
     font-size: 0.9rem;
   }
 }
+
+/* Estilos para el switch */
+.custom-switch {
+    padding-left: 2.25rem;
+}
+.custom-control-input:checked~.custom-control-label::before {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+.custom-control-label::before {
+    background-color: #dc3545;
+}

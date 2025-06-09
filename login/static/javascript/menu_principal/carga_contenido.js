@@ -29,7 +29,9 @@ function loadRegularTemplate(templateName) {
         "noticias.html": "/noticias/",
         "ver_prenomina.html": "/ver_prenomina",
         "crear_usuarios.html": "/crear_usuarios",
-        "roles_usuarios.html": "/roles_usuarios"
+        "roles_usuarios.html": "/roles_usuarios",
+        "crear_roles.html" : "/crear_roles.html",
+        "gestion_respaldo.html": "/gestion_respaldo"
     };
 
     const url = templateUrls[templateName];
@@ -92,7 +94,9 @@ function loadTemplateScripts(templateName) {
     const templateScripts = {
         "importar_nomina.html": "/static/javascript/menu_principal/subs_menus/importar_nomina.js",
         "crear_usuarios.html": "/static/javascript/menu_principal/subs_menus/crear_usuarios.js",
-        "roles_usuarios.html": "/static/javascript/menu_principal/subs_menus/roles_usuarios.js"
+        "roles_usuarios.html": "/static/javascript/menu_principal/subs_menus/roles_usuarios.js",
+        "crear_roles.html": "/static/javascript/menu_principal/subs_menus/crear_roles.js",
+        "gestion_respaldo.html": "/static/javascript/menu_principal/subs_menus/gestion_respaldo.html"
     };
 
     if (templateScripts[templateName]) {
@@ -232,3 +236,4 @@ function loadDashboardJs() {
         document.head.appendChild(script);
     });
 }
+

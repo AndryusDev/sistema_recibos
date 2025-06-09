@@ -90,6 +90,14 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <div class="form-group">
+                        <label>Estado:</label>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="edit-user-active">
+                            <label class="custom-control-label" for="edit-user-active">Usuario Activo</label>
+                        </div>
+                    </div>
 
                     <!-- Asignación de Rol -->
                     <div class="form-section">
@@ -107,8 +115,14 @@
                     <div class="form-section">
                         <h4><i class="fas fa-lock"></i> Seguridad</h4>
                         <div class="form-group">
-                            <label for="edit-user-password">Nueva Contraseña</label>
-                            <input type="password" id="edit-user-password" class="form-control" placeholder="Dejar en blanco para no cambiar">
+                            <label for="edit-user-password">Nueva Contraseña:</label>
+                            <input type="password" id="edit-user-password" placeholder="Dejar en blanco para no cambiar">
+                            <small class="form-text">Mínimo 8 caracteres</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit-user-confirm-password">Confirmar Contraseña:</label>
+                            <input type="password" id="edit-user-confirm-password" placeholder="Repite la nueva contraseña">
                             <small class="form-text">Mínimo 8 caracteres</small>
                         </div>
                     </div>

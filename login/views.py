@@ -1527,3 +1527,160 @@ def listar_usuarios(request):
             'error': 'Error al procesar la solicitud',
             'detail': str(e)
         }, status=500)
+    
+
+logger = logging.getLogger(__name__)
+
+@csrf_exempt  # Solo si necesitas desactivar CSRF temporalmente para pruebas
+@require_http_methods(["GET", "PUT", "DELETE"])
+def manejar_usuario(request, usuario_id):
+    """API para ver, editar o eliminar un usuario específico"""
+    try:
+        # Obtener el usuario
+        try:
+            user = usuario.objects.select_related('empleado', 'rol').get(pk=usuario_id)
+        except usuario.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Usuario no encontrado'
+            }, status=404)
+
+        if request.method == 'GET':
+            # Obtener datos del usuario
+            empleado_nombre = 'Sin nombre'
+            if hasattr(user, 'empleado') and user.empleado:
+                empleado_nombre = f"{user.empleado.primer_nombre or ''} {user.empleado.primer_apellido or ''}".strip()
+            
+            # Manejo seguro del rol
+            rol_data = None
+            if user.rol:
+                rol_data = {
+                    'codigo': getattr(user.rol, 'codigo_rol', None),
+                    'nombre': getattr(user.rol, 'nombre_rol', 'Sin rol'),
+                    'id': user.rol.pk  # Usamos pk en lugar de id para mayor seguridad
+                }
+            else:
+                rol_data = {
+                    'codigo': None,
+                    'nombre': 'Sin rol',
+                    'id': None
+                }
+            
+            # Formateo seguro de fechas
+            def format_date(date):
+                if date and isinstance(date, datetime):
+                    return date.strftime('%d/%m/%Y %H:%M')
+                return None
+            
+            usuario_data = {
+                'id': user.id,
+                'nombre': empleado_nombre if empleado_nombre else 'Sin nombre',
+                'email': user.email,
+                'rol': rol_data,
+                'activo': user.activo,
+                'ultimo_login': format_date(getattr(user, 'ultimo_login', None)) or 'Nunca',
+                'fecha_registro': format_date(getattr(user, 'fecha_registro', None)) or ''
+            }
+            
+            return JsonResponse({
+                'success': True,
+                'usuario': usuario_data
+            })
+
+        elif request.method == 'PUT':
+            # Editar usuario
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Formato JSON inválido'
+                }, status=400)
+            
+            # Validar datos esenciales
+            if 'email' not in data:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'El email es requerido'
+                }, status=400)
+            
+            # Actualizar campos
+            user.email = data['email']
+            
+            if 'rol' in data and data['rol'] is not None:
+                try:
+                    # Si viene como objeto {id: X} o directamente como número
+                    rol_id = data['rol']['id'] if isinstance(data['rol'], dict) else data['rol']
+                    nuevo_rol = rol.objects.get(pk=rol_id)
+                    user.rol = nuevo_rol
+                except (rol.DoesNotExist, KeyError, TypeError):
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Rol no válido'
+                    }, status=400)
+            else:
+                # Opcional: quitar rol si no viene en los datos
+                user.rol = None
+            
+            if 'activo' in data:
+                user.activo = bool(data['activo'])
+            
+            try:
+                user.save()
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Usuario actualizado correctamente'
+                })
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Error al guardar usuario',
+                    'detail': str(e)
+                }, status=400)
+
+        elif request.method == 'DELETE':
+            # Eliminar usuario
+            try:
+                user.delete()
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Usuario eliminado correctamente'
+                })
+            except Exception as e:
+                logger.error(f"Error eliminando usuario: {str(e)}", exc_info=True)
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Error al eliminar usuario',
+                    'detail': str(e)
+                }, status=500)
+
+    except Exception as e:
+        logger.error(f"Error en manejar_usuario: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al procesar la solicitud',
+            'detail': str(e)
+        }, status=500)
+    
+@require_http_methods(["GET"])
+def listar_roles(request):
+    """API para listar todos los roles disponibles"""
+    try:
+        roles = rol.objects.all().order_by('nombre_rol')
+        roles_data = [{
+            'codigo': rol.codigo_rol,
+            'nombre': rol.nombre_rol
+        } for rol in roles]
+        
+        return JsonResponse({
+            'success': True,
+            'roles': roles_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en listar_roles: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al obtener los roles',
+            'detail': str(e)
+        }, status=500)
