@@ -35,7 +35,6 @@ function loadRegularTemplate(templateName) {
     const url = templateUrls[templateName];
     if (!url) return;
 
-    // Mostrar estado de carga
     const container = document.getElementById('contenido-dinamico');
     container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Cargando contenido...</div>';
 
@@ -46,8 +45,11 @@ function loadRegularTemplate(templateName) {
         })
         .then(html => {
             container.innerHTML = html;
-            return loadTemplateScripts(templateName);
+            
+            // Esperar a que el navegador procese el HTML antes de continuar
+            return new Promise(resolve => setTimeout(resolve, 50));
         })
+        .then(() => loadTemplateScripts(templateName))
         .catch(error => {
             console.error(error);
             container.innerHTML = `
@@ -95,72 +97,114 @@ function loadTemplateScripts(templateName) {
 
     if (templateScripts[templateName]) {
         const scriptUrl = templateScripts[templateName];
-        const existingScript = document.querySelector(`script[src="${scriptUrl}"]`);
+        console.log(`Intentando cargar script: ${scriptUrl}`); // Debug
         
-        if (!existingScript) {
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = scriptUrl;
-                
-                // Primero verificar si el archivo existe
-                fetch(scriptUrl, { method: 'HEAD' })
-                    .then(response => {
-                        if (response.ok) {
-                            // Si existe, cargar el script
-                            script.onload = () => {
-                                setTimeout(() => {
-                                    initializeTemplateFunctions(templateName);
-                                    resolve();
-                                }, 300);
-                            };
-                            script.onerror = () => {
-                                console.error(`Error al cargar el script: ${scriptUrl}`);
-                                reject(`Script no encontrado: ${scriptUrl}`);
-                            };
-                            document.head.appendChild(script);
-                        } else {
-                            console.warn(`El script ${scriptUrl} no existe en el servidor`);
-                            reject(`Script no encontrado: ${scriptUrl}`);
-                        }
-                    })
-                    .catch(error => {
-                        console.error(`Error verificando script ${scriptUrl}:`, error);
-                        reject(`Error verificando script: ${scriptUrl}`);
-                    });
-            }).catch(error => {
-                console.warn(error);
-                // Continuar aunque falle la carga del script
-                return Promise.resolve();
-            });
-        } else {
-            // Si el script ya está cargado
-            setTimeout(() => initializeTemplateFunctions(templateName), 100);
+        return new Promise((resolve, reject) => {
+            // Verificar primero si el archivo existe
+            fetch(scriptUrl, { method: 'HEAD' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Archivo no encontrado (${response.status})`);
+                    }
+                    
+                    const script = document.createElement('script');
+                    script.src = scriptUrl;
+                    
+                    script.onload = () => {
+                        console.log(`Script cargado, funciones disponibles:`, {
+                            inicializarModuloUsuarios: window.inicializarModuloUsuarios,
+                            abrirModalEditarUsuario: window.abrirModalEditarUsuario,
+                            eliminarUsuario: window.eliminarUsuario
+                        });
+                        
+                        // Esperar un poco más para asegurar que todo está listo
+                        setTimeout(() => {
+                            initializeTemplateFunctions(templateName);
+                            resolve();
+                        }, 300);
+                    };
+                    
+                    script.onerror = () => {
+                        console.error(`Error al cargar el script: ${scriptUrl}`);
+                        reject(new Error(`Error loading ${scriptUrl}`));
+                    };
+                    
+                    document.head.appendChild(script);
+                })
+                .catch(error => {
+                    console.error(`Error verificando script ${scriptUrl}:`, error);
+                    reject(error);
+                });
+        }).catch(error => {
+            console.warn(error);
+            // Continuar aunque falle la carga del script
             return Promise.resolve();
-        }
+        });
     }
     return Promise.resolve();
 }
 
 // Función auxiliar para inicializar funciones específicas de cada template
 function initializeTemplateFunctions(templateName) {
+    console.log(`Inicializando funciones para ${templateName}`);
+    
     try {
         if (templateName === "importar_nomina.html") {
-            if (window.initializeImportarNomina) initializeImportarNomina();
-            if (window.aplicarFiltros) aplicarFiltros();
+            if (window.initializeImportarNomina) {
+                console.log("Ejecutando initializeImportarNomina");
+                initializeImportarNomina();
+            }
+            if (window.aplicarFiltros) {
+                console.log("Ejecutando aplicarFiltros");
+                aplicarFiltros();
+            }
         }
         if (templateName === "crear_usuarios.html") {
-            if (window.inicializarEventosEmpleados) inicializarEventosEmpleados();
-            if (window.aplicarFiltrosEmpleados) aplicarFiltrosEmpleados();
+            if (window.inicializarEventosEmpleados) {
+                console.log("Ejecutando inicializarEventosEmpleados");
+                inicializarEventosEmpleados();
+            }
+            if (window.aplicarFiltrosEmpleados) {
+                console.log("Ejecutando aplicarFiltrosEmpleados");
+                aplicarFiltrosEmpleados();
+            }
         }
         if (templateName === "roles_usuarios.html") {
-            if (window.inicializarGestionUsuarios) inicializarGestionUsuarios();
+            // Implementación mejorada con límite de reintentos
+            let intentos = 0;
+            const maxIntentos = 5;
+            
+            const checkAndInitialize = () => {
+                intentos++;
+                
+                if (window.inicializarModuloUsuarios) {
+                    console.log(`Ejecutando inicializarModuloUsuarios (intento ${intentos})`);
+                    try {
+                        inicializarModuloUsuarios();
+                        return; // Salir si tuvo éxito
+                    } catch (e) {
+                        console.error("Error ejecutando inicializarModuloUsuarios:", e);
+                    }
+                }
+                
+                if (intentos >= maxIntentos) {
+                    console.error(`No se pudo cargar inicializarModuloUsuarios después de ${maxIntentos} intentos`);
+                    return;
+                }
+                
+                console.warn(`inicializarModuloUsuarios no disponible (intento ${intentos}), reintentando...`);
+                setTimeout(checkAndInitialize, 300 * intentos); // Aumenta el tiempo de espera cada intento
+            };
+            
+            // Iniciar el proceso con un tiempo de espera inicial
+            setTimeout(checkAndInitialize, 100);
         }
     } catch (error) {
         console.error(`Error inicializando funciones para ${templateName}:`, error);
     }
 }
 
-// Funciones para cargar Chart.js y Dashboard.js (mantén las originales)
+// Funciones para cargar Chart.js y Dashboard.js
 function loadChartJs() {
     return new Promise((resolve) => {
         if (typeof Chart !== 'undefined') {

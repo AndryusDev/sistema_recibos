@@ -1,7 +1,7 @@
 // ===== CONSTANTES GLOBALES =====
 const API_USUARIOS_URL = '/api/usuarios/';
 const API_ROLES_URL = '/api/roles/';
-const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
 
 // ===== FUNCIONES PRINCIPALES =====
 
@@ -281,57 +281,81 @@ function mostrarNotificacion(mensaje, tipo) {
 
 // ===== INICIALIZACIÓN =====
 
-function inicializarGestionUsuarios() {
-    if (!document.getElementById('cuerpo-tabla-usuarios')) {
-        console.log('No está en página de gestión de usuarios');
-        return;
-    }
+// ===== INICIALIZACIÓN =====
+function inicializarModuloUsuarios() {
+    console.log('[RolesUsuarios] Inicializando módulo de gestión de usuarios...');
+    
+    const checkDOM = () => {
+        const tbody = document.getElementById('cuerpo-tabla-usuarios');
+        if (!tbody) {
+            console.log('[RolesUsuarios] Elemento principal no disponible, reintentando...');
+            setTimeout(checkDOM, 100);
+            return;
+        }
 
-    console.log('Inicializando módulo de gestión de usuarios...');
-    
-    // Cargar datos iniciales
-    cargarUsuarios();
-    
-    // Configurar eventos
-    const setupEventos = () => {
-        // Filtro de roles
-        const filtroRol = document.getElementById('filtro-rol');
-        if (filtroRol) {
-            filtroRol.addEventListener('change', function() {
-                cargarUsuarios(this.value);
-            });
-        }
+        console.log('[RolesUsuarios] Elemento principal encontrado, iniciando...');
         
-        // Botón de búsqueda
-        const btnBuscar = document.getElementById('btn-buscar-usuarios');
-        if (btnBuscar) {
-            btnBuscar.addEventListener('click', function() {
-                const busqueda = document.querySelector('.search-box input').value;
-                // Implementar búsqueda si es necesario
-                console.log('Buscar:', busqueda);
-            });
-        }
+        // Cargar datos iniciales
+        cargarUsuarios();
         
-        // Modal eventos
-        document.getElementById('btn-cerrar-modal')?.addEventListener('click', cerrarModalUsuario);
-        document.getElementById('btn-cancelar-edicion')?.addEventListener('click', cerrarModalUsuario);
-        document.getElementById('btn-guardar-usuario')?.addEventListener('click', function() {
-            const idUsuario = document.getElementById('edit-user-modal').getAttribute('data-user-id') || null;
-            guardarUsuario(idUsuario);
-        });
+        // Configurar eventos
+        const setupEventos = () => {
+            // Filtro de roles
+            document.addEventListener('change', function(e) {
+                if (e.target && e.target.id === 'filtro-rol') {
+                    cargarUsuarios(e.target.value);
+                }
+            });
+            
+            // Botón de búsqueda
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.id === 'btn-buscar-usuarios') {
+                    const busqueda = document.querySelector('.search-box input')?.value;
+                    cargarUsuarios('all', 1, busqueda);
+                }
+            });
+            
+            // Modal eventos
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.id === 'btn-cerrar-modal') {
+                    cerrarModalUsuario();
+                }
+                if (e.target && e.target.id === 'btn-cancelar-edicion') {
+                    cerrarModalUsuario();
+                }
+                if (e.target && e.target.id === 'btn-guardar-usuario') {
+                    const idUsuario = document.getElementById('edit-user-modal')?.getAttribute('data-user-id') || null;
+                    guardarUsuario(idUsuario);
+                }
+            });
+        };
+        
+        setupEventos();
     };
     
-    setupEventos();
+    checkDOM();
 }
 
-// Inicializar cuando el DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarGestionUsuarios);
-} else {
-    setTimeout(inicializarGestionUsuarios, 300);
-}
+// ===== EXPOSICIÓN DE FUNCIONES =====
+(function() {
+    // Solo exponer las funciones si window está definido (entorno de navegador)
+    if (typeof window !== 'undefined') {
+        console.log("[RolesUsuarios] Exportando funciones al ámbito global");
+        
+        // Exportar funciones principales
+        window.inicializarModuloUsuarios = inicializarModuloUsuarios;
+        window.abrirModalEditarUsuario = abrirModalEditarUsuario;
+        window.eliminarUsuario = eliminarUsuario;
 
-// Exportar funciones globales si es necesario
-window.abrirModalEditarUsuario = abrirModalEditarUsuario;
-window.eliminarUsuario = eliminarUsuario;
-window.cargarUsuarios = cargarUsuarios;
+        console.log("[RolesUsuarios] Funciones exportadas correctamente:", {
+            inicializarModuloUsuarios: typeof window.inicializarModuloUsuarios,
+            abrirModalEditarUsuario: typeof window.abrirModalEditarUsuario,
+            eliminarUsuario: typeof window.eliminarUsuario
+        });
+
+        // Disparar evento cuando el módulo esté listo
+        document.dispatchEvent(new CustomEvent('moduloUsuariosReady', {
+            detail: { ready: true, timestamp: new Date() }
+        }));
+    }
+})();
