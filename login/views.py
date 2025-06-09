@@ -465,6 +465,7 @@ def completar_registro(request):
 #          <-------LOGIN------->
 
 @require_POST
+@require_POST
 def login_empleado(request):
     try:
         email = request.POST.get('email')
@@ -479,7 +480,7 @@ def login_empleado(request):
 
         # Buscar el usuario por email
         try:
-            usuario_instance = usuario.objects.get(email=email)
+            usuario_instance = usuario.objects.get(email=email)  # Corregí el typo de 'sle' a 'get'
         except usuario.DoesNotExist:
             return JsonResponse({'status': 'error', 'error': 'Correo electrónico no registrado.'}, status=401)
 
@@ -488,7 +489,7 @@ def login_empleado(request):
             return JsonResponse({'status': 'error', 'error': 'Contraseña incorrecta.'}, status=401)
 
         # Obtener el empleado asociado
-        empleado_instance = usuario_instance.empleado  # Asegúrate de que esta relación exista
+        empleado_instance = usuario_instance.empleado
 
         # Guardar datos de sesión
         request.session['usuario_id'] = usuario_instance.id
@@ -499,8 +500,8 @@ def login_empleado(request):
         usuario_instance.ultimo_login = timezone.now()
         usuario_instance.save()
 
-        rol_nombre = usuario_instance.rol.nombre_rol if usuario_instance.rol else 'Sin rol asignado'
-        
+        # Obtener el nombre del rol como array para mantener compatibilidad con el frontend
+        rol_nombre = [usuario_instance.rol.nombre_rol] if usuario_instance.rol else ['Sin rol asignado']
 
         # Información del usuario para enviar al frontend
         usuario_info = {
@@ -508,7 +509,7 @@ def login_empleado(request):
             'apellido': empleado_instance.primer_apellido,
             'cedula': empleado_instance.cedula,
             'cargo': str(empleado_instance.cargo) if empleado_instance.cargo else 'N/A',
-            'roles': rol_nombre,
+            'roles': rol_nombre,  # Ahora es un array
             'ultimo_login': usuario_instance.ultimo_login.strftime('%d/%m/%Y %H:%M') if usuario_instance.ultimo_login else 'Nunca'
         }
         
@@ -521,10 +522,32 @@ def login_empleado(request):
 
     except Exception as e:
         import traceback
-        traceback.print_exc()  # Esto imprimirá el traceback completo en la consola del servidor
+        traceback.print_exc()
         return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
-    
 #          <-------LOGIN_TERMINADO------->
+
+
+from django.contrib.auth import logout
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+
+@require_POST
+def logout_empleado(request):
+    try:
+        # Limpiar la sesión
+        logout(request)  # Esto elimina la sesión de autenticación
+        request.session.flush()  # Limpia todos los datos de la sesión
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Sesión cerrada correctamente',
+            'redirect_url': '/login/'  # Redirige a la página de login
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'error': str(e)
+        }, status=500)
 
 #          <-------RECUPERAR_CONTRASEÑA------->
 

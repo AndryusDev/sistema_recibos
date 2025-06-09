@@ -196,12 +196,15 @@
                 </ul>
             </li>  
         </ul>
-        <div class="menu-exit" id="menu-exit">
-            <span>Salida</span>
-            <i class="fa-solid right-to-bracket">&#xF2F6</i>
+        <div class="sidebar-footer">
+            <a href="#" id="logout-button" class="menu-exit">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar sesión</span>
+            </a>
         </div>
     </div>
 </div>
+<script src="{% static 'javascript/menu_principal/subs_menus/salir.js' %}"></script>
 <script src="{% static 'javascript/menu_principal/sidebar.js' %}"></script>
 <script src="{% static 'javascript/menu_principal/subs_menus/perfil_usuario.js' %}"></script>
 <script src="{% static 'javascript/menu_principal/subs_menus/recibos_pagos.js' %}"></script>

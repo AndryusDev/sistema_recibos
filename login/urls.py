@@ -48,6 +48,7 @@ urlpatterns = [
 
     path('crear_roles/', views.crear_roles, name='crear_roles'),
     
+    path('logout/', views.logout_empleado, name='logout'),
     
 
     path('recibos/', login_required(listado_recibos), name='listado_recibos'),

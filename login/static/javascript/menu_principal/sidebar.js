@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const mainContentDiv = document.querySelector('.rightweb-section');
     
     const templatesConfig = {
-        initial: 'noticias.html',
+        initial: 'dashboard.html',
         scripts: {
             'noticias.html': ['/static/javascript/menu_principal/subs_menus/noticias.js'],
             'perfil_usuario.html': ['/static/javascript/menu_principal/subs_menus/perfil_usuario.js'],
@@ -98,8 +98,8 @@ async function loadTemplate(templateName) {
             case "roles_usuarios.html": url = "/roles_usuarios"; break;
             case "crear_roles.html": url = "/crear_roles"; break;
             case "gestion_respaldo.html": url = "/gestion_respaldo"; break;
-            /*case "dashboard.html": 
-                url = "/dashboard";*/
+            case "dashboard.html": 
+                url = "/dashboard";
                 // Manejo especial para dashboard como en tu primer enfoque
                 await loadDashboardContent();
                 return true;
