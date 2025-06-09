@@ -33,9 +33,10 @@
                         </div>
                         <div class="card-actions">
                             <select class="filter-select" id="filtro-rol">
-                                <option value="all">Todos los usuarios</option>
-                                <option value="admin">Administradores</option>
-                                <option value="consultor">Consultores</option>
+                                <option value="" >Todos los roles</option>
+                                {% for rol in roles %}
+                                    <option value="{{ rol.nombre_rol }}">{{rol.nombre_rol}}</option>
+                                {% endfor %}
                             </select>
                         </div>
                     </div>

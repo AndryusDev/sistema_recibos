@@ -282,12 +282,8 @@ def chart_data(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 def roles_usuarios(request):
-    # Verificar si el archivo JS existe (para debugging)
-    js_path = os.path.join(settings.STATIC_ROOT, 'javascript', 'menu_principal', 'subs_menus', 'roles_usuarios.js')
-    print(f"Ruta del JS: {js_path}")
-    print(f"Existe el archivo?: {os.path.exists(js_path)}")
-    
-    return render(request, 'menu_principal/subs_menus/roles_usuarios.html')
+    roles = rol.objects.all()
+    return render(request, 'menu_principal/subs_menus/roles_usuarios.html', { 'roles': roles})
 
 def crear_roles(request):
     return render(request, 'menu_principal/subs_menus/crear_roles.html')
@@ -1471,18 +1467,20 @@ def listar_usuarios(request):
         
         # 3. Aplicar filtros
         if nombre:
-            queryset = queryset.filter(empleado__nombre__icontains=nombre)
+            queryset = queryset.filter(
+                Q(empleado__primer_nombre__icontains=nombre) |
+                Q(empleado__primer_apellido__icontains=nombre)
+            )
         if email:
             queryset = queryset.filter(email__icontains=email)
         if rol_filter:
             queryset = queryset.filter(rol__nombre_rol__icontains=rol_filter)
         if estado:
-            # Filtro por estado (activo/inactivo)
             queryset = queryset.filter(activo=(estado.lower() == 'activo'))
         
         # 4. Ordenamiento
-        orden_validos = ['-fecha_registro', 'fecha_registro', 'empleado__nombre', 
-                        '-empleado__nombre', 'email', '-email', 'rol__nombre_rol', 
+        orden_validos = ['-fecha_registro', 'fecha_registro', 'empleado__primer_nombre', 
+                        '-empleado__primer_nombre', 'email', '-email', 'rol__nombre_rol', 
                         '-rol__nombre_rol', '-ultimo_login', 'ultimo_login']
         orden = orden if orden in orden_validos else '-fecha_registro'
         queryset = queryset.order_by(orden)
@@ -1494,18 +1492,22 @@ def listar_usuarios(request):
         except:
             usuarios_paginados = paginator.page(1)
         
-        # 6. Preparar respuesta
+        # 6. Preparar respuesta (versión simplificada)
         usuarios_data = []
         for user in usuarios_paginados:
+            empleado_nombre = 'Sin nombre'
+            if hasattr(user, 'empleado') and user.empleado:
+                empleado_nombre = f"{user.empleado.primer_nombre or ''} {user.empleado.primer_apellido or ''}".strip()
+            
             usuarios_data.append({
                 'id': user.id,
-                'nombre': getattr(user.empleado, 'nombre', 'Sin nombre'),
+                'nombre': empleado_nombre if empleado_nombre else 'Sin nombre',
                 'email': user.email,
                 'rol': {
                     'codigo': user.rol.codigo_rol if user.rol else None,
-                    'nombre': getattr(user.rol, 'nombre_rol', 'Sin rol')
+                    'nombre': user.rol.nombre_rol if user.rol else 'Sin rol'
                 },
-                'activo': user.activo,  # Ahora este campo existe
+                'activo': user.activo,
                 'ultimo_login': user.ultimo_login.strftime('%d/%m/%Y %H:%M') if user.ultimo_login else 'Nunca',
                 'fecha_registro': user.fecha_registro.strftime('%d/%m/%Y %H:%M') if user.fecha_registro else ''
             })

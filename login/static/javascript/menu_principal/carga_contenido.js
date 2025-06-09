@@ -153,7 +153,7 @@ function initializeTemplateFunctions(templateName) {
             if (window.aplicarFiltrosEmpleados) aplicarFiltrosEmpleados();
         }
         if (templateName === "roles_usuarios.html") {
-            if (window.inicializarEventosRoles) inicializarEventosRoles();
+            if (window.inicializarGestionUsuarios) inicializarGestionUsuarios();
         }
     } catch (error) {
         console.error(`Error inicializando funciones para ${templateName}:`, error);
