@@ -262,10 +262,10 @@ async function aplicarFiltros() {
 
         // Construir parámetros
         const params = new URLSearchParams({
-            tipo: document.getElementById('tipo-filter')?.value || '',
-            mes: document.getElementById('mes-filter')?.value || '',
-            anio: document.getElementById('anio-filter')?.value || '',
-            orden: document.getElementById('orden-filter')?.value || '-fecha_creacion'
+            tipo: encodeURIComponent(document.getElementById('tipo-filter')?.value || ''),
+            mes: encodeURIComponent(document.getElementById('mes-filter')?.value || ''),
+            anio: encodeURIComponent(document.getElementById('anio-filter')?.value || ''),
+            orden: encodeURIComponent(document.getElementById('orden-filter')?.value || '-fecha_creacion')
         });
 
         console.log('Fetching data with params:', params.toString());
@@ -295,9 +295,9 @@ async function aplicarFiltros() {
     } catch (error) {
         console.error('Error al aplicar filtros:', error);
         const tbody = cuerpoTabla.querySelector('tbody');
-         if (tbody) {
-             tbody.innerHTML = `<tr><td colspan="7" class="text-center error">Error al cargar datos: ${error.message}</td></tr>`;
-         }
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center error">Error al cargar datos: ${error.message}</td></tr>`;
+        }
         mostrarNotificacion('Error al cargar prenominas: ' + error.message, 'error');
     }
 }
