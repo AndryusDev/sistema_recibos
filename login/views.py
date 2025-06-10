@@ -1735,6 +1735,38 @@ def listar_roles(request):
         }, status=500)
 
 @require_http_methods(["GET"])
+def obtener_rol(request, codigo_rol):
+    """API para obtener los datos de un rol específico por su código"""
+    try:
+        rol_obj = rol.objects.get(codigo_rol=codigo_rol)
+        permisos_qs = permiso.objects.filter(rol_permisos__rol=rol_obj)
+        permisos_list = list(permisos_qs.values('codigo', 'nombre', 'descripcion'))
+        usuarios_count = usuario.objects.filter(rol=rol_obj).count()
+        rol_data = {
+            'codigo_rol': rol_obj.codigo_rol,
+            'nombre_rol': rol_obj.nombre_rol,
+            'descripcion': rol_obj.descripcion,
+            'permisos': permisos_list,
+            'usuarios_count': usuarios_count,
+        }
+        return JsonResponse({
+            'success': True,
+            'rol': rol_data
+        })
+    except rol.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Rol no encontrado'
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Error en obtener_rol: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al obtener el rol',
+            'detail': str(e)
+        }, status=500)
+
+@require_http_methods(["GET"])
 def listar_permisos(request):
     """API para listar todos los permisos disponibles"""
     try:
@@ -1753,154 +1785,177 @@ def listar_permisos(request):
         }, status=500)
 
 @csrf_exempt
-@require_http_methods(["POST", "PUT", "DELETE"])
-def manejar_roles(request, rol_id=None):
-    """API para crear, actualizar o eliminar roles"""
+@require_http_methods(["POST"])
+def crear_roles_api(request):
+    """API para crear roles"""
     try:
-        if request.method == 'POST':
-            # Crear nuevo rol
-            try:
-                data = json.loads(request.body)
-            except json.JSONDecodeError:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Formato JSON inválido'
-                }, status=400)
-            
-            # Validar campos requeridos
-            required_fields = ['nombre', 'codigo']
-            missing_fields = [field for field in required_fields if not data.get(field)]
-            if missing_fields:
-                return JsonResponse({
-                    'success': False,
-                    'error': f'Campos requeridos: {", ".join(missing_fields)}'
-                }, status=400)
-            
-            # Verificar que el código no exista
-            if rol.objects.filter(codigo_rol=data['codigo']).exists():
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Ya existe un rol con este código'
-                }, status=400)
-            
-            # Crear el rol
-            nuevo_rol = rol.objects.create(
-                codigo_rol=data['codigo'],
-                nombre_rol=data['nombre'],
-                descripcion=data.get('descripcion', '')
-            )
-            
-            # Asignar permisos si se proporcionan
-            if 'permisos' in data and data['permisos']:
-                from .models import rol_permisos
-                for permiso_codigo in data['permisos']:
-                    try:
-                        permiso_obj = permiso.objects.get(codigo=permiso_codigo)
-                        rol_permisos.objects.create(
-                            rol=nuevo_rol,
-                            permiso=permiso_obj
-                        )
-                    except permiso.DoesNotExist:
-                        continue
-            
+        # Crear nuevo rol
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
             return JsonResponse({
-                'success': True,
-                'message': 'Rol creado exitosamente',
-                'rol_id': nuevo_rol.codigo_rol
-            })
+                'success': False,
+                'error': 'Formato JSON inválido'
+            }, status=400)
         
-        elif request.method == 'PUT':
-            # Actualizar rol existente
-            if not rol_id:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'ID de rol requerido'
-                }, status=400)
-            
-            try:
-                rol_obj = rol.objects.get(codigo_rol=rol_id)
-            except rol.DoesNotExist:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Rol no encontrado'
-                }, status=404)
-            
-            try:
-                data = json.loads(request.body)
-            except json.JSONDecodeError:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Formato JSON inválido'
-                }, status=400)
-            
-            # Actualizar campos
-            if 'nombre' in data:
-                rol_obj.nombre_rol = data['nombre']
-            if 'descripcion' in data:
-                rol_obj.descripcion = data['descripcion']
-            
-            rol_obj.save()
-            
-            # Actualizar permisos si se proporcionan
-            if 'permisos' in data:
-                from .models import rol_permisos
-                # Eliminar permisos existentes
-                rol_permisos.objects.filter(rol=rol_obj).delete()
-                
-                # Agregar nuevos permisos
-                for permiso_codigo in data['permisos']:
-                    try:
-                        permiso_obj = permiso.objects.get(codigo=permiso_codigo)
-                        rol_permisos.objects.create(
-                            rol=rol_obj,
-                            permiso=permiso_obj
-                        )
-                    except permiso.DoesNotExist:
-                        continue
-            
+        # Validar campos requeridos
+        required_fields = ['nombre', 'codigo']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        if missing_fields:
             return JsonResponse({
-                'success': True,
-                'message': 'Rol actualizado exitosamente'
-            })
+                'success': False,
+                'error': f'Campos requeridos: {", ".join(missing_fields)}'
+            }, status=400)
         
-        elif request.method == 'DELETE':
-            # Eliminar rol
-            if not rol_id:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'ID de rol requerido'
-                }, status=400)
-            
-            try:
-                rol_obj = rol.objects.get(codigo_rol=rol_id)
-            except rol.DoesNotExist:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Rol no encontrado'
-                }, status=404)
-            
-            # Verificar si hay usuarios asignados a este rol
-            usuarios_con_rol = usuario.objects.filter(rol=rol_obj).count()
-            if usuarios_con_rol > 0:
-                return JsonResponse({
-                    'success': False,
-                    'error': f'No se puede eliminar el rol. Hay {usuarios_con_rol} usuario(s) asignado(s) a este rol.'
-                }, status=400)
-            
-            # Eliminar permisos asociados
+        # Verificar que el código no exista
+        if rol.objects.filter(codigo_rol=data['codigo']).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'Ya existe un rol con este código'
+            }, status=400)
+        
+        # Crear el rol
+        nuevo_rol = rol.objects.create(
+            codigo_rol=data['codigo'],
+            nombre_rol=data['nombre'],
+            descripcion=data.get('descripcion', '')
+        )
+        
+        # Asignar permisos si se proporcionan
+        if 'permisos' in data and data['permisos']:
             from .models import rol_permisos
-            rol_permisos.objects.filter(rol=rol_obj).delete()
-            
-            # Eliminar el rol
-            rol_obj.delete()
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Rol eliminado exitosamente'
-            })
+            for permiso_codigo in data['permisos']:
+                try:
+                    permiso_obj = permiso.objects.get(codigo=permiso_codigo)
+                    rol_permisos.objects.create(
+                        rol=nuevo_rol,
+                        permiso=permiso_obj
+                    )
+                except permiso.DoesNotExist:
+                    continue
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Rol creado exitosamente',
+            'rol_id': nuevo_rol.codigo_rol
+        })
     
     except Exception as e:
-        logger.error(f"Error en manejar_roles: {str(e)}", exc_info=True)
+        logger.error(f"Error en crear_roles_api: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al procesar la solicitud',
+            'detail': str(e)
+        }, status=500)
+
+@csrf_exempt
+@require_http_methods(["PUT"])
+def actualizar_roles(request, rol_id):
+    """API para actualizar roles"""
+    try:
+        # Actualizar rol existente
+        if not rol_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'ID de rol requerido'
+            }, status=400)
+        
+        try:
+            rol_obj = rol.objects.get(codigo_rol=rol_id)
+        except rol.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Rol no encontrado'
+            }, status=404)
+        
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Formato JSON inválido'
+            }, status=400)
+        
+        # Actualizar campos
+        if 'nombre' in data:
+            rol_obj.nombre_rol = data['nombre']
+        if 'descripcion' in data:
+            rol_obj.descripcion = data['descripcion']
+        
+        rol_obj.save()
+        
+        # Actualizar permisos si se proporcionan
+        if 'permisos' in data:
+            from .models import rol_permisos
+            # Eliminar permisos existentes
+            rol_permisos.objects.filter(rol=rol_obj).delete()
+            
+            # Agregar nuevos permisos
+            for permiso_codigo in data['permisos']:
+                try:
+                    permiso_obj = permiso.objects.get(codigo=permiso_codigo)
+                    rol_permisos.objects.create(
+                        rol=rol_obj,
+                        permiso=permiso_obj
+                    )
+                except permiso.DoesNotExist:
+                    continue
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Rol actualizado exitosamente'
+        })
+    
+    except Exception as e:
+        logger.error(f"Error en actualizar_roles: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al procesar la solicitud',
+            'detail': str(e)
+        }, status=500)
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def eliminar_roles(request, rol_id):
+    """API para eliminar roles"""
+    try:
+        # Eliminar rol
+        if not rol_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'ID de rol requerido'
+            }, status=400)
+        
+        try:
+            rol_obj = rol.objects.get(codigo_rol=rol_id)
+        except rol.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Rol no encontrado'
+            }, status=404)
+        
+        # Verificar si hay usuarios asignados a este rol
+        usuarios_con_rol = usuario.objects.filter(rol=rol_obj).count()
+        if usuarios_con_rol > 0:
+            return JsonResponse({
+                'success': False,
+                'error': f'No se puede eliminar el rol. Hay {usuarios_con_rol} usuario(s) asignado(s) a este rol.'
+            }, status=400)
+        
+        # Eliminar permisos asociados
+        from .models import rol_permisos
+        rol_permisos.objects.filter(rol=rol_obj).delete()
+        
+        # Eliminar el rol
+        rol_obj.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Rol eliminado exitosamente'
+        })
+    
+    except Exception as e:
+        logger.error(f"Error en eliminar_roles: {str(e)}", exc_info=True)
         return JsonResponse({
             'success': False,
             'error': 'Error al procesar la solicitud',

@@ -2,7 +2,9 @@
 const CrearRolesModule = {
     API_ROLES_URL: '/api/roles_listar/',
     API_PERMISOS_URL: '/api/permisos/',
-    API_ROLES_MANAGE_URL: '/api/roles/manejar/',
+    API_ROLES_CREATE_URL: '/api/roles/crear/',
+    API_ROLES_UPDATE_URL: '/api/roles/actualizar/',
+    API_ROLES_DELETE_URL: '/api/roles/eliminar/',
     roles: [],
     permisos: [],
     currentRolId: null
@@ -89,21 +91,35 @@ async function abrirModalRol(rolId = null) {
     await cargarPermisos();
 
     if (rolId) {
-        // Cargar datos del rol para editar
-        const rol = CrearRolesModule.roles.find(r => r.id == rolId);
-        if (rol) {
-            document.getElementById('rol-nombre').value = rol.nombre || '';
-            document.getElementById('rol-codigo').value = rol.codigo || '';
-            document.getElementById('rol-descripcion').value = rol.descripcion || '';
-
-            // Marcar permisos asignados
-            const permisosAsignados = rol.permisos || [];
-            CrearRolesModule.permisos.forEach(permiso => {
-                const checkbox = document.querySelector(`input[name="permisos"][value="${permiso.id}"]`);
-                if (checkbox) {
-                    checkbox.checked = permisosAsignados.includes(permiso.id);
+        try {
+            // Llamar a la API para obtener datos del rol
+            const response = await fetch(`/api/roles/${rolId}/`, {
+                headers: {
+                    'Accept': 'application/json'
                 }
             });
+            if (!response.ok) throw new Error(`Error HTTP! estado: ${response.status}`);
+
+            const data = await response.json();
+            if (data.success && data.rol) {
+                const rol = data.rol;
+                document.getElementById('rol-nombre').value = rol.nombre_rol || '';
+                document.getElementById('rol-codigo').value = rol.codigo_rol || '';
+                document.getElementById('rol-descripcion').value = rol.descripcion || '';
+
+                // Marcar permisos asignados
+                const permisosAsignados = rol.permisos.map(p => p.codigo) || [];
+                CrearRolesModule.permisos.forEach(permiso => {
+                    const checkbox = document.querySelector(`input[name="permisos"][value="${permiso.codigo}"]`);
+                    if (checkbox) {
+                        checkbox.checked = permisosAsignados.includes(permiso.codigo);
+                    }
+                });
+            } else {
+                console.error('Error al obtener datos del rol:', data.error || 'Respuesta inválida');
+            }
+        } catch (error) {
+            console.error('Error al cargar datos del rol:', error);
         }
     }
 
@@ -198,12 +214,20 @@ async function guardarRol() {
     };
 
     try {
-        const url = CrearRolesModule.currentRolId 
-            ? `${CrearRolesModule.API_ROLES_MANAGE_URL}${CrearRolesModule.currentRolId}/`
-            : CrearRolesModule.API_ROLES_MANAGE_URL;
+        let url = '';
+        let method = '';
 
-        const method = CrearRolesModule.currentRolId ? 'PUT' : 'POST';
-        
+        if (CrearRolesModule.currentRolId) {
+            url = `${CrearRolesModule.API_ROLES_UPDATE_URL}${CrearRolesModule.currentRolId}/`;
+            method = 'PUT';
+        } else {
+            url = CrearRolesModule.API_ROLES_CREATE_URL;
+            method = 'POST';
+        }
+
+        // Convertir el código a un entero
+        payload.codigo = parseInt(payload.codigo, 10);
+
         const response = await fetch(url, {
             method: method,
             headers: {
@@ -244,7 +268,7 @@ async function eliminarRol(rolId) {
     if (!confirmacion.isConfirmed) return;
 
     try {
-        const response = await fetch(`${CrearRolesModule.API_ROLES_MANAGE_URL}${rolId}/`, {
+        const response = await fetch(`${CrearRolesModule.API_ROLES_DELETE_URL}${rolId}/`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',

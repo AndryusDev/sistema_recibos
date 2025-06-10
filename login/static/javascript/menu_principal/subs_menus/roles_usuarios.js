@@ -27,7 +27,6 @@ async function cargarUsuarios(filtro = 'all', pagina = 1, busqueda = '') {
         
         const response = await fetch(`${API_USUARIOS_URL}?${params.toString()}`, {
             headers: {
-                'X-CSRFToken': getCSRFToken(),
                 'Accept': 'application/json'
             }
         });
@@ -140,16 +139,27 @@ async function abrirModalEditarUsuario(usuarioId) {
             }
         });
         
-        // Llenar el formulario
-        document.getElementById('edit-user-name').value = data.usuario.nombre || '';
-        document.getElementById('edit-user-email').value = data.usuario.email || '';
-        document.getElementById('edit-user-active').checked = data.usuario.activo || false;
-        
+        // Verificar que existan los elementos del DOM
+        const nameInput = document.getElementById('edit-user-name');
+        const emailInput = document.getElementById('edit-user-email');
+        const activeCheckbox = document.getElementById('edit-user-active');
+
+        if (nameInput && emailInput && activeCheckbox) {
+            // Llenar el formulario
+            nameInput.value = data.usuario.nombre || '';
+            emailInput.value = data.usuario.email || '';
+            activeCheckbox.checked = data.usuario.activo || false;
+        } else {
+            console.error('Error: No se encontraron todos los elementos del formulario');
+            mostrarError('No se pudieron cargar todos los datos del usuario');
+            return;
+        }
+
         // Cargar roles
-        await cargarRoles(data.usuario.rol?.id || null);
         
-        // Mostrar el modal
-        document.getElementById('edit-user-modal').style.display = 'flex';
+        const modal = document.getElementById('edit-user-modal');
+        modal.style.display = 'flex';
+        await cargarRoles(data.usuario.rol?.id || null);
         
     } catch (error) {
         console.error('Error al abrir modal:', error);
@@ -166,7 +176,6 @@ async function cargarRoles(rolSeleccionadoId = null) {
     try {
         const response = await fetch(API_ROLES_URL, {
             headers: {
-                'X-CSRFToken': getCSRFToken(),
                 'Accept': 'application/json'
             }
         });
@@ -179,29 +188,36 @@ async function cargarRoles(rolSeleccionadoId = null) {
         if (!data.success) throw new Error(data.error || 'Error al cargar roles');
         
         const selectRol = document.getElementById('edit-user-role');
-        selectRol.innerHTML = '<option value="">Seleccionar rol...</option>';
-        
-        data.roles.forEach(rol => {
-            const option = document.createElement('option');
-            option.value = rol.id;
-            option.textContent = rol.nombre;
-            option.selected = rol.id == rolSeleccionadoId;
-            selectRol.appendChild(option);
-        });
+        if(selectRol){
+            selectRol.innerHTML = '<option value="">Seleccionar rol...</option>';
+            
+            data.roles.forEach(rol => {
+                const option = document.createElement('option');
+                option.value = rol.id;
+                option.textContent = rol.nombre;
+                option.selected = rol.id == rolSeleccionadoId;
+                selectRol.appendChild(option);
+            });
+        } else {
+             console.error('Error: No se encontró el elemento select#edit-user-role');
+             mostrarError('No se pudieron cargar los roles');
+        }
     } catch (error) {
         console.error('Error al cargar roles:', error);
         mostrarError('Error al cargar roles: ' + error.message);
         
         // Opción de respaldo en caso de error
         const selectRol = document.getElementById('edit-user-role');
-        selectRol.innerHTML = `
-            <option value="">Error cargando roles</option>
-            <option value="1">Administrador</option>
-            <option value="2">Usuario</option>
-        `;
-        
-        if (rolSeleccionadoId) {
-            selectRol.value = rolSeleccionadoId;
+        if(selectRol){
+            selectRol.innerHTML = `
+                <option value="">Error cargando roles</option>
+                <option value="1">Administrador</option>
+                <option value="2">Usuario</option>
+            `;
+            
+            if (rolSeleccionadoId) {
+                selectRol.value = rolSeleccionadoId;
+            }
         }
     }
 }
