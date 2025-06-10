@@ -59,11 +59,11 @@
                                     <!-- Ejemplo de filas - en producción esto vendría de tu backend -->
                                     <tr class="tabla-datos__fila" data-rol-id="1">
                                         <td class="tabla-datos__celda">
-                                            <span>Administrador</span>
+                                            <span></span>
                                         </td>
-                                        <td class="tabla-datos__celda">Acceso completo al sistema</td>
-                                        <td class="tabla-datos__celda">12</td>
-                                        <td class="tabla-datos__celda">3</td>
+                                        <td class="tabla-datos__celda"></td>
+                                        <td class="tabla-datos__celda"></td>
+                                        <td class="tabla-datos__celda"></td>
                                         <td class="tabla-datos__celda">
                                             <button class="tabla-datos__boton btn-editar" data-idusuario="{{ usuario.id }}" onclick="editarUsuario(this)">
                                                 <i class="fas fa-edit"></i> Editar
@@ -71,38 +71,6 @@
                                             <button class="tabla-datos__boton btn-eliminar" data-usuarioid="{{ usuario.id }}" onclick="confirmarEliminarUsuario(this)">
                                                 <i class="fas fa-trash"></i> Eliminar
                                             </button>
-                                        </td>
-                                    </tr>
-                                    <tr class="tabla-datos__fila" data-rol-id="2">
-                                        <td class="tabla-datos__celda">
-                                            <span class="badge badge-consultant">Consultor RH</span>
-                                        </td>
-                                        <td class="tabla-datos__celda">Acceso a módulos de nómina y empleados</td>
-                                        <td class="tabla-datos__celda">8</td>
-                                        <td class="tabla-datos__celda">5</td>
-                                        <td class="tabla-datos__celda">
-                                        <button class="tabla-datos__boton btn-editar" data-idusuario="{{ usuario.id }}" onclick="editarUsuario(this)">
-                                            <i class="fas fa-edit"></i> Editar
-                                        </button>
-                                        <button class="tabla-datos__boton btn-eliminar" data-usuarioid="{{ usuario.id }}" onclick="confirmarEliminarUsuario(this)">
-                                            <i class="fas fa-trash"></i> Eliminar
-                                        </button>
-                                        </td>
-                                    </tr>
-                                    <tr class="tabla-datos__fila" data-rol-id="3">
-                                        <td class="tabla-datos__celda">
-                                            <span class="badge badge-finance">Consultor Finanzas</span>
-                                        </td>
-                                        <td class="tabla-datos__celda">Acceso a reportes financieros</td>
-                                        <td class="tabla-datos__celda">6</td>
-                                        <td class="tabla-datos__celda">2</td>
-                                        <td class="tabla-datos__celda">
-                                        <button class="tabla-datos__boton btn-editar" data-idusuario="{{ usuario.id }}" onclick="editarUsuario(this)">
-                                            <i class="fas fa-edit"></i> Editar
-                                        </button>
-                                        <button class="tabla-datos__boton btn-eliminar" data-usuarioid="{{ usuario.id }}" onclick="confirmarEliminarUsuario(this)">
-                                            <i class="fas fa-trash"></i> Eliminar
-                                        </button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -171,6 +139,6 @@
     </div>
 </div>
 
-    <script src="{% static 'js/roles.js' %}"></script>
+    <script src="{% static 'javascript/menu_principal/subs_menus/crear_roles.js' %}"></script>
 </body>
 </html>

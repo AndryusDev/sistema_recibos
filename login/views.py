@@ -6,7 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 import pandas as pd
 from django.http import JsonResponse
-from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, empleado
+from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado
 from datetime import datetime
 import os
 from django.conf import settings
@@ -1705,13 +1705,21 @@ def manejar_usuario(request, usuario_id):
     
 @require_http_methods(["GET"])
 def listar_roles(request):
-    """API para listar todos los roles disponibles"""
+    """API para listar todos los roles disponibles con permisos y cantidad de usuarios"""
     try:
         roles = rol.objects.all().order_by('nombre_rol')
-        roles_data = [{
-            'codigo': rol.codigo_rol,
-            'nombre': rol.nombre_rol
-        } for rol in roles]
+        roles_data = []
+        for r in roles:
+            permisos_qs = permiso.objects.filter(rol_permisos__rol=r)
+            permisos_list = list(permisos_qs.values('codigo', 'nombre', 'descripcion'))
+            usuarios_count = usuario.objects.filter(rol=r).count()
+            roles_data.append({
+                'codigo_rol': r.codigo_rol,
+                'nombre_rol': r.nombre_rol,
+                'descripcion': r.descripcion,
+                'permisos': permisos_list,
+                'usuarios_count': usuarios_count,
+            })
         
         return JsonResponse({
             'success': True,

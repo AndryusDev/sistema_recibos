@@ -1,167 +1,347 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Variables globales
-    const rolModal = document.getElementById('rol-modal');
-    const btnNuevoRol = document.getElementById('btn-nuevo-rol');
-    const btnCancelar = document.querySelector('.btn-cancel');
-    const btnClose = document.querySelector('.btn-close');
-    let currentRolId = null;
-    
-    // Abrir modal para nuevo rol
-    btnNuevoRol.addEventListener('click', function() {
-        currentRolId = null;
-        document.getElementById('modal-title').textContent = 'Nuevo Rol';
-        document.getElementById('rol-form').reset();
-        cargarPermisosDisponibles();
-        rolModal.style.display = 'flex';
-    });
-    
-    // Abrir modal para editar rol
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.btn-edit')) {
-            const row = e.target.closest('tr');
-            currentRolId = row.dataset.rolId;
-            
-            // Simular datos del rol (en producción sería una petición AJAX)
-            const rolData = {
-                nombre: row.querySelector('td:nth-child(1) .badge').textContent,
-                codigo: currentRolId,
-                descripcion: row.querySelector('td:nth-child(2)').textContent,
-                permisos: [1, 2, 4, 5, 6] // IDs de permisos asignados (ejemplo)
-            };
-            
-            document.getElementById('modal-title').textContent = `Editar Rol: ${rolData.nombre}`;
-            document.getElementById('rol-nombre').value = rolData.nombre;
-            document.getElementById('rol-codigo').value = rolData.codigo;
-            document.getElementById('rol-descripcion').value = rolData.descripcion;
-            
-            cargarPermisosDisponibles(currentRolId);
-            rolModal.style.display = 'flex';
-        }
-    });
-    
-    // Cerrar modal
-    function closeModal() {
-        rolModal.style.display = 'none';
-    }
-    
-    btnCancelar.addEventListener('click', closeModal);
-    btnClose.addEventListener('click', closeModal);
-    
-    // Cargar permisos disponibles
-    async function cargarPermisosDisponibles(rolId = null) {
-        try {
-            const [permisosResponse, rolResponse] = await Promise.all([
-                fetch('/api/permisos/'),
-                rolId ? fetch(`/api/roles/${rolId}/permisos/`) : Promise.resolve(null)
-            ]);
-            
-            const [permisos, rolPermisos] = await Promise.all([
-                permisosResponse.json(),
-                rolResponse ? rolResponse.json() : Promise.resolve([])
-            ]);
-            
-            renderizarPermisos(permisos, rolPermisos);
-            
-        } catch (error) {
-            console.error("Error cargando permisos:", error);
-            document.getElementById('permisos-container').innerHTML = `
-                <div class="alert alert-error">
-                    <i class="fas fa-exclamation-circle"></i> Error cargando los permisos
-                </div>
-            `;
-        }
-    }
-    
-    // Renderizar lista de permisos
-    function renderizarPermisos(permisos, permisosAsignados = []) {
-        const container = document.getElementById('permisos-container');
-        const contador = document.getElementById('contador-permisos');
-        
-        // Ordenar permisos alfabéticamente por nombre
-        permisos.sort((a, b) => a.nombre.localeCompare(b.nombre));
-        
-        let html = '';
-        let seleccionados = 0;
-        
-        permisos.forEach(permiso => {
-            const estaSeleccionado = permisosAsignados.includes(permiso.id);
-            if (estaSeleccionado) seleccionados++;
-            
-            html += `
-                <label class="permiso-item">
-                    <input type="checkbox" name="permisos" value="${permiso.id}" 
-                        ${estaSeleccionado ? 'checked' : ''}>
-                    <span class="permiso-nombre">${permiso.nombre}</span>
-                    <span class="permiso-codigo">${permiso.codigo}</span>
-                </label>
-            `;
-        });
-        
-        container.innerHTML = html || '<div class="no-permisos">No hay permisos disponibles</div>';
-        contador.textContent = seleccionados;
-        
-        // Actualizar contador cuando cambian las selecciones
-        container.addEventListener('change', (e) => {
-            if (e.target.matches('input[type="checkbox"]')) {
-                const total = container.querySelectorAll('input[type="checkbox"]:checked').length;
-                contador.textContent = total;
+const API_ROLES_URL = '/api/roles_listar/';
+const API_CREAR_ROLES_URL = '/api/crear_roles/';
+const API_PERMISOS_URL = '/api/permisos/';
+
+let roles = [];
+let permisos = [];
+let currentRolId = null;
+
+// Función para cargar y mostrar la lista de roles
+async function cargarRoles(busqueda = '') {
+    const tbody = document.querySelector('.tabla-datos__tbody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="5" class="text-center">
+                <i class="fas fa-spinner fa-spin"></i> Cargando roles...
+            </td>
+        </tr>
+    `;
+
+    try {
+        const params = new URLSearchParams();
+        if (busqueda) params.append('search', busqueda);
+
+        const response = await fetch(`${API_ROLES_URL}?${params.toString()}`, {
+            headers: {
+                'Accept': 'application/json'
             }
         });
-        
-        // Configurar búsqueda
-        document.getElementById('search-permisos').addEventListener('input', function(e) {
-            const term = e.target.value.toLowerCase();
-            document.querySelectorAll('.permiso-item').forEach(item => {
-                const texto = item.textContent.toLowerCase();
-                item.style.display = texto.includes(term) ? 'flex' : 'none';
-            });
-        });
-    }
-    
-    // Guardar rol
-    document.querySelector('.btn-save').addEventListener('click', function() {
-        const form = document.getElementById('rol-form');
-        
-        if (form.checkValidity()) {
-            const formData = {
-                id: currentRolId,
-                nombre: document.getElementById('rol-nombre').value,
-                codigo: document.getElementById('rol-codigo').value,
-                descripcion: document.getElementById('rol-descripcion').value,
-                permisos: Array.from(document.querySelectorAll('input[name="permisos"]:checked')).map(el => el.value)
-            };
-            
-            // Aquí iría tu lógica para guardar (AJAX al backend)
-            console.log('Datos a guardar:', formData);
-            alert(currentRolId ? 'Rol actualizado correctamente' : 'Rol creado correctamente');
-            closeModal();
-            
-            // En producción, actualizarías la tabla aquí
-            // location.reload(); o actualización dinámica
+
+        if (!response.ok) throw new Error(`Error HTTP! estado: ${response.status}`);
+
+        const data = await response.json();
+
+        if (data.success && data.roles && data.roles.length > 0) {
+            roles = data.roles;
+            renderizarRoles(roles);
         } else {
-            form.reportValidity();
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center">No se encontraron roles</td>
+                </tr>
+            `;
         }
-    });
-    
-    // Búsqueda en tabla de roles
-    document.getElementById('search-roles').addEventListener('input', function(e) {
-        const term = e.target.value.toLowerCase();
-        document.querySelectorAll('.tabla-roles tbody tr').forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(term) ? '' : 'none';
-        });
-    });
-    
-    // Filtrar roles
-    document.getElementById('filter-roles').addEventListener('change', function(e) {
-        const filterValue = e.target.value;
-        document.querySelectorAll('.tabla-roles tbody tr').forEach(row => {
-            if (filterValue === 'all') {
-                row.style.display = '';
-            } else {
-                // Implementar lógica de filtrado según tu necesidad
-                row.style.display = ''; // Mostrar todos por defecto en este ejemplo
+    } catch (error) {
+        console.error('Error al cargar roles:', error);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center error">
+                    Error al cargar roles: ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Función para renderizar la tabla de roles
+function renderizarRoles(roles) {
+    const tbody = document.querySelector('.tabla-datos__tbody');
+    tbody.innerHTML = roles.map(rol => `
+        <tr class="tabla-datos__fila" data-rol-id="${rol.codigo_rol}">
+            <td class="tabla-datos__celda">
+                <span class="badge rol-${rol.codigo_rol}">${rol.nombre_rol}</span>
+            </td>
+            <td class="tabla-datos__celda">${rol.descripcion || ''}</td>
+            <td class="tabla-datos__celda">${rol.permisos.length || 0}</td>
+            <td class="tabla-datos__celda">${rol.usuarios_count || 0}</td>
+            <td class="tabla-datos__celda">
+                <button class="tabla-datos__boton btn-editar" title="Editar" data-id="${rol.codigo_rol}">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                <button class="tabla-datos__boton btn-eliminar" title="Eliminar" data-id="${rol.codigo_rol}">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+
+// Función para abrir el modal para crear o editar rol
+async function abrirModalRol(rolId = null) {
+    currentRolId = rolId;
+    document.getElementById('modal-title').textContent = rolId ? 'Editar Rol' : 'Nuevo Rol';
+    const form = document.getElementById('rol-form');
+    form.reset();
+
+    await cargarPermisos();
+
+    if (rolId) {
+        // Cargar datos del rol para editar
+        const rol = roles.find(r => r.id == rolId);
+        if (rol) {
+            document.getElementById('rol-nombre').value = rol.nombre || '';
+            document.getElementById('rol-codigo').value = rol.codigo || '';
+            document.getElementById('rol-descripcion').value = rol.descripcion || '';
+
+            // Marcar permisos asignados
+            const permisosAsignados = rol.permisos || [];
+            permisos.forEach(permiso => {
+                const checkbox = document.querySelector(`input[name="permisos"][value="${permiso.id}"]`);
+                if (checkbox) {
+                    checkbox.checked = permisosAsignados.includes(permiso.id);
+                }
+            });
+        }
+    }
+
+    document.getElementById('rol-modal').style.display = 'flex';
+}
+
+// Función para cerrar el modal
+function cerrarModal() {
+    document.getElementById('rol-modal').style.display = 'none';
+}
+
+// Función para cargar permisos y renderizarlos
+async function cargarPermisos() {
+    try {
+        const response = await fetch(API_PERMISOS_URL, {
+            headers: {
+                'Accept': 'application/json'
             }
         });
+        if (!response.ok) throw new Error(`Error HTTP! estado: ${response.status}`);
+
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error || 'Error al cargar permisos');
+
+        permisos = data.permisos || [];
+        renderizarPermisos(permisos);
+    } catch (error) {
+        console.error('Error al cargar permisos:', error);
+        document.getElementById('permisos-container').innerHTML = `
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i> Error cargando los permisos
+            </div>
+        `;
+    }
+}
+
+// Función para renderizar permisos en el modal
+function renderizarPermisos(permisos) {
+    const container = document.getElementById('permisos-container');
+    const contador = document.getElementById('contador-permisos');
+
+    permisos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+    let html = '';
+    permisos.forEach(permiso => {
+        html += `
+            <label class="permiso-item">
+                <input type="checkbox" name="permisos" value="${permiso.id}">
+                <span class="permiso-nombre">${permiso.nombre}</span>
+                <span class="permiso-codigo">${permiso.codigo}</span>
+            </label>
+        `;
     });
-});
+
+    container.innerHTML = html || '<div class="no-permisos">No hay permisos disponibles</div>';
+    contador.textContent = '0';
+
+    container.addEventListener('change', (e) => {
+        if (e.target.matches('input[type="checkbox"]')) {
+            const total = container.querySelectorAll('input[type="checkbox"]:checked').length;
+            contador.textContent = total;
+        }
+    });
+
+    document.getElementById('search-permisos').addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase();
+        document.querySelectorAll('.permiso-item').forEach(item => {
+            const texto = item.textContent.toLowerCase();
+            item.style.display = texto.includes(term) ? 'flex' : 'none';
+        });
+    });
+}
+
+// Función para guardar rol (crear o actualizar)
+async function guardarRol() {
+    const form = document.getElementById('rol-form');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const nombre = document.getElementById('rol-nombre').value.trim();
+    const codigo = document.getElementById('rol-codigo').value.trim();
+    const descripcion = document.getElementById('rol-descripcion').value.trim();
+    const permisosSeleccionados = Array.from(document.querySelectorAll('input[name="permisos"]:checked')).map(el => parseInt(el.value));
+
+    const payload = {
+        nombre,
+        codigo,
+        descripcion,
+        permisos: permisosSeleccionados
+    };
+
+    try {
+        const method = currentRolId ? 'PUT' : 'POST';
+        const url = currentRolId ? `${API_CREAR_ROLES_URL}${currentRolId}/` : API_CREAR_ROLES_URL;
+
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || `Error HTTP! estado: ${response.status}`);
+        }
+
+        mostrarNotificacion(currentRolId ? 'Rol actualizado correctamente' : 'Rol creado correctamente', 'success');
+        cerrarModal();
+        cargarRoles();
+    } catch (error) {
+        console.error('Error guardando rol:', error);
+        mostrarNotificacion(error.message || 'Error al guardar el rol', 'error');
+    }
+}
+
+// Función para eliminar rol
+async function eliminarRol(rolId) {
+    const confirmacion = await Swal.fire({
+        title: '¿Estás seguro?',
+        html: `Esta acción eliminará el rol ID: ${rolId}`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirmacion.isConfirmed) return;
+
+    try {
+        const response = await fetch(`${API_CREAR_ROLES_URL}${rolId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        mostrarNotificacion(data.message || 'Rol eliminado', 'success');
+        cargarRoles();
+    } catch (error) {
+        console.error('Error eliminando rol:', error);
+        mostrarNotificacion(`Error al eliminar rol: ${error.message}`, 'error');
+    }
+}
+
+// Función para mostrar notificaciones con SweetAlert2
+function mostrarNotificacion(mensaje, tipo) {
+    Swal.fire({
+        title: tipo === 'success' ? 'Éxito' : 'Error',
+        text: mensaje,
+        icon: tipo,
+        confirmButtonText: 'Aceptar'
+    });
+}
+
+// Función para obtener el token CSRF
+function getCSRFToken() {
+    const cookieValue = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)');
+    return cookieValue ? cookieValue.pop() : '';
+}
+
+// Inicialización y eventos
+function inicializarModuloRoles() {
+    console.log('[Roles] Inicializando módulo de gestión de roles...');
+
+    const checkDOM = () => {
+        const tbody = document.querySelector('.tabla-datos__tbody');
+        if (!tbody) {
+            console.log('[Roles] Elemento principal no disponible, reintentando...');
+            setTimeout(checkDOM, 100);
+            return;
+        }
+
+        console.log('[Roles] Elemento principal encontrado, iniciando...');
+
+        cargarRoles();
+
+        // Eventos
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('#btn-nuevo-rol')) {
+                abrirModalRol();
+            }
+            if (e.target.closest('.btn-editar')) {
+                const rolId = e.target.closest('.btn-editar').dataset.id;
+                abrirModalRol(rolId);
+            }
+            if (e.target.closest('.btn-eliminar')) {
+                const rolId = e.target.closest('.btn-eliminar').dataset.id;
+                eliminarRol(rolId);
+            }
+            if (e.target.matches('.btn-cancel')) {
+                cerrarModal();
+            }
+            if (e.target.matches('.btn-close')) {
+                cerrarModal();
+            }
+            if (e.target.matches('.btn-save')) {
+                guardarRol();
+            }
+        });
+
+        // Búsqueda roles
+        document.getElementById('search-roles').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            const filteredRoles = roles.filter(rol => 
+                rol.nombre.toLowerCase().includes(term) ||
+                (rol.descripcion && rol.descripcion.toLowerCase().includes(term)) ||
+                (rol.codigo && rol.codigo.toLowerCase().includes(term))
+            );
+            renderizarRoles(filteredRoles);
+        });
+    };
+
+    checkDOM();
+}
+
+// Exportar funciones globalmente
+(function() {
+    if (typeof window !== 'undefined') {
+        window.inicializarModuloRoles = inicializarModuloRoles;
+        window.abrirModalRol = abrirModalRol;
+        window.eliminarRol = eliminarRol;
+
+        document.dispatchEvent(new CustomEvent('moduloRolesReady', {
+            detail: { ready: true, timestamp: new Date() }
+        }));
+    }
+})();
+
+// Inicializar módulo al cargar el script
+document.addEventListener('DOMContentLoaded', inicializarModuloRoles);

@@ -186,13 +186,6 @@ function mostrarRecibo(button) {
     const prenominaId = button.getAttribute('data-prenomina-id');
     console.log('Mostrar detalles para prenomina ID:', prenominaId);
     preNominaModal__abrir();
-    // Asegurar que el modal se muestre correctamente
-    const modal = document.getElementById('preNominaModal');
-    if (modal) {
-        modal.style.display = 'flex';
-    } else {
-        console.error('Modal no encontrado al intentar mostrar');
-    }
 }
 
 

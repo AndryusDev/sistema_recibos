@@ -47,6 +47,9 @@ urlpatterns = [
     path('api/roles/', views.listar_roles, name='listar_roles'),
 
     path('crear_roles/', views.crear_roles, name='crear_roles'),
+    path('api/crear_roles/', views.manejar_usuario, name = 'manejar_usuario'),
+    path('api/roles_listar/', views.listar_roles, name = 'listar_roles'),
+
     
     path('logout/', views.logout_empleado, name='logout'),
     
