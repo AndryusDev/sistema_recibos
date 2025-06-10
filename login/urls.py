@@ -33,6 +33,8 @@ urlpatterns = [
 
     path('ver_prenomina/', views.ver_prenomina, name= 'ver_prenomina'),
     path('listar_prenominas/', views.listar_prenominas, name= 'listar_prenominas'),
+    path('api/prenomina/<int:prenomina_id>/', views.obtener_detalle_prenomina, name='obtener_detalle_prenomina'),
+
 
     path('gestion_respaldo/', views.gestion_respaldo, name= 'gestion_respaldo'),
     

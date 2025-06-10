@@ -64,7 +64,7 @@ function formatearFechaPreNomina(fechaStr) {
 }
 
 // Función para mostrar el modal de pre-nómina
-function mostrarPreNominaModal() {
+async function mostrarPreNominaModal(prenominaId) {
     const modal = document.getElementById('preNominaModal');
     const contenido = document.getElementById('contenidoPreNomina');
 
@@ -73,94 +73,120 @@ function mostrarPreNominaModal() {
         return;
     }
 
-    // Crear fecha actual si no existen los elementos
-    const fechaActual = new Date();
-    const fechaDesde = new Date();
-    fechaDesde.setDate(16);
-    const fechaHasta = new Date();
-    fechaHasta.setDate(30);
+    try {
+        // Construir la URL de la API
+        const apiUrl = `/api/prenomina/${prenominaId}/`;
 
-    contenido.innerHTML = `
-        <div class="prenomina-encabezado">
-            <div class="prenomina-logo-izquierdo">
-                <img src="/static/image/MinRIntPaz.png" alt="Logo Ministerio">
-            </div>
-            <div class="prenomina-texto-centro">
-                <h3 class="prenomina-titulo">POLICIA ESTADAL BOLIVARIANA DE ANZOATEGUI</h3>
-                <h3 class="prenomina-subtitulo">RESUMEN DE DESCUENTOS NOMINA PERSONAL PENSIONADO</h3>
-            </div>
-            <div class="prenomina-logo-derecho">
-                <img src="/static/image/logo_polibanz.png" alt="Logo Policía">
-            </div>
-        </div>
+        // Realizar la llamada a la API
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            throw new Error(`Error al obtener detalles de la pre-nómina: ${response.status}`);
+        }
 
-        <div class="prenomina-info-periodo">
-            <div class="prenomina-fila-periodo">
-                <span class="prenomina-etiqueta">FECHA:</span>
-                <span class="prenomina-valor">${formatearFechaPreNomina(fechaActual)}</span>
-            </div>
-            <div class="prenomina-fila-periodo">
-                <span class="prenomina-etiqueta">DESDE:</span>
-                <span class="prenomina-valor">${formatearFechaPreNomina(fechaDesde)}</span>
-            </div>
-            <div class="prenomina-fila-periodo">
-                <span class="prenomina-etiqueta">HASTA:</span>
-                <span class="prenomina-valor">${formatearFechaPreNomina(fechaHasta)}</span>
-            </div>
-        </div>
+        const data = await response.json();
 
-        <div class="prenomina-tipo-nomina">
-            <h4>PRE-NOMINA // PERSONAL PENSIONADO POR SOBREVIVENCIA (VIUDEZ Y/U ORFANDAD)</h4>
-        </div>
+        if (!data.success) {
+            throw new Error(data.error || 'Error desconocido al obtener detalles de la pre-nómina');
+        }
 
-        <table class="prenomina-tabla__modal">
-            <thead>
+        const prenomina = data.prenomina;
+        const detalles = data.detalles;
+
+        // Formatear la fecha
+        function formatearFecha(fechaStr) {
+            const fecha = new Date(fechaStr);
+            const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+            const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+            return `${dias[fecha.getDay()]} | ${fecha.getDate()} ${meses[fecha.getMonth()]} ${fecha.getFullYear()}`;
+        }
+
+        // Crear el contenido del modal
+        let detallesHTML = '';
+        detalles.forEach(detalle => {
+            detallesHTML += `
                 <tr>
-                    <th>CODIGO</th>
-                    <th>DESCRIPCION</th>
-                    <th>ASIGNACION</th>
-                    <th>DEDUCCION</th>
-                    <th>NRO.PERS.</th>
+                    <td>${detalle.codigo}</td>
+                    <td>${detalle.descripcion}</td>
+                    <td>${detalle.asignacion || '-'}</td>
+                    <td>${detalle.deduccion || '-'}</td>
+                    <td>${detalle.numero_personas }</td>
                 </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>1009</td>
-                    <td>PENSION POR VIUDEZ U ORFANDAD</td>
-                    <td>2.187,19</td>
-                    <td>-</td>
-                    <td>8</td>
-                </tr>
-                <tr>
-                    <td>8002</td>
-                    <td>BONO DE ALIMENTACION</td>
-                    <td>20.632,00</td>
-                    <td>-</td>
-                    <td>8</td>
-                </tr>
-                <tr class="prenomina-fila-total">
-                    <td></td>
-                    <th>TOTALES</th>
-                    <td>22.819,19</td>
-                    <td>0,00</td>
-                    <td></td>
-                </tr>
-                <tr class="prenomina-fila-total">
-                    <td></td>
-                    <th>TOTALES NOMINA</th>
-                    <td>22.819,19</td>
-                    <td>0,00</td>
-                    <td></td>
-                </tr>
-            </tbody>
-        </table>
+            `;
+        });
 
-        <div class="prenomina-total">
-            <h4>TOTAL NOMINA: 22.819,19</h4>
-        </div>
-    `;
+        contenido.innerHTML = `
+            <div class="prenomina-encabezado">
+                <div class="prenomina-logo-izquierdo">
+                    <img src="/static/image/MinRIntPaz.png" alt="Logo Ministerio">
+                </div>
+                <div class="prenomina-texto-centro">
+                    <h3 class="prenomina-titulo">POLICIA ESTADAL BOLIVARIANA DE ANZOATEGUI</h3>
+                    <h3 class="prenomina-subtitulo">RESUMEN DE DESCUENTOS NOMINA PERSONAL PENSIONADO</h3>
+                </div>
+                <div class="prenomina-logo-derecho">
+                    <img src="/static/image/logo_polibanz.png" alt="Logo Policía">
+                </div>
+            </div>
 
-    modal.style.display = 'flex';
+            <div class="prenomina-info-periodo">
+                <div class="prenomina-fila-periodo">
+                    <span class="prenomina-etiqueta">FECHA:</span>
+                    <span class="prenomina-valor">${formatearFecha(prenomina.fecha_creacion)}</span>
+                </div>
+                <div class="prenomina-fila-periodo">
+                    <span class="prenomina-etiqueta">PERIODO:</span>
+                    <span class="prenomina-valor">${prenomina.periodo}</span>
+                </div>
+                <div class="prenomina-fila-periodo">
+                    <span class="prenomina-etiqueta">TIPO:</span>
+                    <span class="prenomina-valor">${prenomina.tipo}</span>
+                </div>
+            </div>
+
+            <div class="prenomina-tipo-nomina">
+                <h4>PRE-NOMINA // PERSONAL PENSIONADO POR SOBREVIVENCIA (VIUDEZ Y/U ORFANDAD)</h4>
+            </div>
+
+            <table class="prenomina-tabla__modal">
+                <thead>
+                    <tr>
+                        <th>CODIGO</th>
+                        <th>DESCRIPCION</th>
+                        <th>ASIGNACION</th>
+                        <th>DEDUCCION</th>
+                        <th>NRO.PERS.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${detallesHTML}
+                    <tr class="prenomina-fila-total">
+                        <td></td>
+                        <th>TOTALES</th>
+                        <td>${prenomina.total}</td>
+                        <td>0,00</td>
+                        <td></td>
+                    </tr>
+                    <tr class="prenomina-fila-total">
+                        <td></td>
+                        <th>TOTALES NOMINA</th>
+                        <td>${prenomina.total}</td>
+                        <td>0,00</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="prenomina-total">
+                <h4>TOTAL NOMINA: ${prenomina.total}</h4>
+            </div>
+        `;
+
+        modal.style.display = 'flex';
+
+    } catch (error) {
+        console.error('Error al mostrar el modal de pre-nómina:', error);
+        mostrarNotificacion('Error al mostrar el modal de pre-nómina: ' + error.message, 'error');
+    }
 }
 
 // Función para cerrar el modal de pre-nómina
@@ -243,7 +269,9 @@ function initializeVerPrenomina() {
     // 4. Configurar otros eventos (eliminación, etc.)
     document.addEventListener('click', function(e) {
         if (e.target.closest('.prenomina-tabla__boton')) {
-            mostrarPreNominaModal();
+            e.preventDefault();
+            const prenominaId = e.target.closest('.prenomina-tabla__boton').getAttribute('data-prenomina-id');
+            mostrarPreNominaModal(prenominaId);
         }
     });
 }
@@ -322,7 +350,7 @@ async function actualizarTablaPrenominas(prenominas) {
             <td>${prenomina.fecha_creacion}</td>
             <td>${prenomina.total}</td>
             <td class="prenomina-tabla__celda">
-                <button class="prenomina-tabla__boton" onclick="mostrarPreNominaModal()">
+                <button class="prenomina-tabla__boton" data-prenomina-id="${prenomina.id_prenomina}">
                     Ver Detalles
                 </button>
             </td>

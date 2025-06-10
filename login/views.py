@@ -316,11 +316,80 @@ from .models import empleado, usuario, rol, usuario_pregunta, pregunta_seguridad
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime
+from django.db.models import Sum
 from django.utils.crypto import get_random_string
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def obtener_detalle_prenomina(request, prenomina_id):
+    """
+    API endpoint para obtener los detalles de una prenomina específica.
+    Ahora incluye el conteo de personas por cada concepto.
+    """
+    try:
+        # Obtener la prenomina con sus detalles relacionados
+        prenomina_obj = prenomina.objects.prefetch_related(
+            'detalles__codigo',  # Prefetch para optimizar las consultas
+        ).get(id_prenomina=prenomina_id)
+
+        # Calcular el total de la prenomina
+        total = prenomina_obj.detalles.aggregate(total=Sum('total_monto'))['total'] or 0
+
+        # Preparar los datos de la prenomina
+        prenomina_data = {
+            'id_prenomina': prenomina_obj.id_prenomina,
+            'periodo': prenomina_obj.nomina.periodo,
+            'tipo': prenomina_obj.nomina.tipo_nomina.tipo_nomina,
+            'secuencia': prenomina_obj.nomina.secuencia.nombre_secuencia,
+            'fecha_creacion': prenomina_obj.fecha_creacion.strftime('%d/%m/%Y %H:%M'),
+            'total': total,
+        }
+
+        # Preparar los datos de los detalles de la prenomina
+        detalles_data = []
+        for detalle in prenomina_obj.detalles.all():
+            concepto = detalle.codigo  # Acceso al objeto concepto_pago relacionado
+
+            # Contar personas con este concepto en la nómina asociada
+            numero_personas = detalle_nomina.objects.filter(
+                nomina=prenomina_obj.nomina,
+                codigo=concepto
+            ).values('cedula').distinct().count()
+
+            detalles_data.append({
+                'codigo': concepto.codigo,
+                'descripcion': concepto.descripcion,
+                'tipo_concepto': concepto.tipo_concepto,
+                'nombre_nomina': concepto.nombre_nomina,
+                'asignacion': str(detalle.total_monto) if concepto.tipo_concepto == 'ASIGNACION' else '0',
+                'deduccion': str(detalle.total_monto) if concepto.tipo_concepto == 'DEDUCCION' else '0',
+                'total_monto': str(detalle.total_monto),
+                'numero_personas': numero_personas,  # Nuevo campo agregado
+            })
+
+        # Retornar la respuesta en formato JSON
+        return JsonResponse({
+            'success': True,
+            'prenomina': prenomina_data,
+            'detalles': detalles_data,
+        })
+
+    except prenomina.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'La prenomina no existe'
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Error en obtener_detalle_prenomina: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al procesar la solicitud',
+            'detail': str(e)
+        }, status=500)
 
 #   <-------CREAR CUENTA------->
 
-#Formulario verificacion empleado
+# Formulario verificacion empleado
 def verificar_empleado(request):
     if request.method == 'POST':
         cedula = request.POST.get('formulario_cedula', '').strip()
