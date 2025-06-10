@@ -327,13 +327,8 @@ function cerrarModalUsuario() {
 
 // ===== FUNCIONES AUXILIARES =====
 
-function mostrarNotificacion(mensaje, tipo) {
-    Swal.fire({
-        title: tipo === 'success' ? 'Éxito' : 'Error',
-        text: mensaje,
-        icon: tipo,
-        confirmButtonText: 'Aceptar'
-    });
+function cerrarModalEdicion() {
+    document.getElementById('edit-user-modal').style.display = 'none';
 }
 
 // ===== INICIALIZACIÓN =====
@@ -415,3 +410,12 @@ function inicializarModuloUsuarios() {
         }));
     }
 })();
+
+// Inicializar automáticamente cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Solo inicializar si estamos en la página correcta
+    if (document.getElementById('cuerpo-tabla-usuarios')) {
+        console.log("[RolesUsuarios] DOM listo, inicializando módulo automáticamente");
+        inicializarModuloUsuarios();
+    }
+});

@@ -46,9 +46,11 @@ urlpatterns = [
     path('api/usuarios/<int:usuario_id>/', views.manejar_usuario, name='manejar_usuario'),
     path('api/roles/', views.listar_roles, name='listar_roles'),
 
+    # Rutas de roles
     path('crear_roles/', views.crear_roles, name='crear_roles'),
-    path('api/crear_roles/', views.manejar_usuario, name = 'manejar_usuario'),
-    path('api/roles_listar/', views.listar_roles, name = 'listar_roles'),
+    path('api/roles/manejar/<str:rol_id>/', views.manejar_roles, name='manejar_roles_with_id'),
+    path('api/roles/manejar/', views.manejar_roles, name='manejar_roles'),
+    path('api/roles_listar/', views.listar_roles, name='listar_roles'),
     path('api/permisos/', views.listar_permisos, name='listar_permisos'),
     
     path('logout/', views.logout_empleado, name='logout'),

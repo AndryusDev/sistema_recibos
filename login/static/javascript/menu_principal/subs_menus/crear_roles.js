@@ -1,10 +1,12 @@
-const API_ROLES_URL = '/api/roles_listar/';
-const API_CREAR_ROLES_URL = '/api/crear_roles/';
-const API_PERMISOS_URL = '/api/permisos/';
-
-let roles = [];
-let permisos = [];
-let currentRolId = null;
+// Namespace para evitar conflictos con otros módulos
+const CrearRolesModule = {
+    API_ROLES_URL: '/api/roles_listar/',
+    API_PERMISOS_URL: '/api/permisos/',
+    API_ROLES_MANAGE_URL: '/api/roles/manejar/',
+    roles: [],
+    permisos: [],
+    currentRolId: null
+};
 
 // Función para cargar y mostrar la lista de roles
 async function cargarRoles(busqueda = '') {
@@ -21,7 +23,7 @@ async function cargarRoles(busqueda = '') {
         const params = new URLSearchParams();
         if (busqueda) params.append('search', busqueda);
 
-        const response = await fetch(`${API_ROLES_URL}?${params.toString()}`, {
+        const response = await fetch(`${CrearRolesModule.API_ROLES_URL}?${params.toString()}`, {
             headers: {
                 'Accept': 'application/json'
             }
@@ -32,8 +34,8 @@ async function cargarRoles(busqueda = '') {
         const data = await response.json();
 
         if (data.success && data.roles && data.roles.length > 0) {
-            roles = data.roles;
-            renderizarRoles(roles);
+            CrearRolesModule.roles = data.roles;
+            renderizarRoles(CrearRolesModule.roles);
         } else {
             tbody.innerHTML = `
                 <tr>
@@ -79,7 +81,7 @@ function renderizarRoles(roles) {
 
 // Función para abrir el modal para crear o editar rol
 async function abrirModalRol(rolId = null) {
-    currentRolId = rolId;
+    CrearRolesModule.currentRolId = rolId;
     document.getElementById('modal-title').textContent = rolId ? 'Editar Rol' : 'Nuevo Rol';
     const form = document.getElementById('rol-form');
     form.reset();
@@ -88,7 +90,7 @@ async function abrirModalRol(rolId = null) {
 
     if (rolId) {
         // Cargar datos del rol para editar
-        const rol = roles.find(r => r.id == rolId);
+        const rol = CrearRolesModule.roles.find(r => r.id == rolId);
         if (rol) {
             document.getElementById('rol-nombre').value = rol.nombre || '';
             document.getElementById('rol-codigo').value = rol.codigo || '';
@@ -96,7 +98,7 @@ async function abrirModalRol(rolId = null) {
 
             // Marcar permisos asignados
             const permisosAsignados = rol.permisos || [];
-            permisos.forEach(permiso => {
+            CrearRolesModule.permisos.forEach(permiso => {
                 const checkbox = document.querySelector(`input[name="permisos"][value="${permiso.id}"]`);
                 if (checkbox) {
                     checkbox.checked = permisosAsignados.includes(permiso.id);
@@ -116,7 +118,7 @@ function cerrarModal() {
 // Función para cargar permisos y renderizarlos
 async function cargarPermisos() {
     try {
-        const response = await fetch(API_PERMISOS_URL, {
+        const response = await fetch(CrearRolesModule.API_PERMISOS_URL, {
             headers: {
                 'Accept': 'application/json'
             }
@@ -126,8 +128,8 @@ async function cargarPermisos() {
         const data = await response.json();
         if (!data.success) throw new Error(data.error || 'Error al cargar permisos');
 
-        permisos = data.permisos || [];
-        renderizarPermisos(permisos);
+        CrearRolesModule.permisos = data.permisos || [];
+        renderizarPermisos(CrearRolesModule.permisos);
     } catch (error) {
         console.error('Error al cargar permisos:', error);
         document.getElementById('permisos-container').innerHTML = `
@@ -149,7 +151,7 @@ function renderizarPermisos(permisos) {
     permisos.forEach(permiso => {
         html += `
             <label class="permiso-item">
-                <input type="checkbox" name="permisos" value="${permiso.id}">
+                <input type="checkbox" name="permisos" value="${permiso.codigo}">
                 <span class="permiso-nombre">${permiso.nombre}</span>
                 <span class="permiso-codigo">${permiso.codigo}</span>
             </label>
@@ -196,11 +198,14 @@ async function guardarRol() {
     };
 
     try {
-        const method = currentRolId ? 'PUT' : 'POST';
-        const url = currentRolId ? `${API_CREAR_ROLES_URL}${currentRolId}/` : API_CREAR_ROLES_URL;
+        const url = CrearRolesModule.currentRolId 
+            ? `${CrearRolesModule.API_ROLES_MANAGE_URL}${CrearRolesModule.currentRolId}/`
+            : CrearRolesModule.API_ROLES_MANAGE_URL;
 
+        const method = CrearRolesModule.currentRolId ? 'PUT' : 'POST';
+        
         const response = await fetch(url, {
-            method,
+            method: method,
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCSRFToken()
@@ -208,15 +213,15 @@ async function guardarRol() {
             body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
-            throw new Error(data.error || `Error HTTP! estado: ${response.status}`);
+            const data = await response.json();
+            throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
         }
 
-        mostrarNotificacion(currentRolId ? 'Rol actualizado correctamente' : 'Rol creado correctamente', 'success');
+        const data = await response.json();
+        mostrarNotificacion(data.message || 'Rol guardado exitosamente', 'success');
         cerrarModal();
-        cargarRoles();
+        cargarRoles(); // Recargar la lista de roles
     } catch (error) {
         console.error('Error guardando rol:', error);
         mostrarNotificacion(error.message || 'Error al guardar el rol', 'error');
@@ -239,20 +244,21 @@ async function eliminarRol(rolId) {
     if (!confirmacion.isConfirmed) return;
 
     try {
-        const response = await fetch(`${API_CREAR_ROLES_URL}${rolId}/`, {
+        const response = await fetch(`${CrearRolesModule.API_ROLES_MANAGE_URL}${rolId}/`, {
             method: 'DELETE',
             headers: {
+                'Content-Type': 'application/json',
                 'X-CSRFToken': getCSRFToken()
             }
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
         }
 
-        const data = await response.json();
-        mostrarNotificacion(data.message || 'Rol eliminado', 'success');
-        cargarRoles();
+        mostrarNotificacion('Rol eliminado exitosamente', 'success');
+        cargarRoles(); // Recargar la lista de roles
     } catch (error) {
         console.error('Error eliminando rol:', error);
         mostrarNotificacion(`Error al eliminar rol: ${error.message}`, 'error');
@@ -316,15 +322,18 @@ function inicializarModuloRoles() {
         });
 
         // Búsqueda roles
-        document.getElementById('search-roles').addEventListener('input', function(e) {
-            const term = e.target.value.toLowerCase();
-            const filteredRoles = roles.filter(rol => 
-                rol.nombre.toLowerCase().includes(term) ||
-                (rol.descripcion && rol.descripcion.toLowerCase().includes(term)) ||
-                (rol.codigo && rol.codigo.toLowerCase().includes(term))
-            );
-            renderizarRoles(filteredRoles);
-        });
+        const searchInput = document.getElementById('search-roles');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                const term = e.target.value.toLowerCase();
+                const filteredRoles = CrearRolesModule.roles.filter(rol => 
+                    rol.nombre_rol.toLowerCase().includes(term) ||
+                    (rol.descripcion && rol.descripcion.toLowerCase().includes(term)) ||
+                    (rol.codigo_rol && rol.codigo_rol.toLowerCase().includes(term))
+                );
+                renderizarRoles(filteredRoles);
+            });
+        }
     };
 
     checkDOM();
@@ -343,5 +352,10 @@ function inicializarModuloRoles() {
     }
 })();
 
-// Inicializar módulo al cargar el script
-document.addEventListener('DOMContentLoaded', inicializarModuloRoles);
+// Inicializar módulo al cargar el script solo si estamos en la página correcta
+document.addEventListener('DOMContentLoaded', function() {
+    // Solo inicializar si estamos en la página de crear roles
+    if (document.querySelector('.tabla-datos__tbody') || document.querySelector('#btn-nuevo-rol')) {
+        inicializarModuloRoles();
+    }
+});

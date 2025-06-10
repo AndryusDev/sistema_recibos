@@ -1,8 +1,10 @@
-// Variables globales
-const API_EMPLEADOS_URL = '/api/empleados/';
-let pasoActual = 1;
-const totalPasos = 4;
-let usuarioActualId = null;
+// Namespace para evitar conflictos con otros módulos
+const CrearUsuariosModule = {
+    API_EMPLEADOS_URL: '/api/empleados/',
+    pasoActual: 1,
+    totalPasos: 4,
+    usuarioActualId: null
+};
 
 // Función para obtener el CSRF token
 function getCSRFToken() {
@@ -17,7 +19,7 @@ function getCSRFToken() {
 function usuarioModal__abrir(usuarioId = null) {
     const modal = document.getElementById("usuarioModal");
     if (modal) {
-        usuarioActualId = usuarioId;
+        CrearUsuariosModule.usuarioActualId = usuarioId;
         modal.style.display = 'flex';
         reiniciarPasos();
         resetearFormulario();
@@ -39,13 +41,13 @@ function usuarioModal__cerrar() {
 
 // Función para navegar entre pasos
 function navegarPaso(direccion) {
-    if (direccion === 'siguiente' && pasoActual < totalPasos) {
+    if (direccion === 'siguiente' && CrearUsuariosModule.pasoActual < CrearUsuariosModule.totalPasos) {
         if (validarPasoActual()) {
-            pasoActual++;
+            CrearUsuariosModule.pasoActual++;
             actualizarPasos();
         }
-    } else if (direccion === 'anterior' && pasoActual > 1) {
-        pasoActual--;
+    } else if (direccion === 'anterior' && CrearUsuariosModule.pasoActual > 1) {
+        CrearUsuariosModule.pasoActual--;
         actualizarPasos();
     }
 }
@@ -61,13 +63,13 @@ function actualizarPasos() {
     });
 
     // Mostrar paso actual
-    const pasoActivo = modal.querySelector(`.paso-formulario[data-paso="${pasoActual}"]`);
+    const pasoActivo = modal.querySelector(`.paso-formulario[data-paso="${CrearUsuariosModule.pasoActual}"]`);
     if (pasoActivo) pasoActivo.classList.add('activo');
 
     // Actualizar indicadores
     modal.querySelectorAll('.indicador-pasos .paso').forEach((paso, index) => {
-        paso.classList.toggle('completado', index < pasoActual - 1);
-        paso.classList.toggle('activo', index === pasoActual - 1);
+        paso.classList.toggle('completado', index < CrearUsuariosModule.pasoActual - 1);
+        paso.classList.toggle('activo', index === CrearUsuariosModule.pasoActual - 1);
     });
 
     // Actualizar botones
@@ -75,11 +77,11 @@ function actualizarPasos() {
     const btnSiguiente = modal.querySelector('#btn-siguiente');
     const btnGuardar = modal.querySelector('#btn-guardar');
 
-    if (btnAnterior) btnAnterior.disabled = pasoActual === 1;
-    if (btnSiguiente) btnSiguiente.style.display = pasoActual < totalPasos ? 'block' : 'none';
+    if (btnAnterior) btnAnterior.disabled = CrearUsuariosModule.pasoActual === 1;
+    if (btnSiguiente) btnSiguiente.style.display = CrearUsuariosModule.pasoActual < CrearUsuariosModule.totalPasos ? 'block' : 'none';
     if (btnGuardar) {
-        btnGuardar.style.display = pasoActual === totalPasos ? 'block' : 'none';
-        if (pasoActual === totalPasos) {
+        btnGuardar.style.display = CrearUsuariosModule.pasoActual === CrearUsuariosModule.totalPasos ? 'block' : 'none';
+        if (CrearUsuariosModule.pasoActual === CrearUsuariosModule.totalPasos) {
             actualizarResumen();
         }
     }
@@ -90,7 +92,7 @@ function validarPasoActual() {
     const modal = document.getElementById("usuarioModal");
     if (!modal) return false;
 
-    const paso = modal.querySelector(`.paso-formulario[data-paso="${pasoActual}"]`);
+    const paso = modal.querySelector(`.paso-formulario[data-paso="${CrearUsuariosModule.pasoActual}"]`);
     if (!paso) return false;
 
     let valido = true;
@@ -103,8 +105,8 @@ function validarPasoActual() {
     };
 
     // Validar campos del paso actual
-    if (camposRequeridos[pasoActual]) {
-        camposRequeridos[pasoActual].forEach(id => {
+    if (camposRequeridos[CrearUsuariosModule.pasoActual]) {
+        camposRequeridos[CrearUsuariosModule.pasoActual].forEach(id => {
             const campo = modal.querySelector(`#${id}`);
             if (campo && !campo.value.trim()) {
                 marcarCampoInvalido(campo, 'Este campo es requerido');
@@ -114,7 +116,7 @@ function validarPasoActual() {
     }
 
     // Validaciones específicas
-    if (pasoActual === 1) {
+    if (CrearUsuariosModule.pasoActual === 1) {
         const cedula = modal.querySelector('#modal-cedula');
         if (cedula && cedula.value && isNaN(cedula.value)) {
             marcarCampoInvalido(cedula, 'La cédula debe ser numérica');
@@ -237,7 +239,7 @@ function resetearFormulario() {
 
 // Función para reiniciar pasos
 function reiniciarPasos() {
-    pasoActual = 1;
+    CrearUsuariosModule.pasoActual = 1;
     actualizarPasos();
 }
 
@@ -337,23 +339,6 @@ function editarUsuario(boton) {
 }
 
 
-document.getElementById('tipo-trabajador').addEventListener('change', function() {
-    const tipoTrabajadorId = this.value;
-    const familiaOptions = document.querySelectorAll('#familia-cargo option');
-    
-    familiaOptions.forEach(option => {
-        if (option.value === "") {
-            option.hidden = false;
-            return;
-        }
-        
-        const optionTipoTrabajador = option.dataset.tipoTrabajador;
-        option.hidden = tipoTrabajadorId !== optionTipoTrabajador;
-    });
-    
-    // Resetear selección
-    document.getElementById('familia-cargo').value = "";
-});
 
 // Inicialización cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
@@ -438,7 +423,7 @@ async function actualizarTablaEmpleados(empleados = null, filtros = {}) {
             if (filtros.tipo_trabajador) params.append('tipo_trabajador', filtros.tipo_trabajador);
             if (filtros.orden) params.append('orden', filtros.orden);
 
-            const response = await fetch(`${API_EMPLEADOS_URL}?${params.toString()}`);
+            const response = await fetch(`${CrearUsuariosModule.API_EMPLEADOS_URL}?${params.toString()}`);
             if (!response.ok) throw new Error("Error en la respuesta del servidor");
             
             const data = await response.json();
@@ -567,7 +552,7 @@ function exportarEmpleados() {
         formato: tipoExportacion
     });
 
-    window.open(`${API_EMPLEADOS_URL}exportar/?${params.toString()}`, '_blank');
+    window.open(`${CrearUsuariosModule.API_EMPLEADOS_URL}exportar/?${params.toString()}`, '_blank');
 }
 
 // ===== FUNCIONES AUXILIARES (NUEVAS) =====
@@ -639,18 +624,11 @@ document.getElementById('tipo-trabajador').addEventListener('change', function()
         });
 });
 
-// Exportar funciones globales (manteniendo las tuyas y añadiendo nuevas)
-window.aplicarFiltrosEmpleados = aplicarFiltrosEmpleados;
-window.limpiarFiltrosEmpleados = limpiarFiltrosEmpleados;
-window.exportarEmpleados = exportarEmpleados;
-
-// Al final de gestion_empleados.js
+// Exportar funciones globales
 window.usuarioModal__abrir = usuarioModal__abrir;
 window.usuarioModal__cerrar = usuarioModal__cerrar;
 window.editarUsuario = editarUsuario;
 window.confirmarEliminarUsuario = confirmarEliminarUsuario;
-window.eliminarUsuarioConfirmado = eliminarUsuarioConfirmado;
-window.cerrarModalConfirmacion = cerrarModalConfirmacion;
 window.guardarUsuario = guardarUsuario;
 window.navegarPaso = navegarPaso;
 window.aplicarFiltrosEmpleados = aplicarFiltrosEmpleados;
