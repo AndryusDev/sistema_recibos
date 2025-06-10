@@ -1025,7 +1025,102 @@ def listar_nominas(request):
         }, status=500)
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
+
 logger = logging.getLogger(__name__)
+
+@csrf_exempt
+@transaction.atomic
+@require_http_methods(["GET"])
+def listar_prenominas(request):
+    """API para listar prenominas con filtros mejorados"""
+    try:
+        # 1. Obtener y validar parámetros de filtrado
+        tipo = request.GET.get('tipo', '').strip()
+        mes = request.GET.get('mes', '').strip()
+        anio = request.GET.get('anio', '').strip()
+        orden = request.GET.get('orden', '-fecha_creacion')
+        
+        # 2. Construir consulta base con select_related para optimización
+        queryset = prenomina.objects.select_related('nomina', 'nomina__tipo_nomina', 'nomina__secuencia').all()
+        
+        # 3. Aplicar filtros con condiciones más precisas
+        filters = Q()
+        
+        if tipo:
+            filters &= Q(nomina__tipo_nomina__tipo_nomina__icontains=tipo)
+        
+        if mes:
+            # Asume que periodo tiene formato "MM-YYYY" o similar
+            if len(mes) == 1:
+                mes = f'0{mes}'  # Normalizar a dos dígitos
+            filters &= Q(nomina__periodo__contains=f'-{mes}-') | Q(nomina__periodo__startswith=f'{mes}-')
+        
+        if anio:
+            # Busca año al inicio (2023-), en medio (-2023-) o al final (-2023)
+            filters &= Q(nomina__periodo__contains=anio)
+        
+        queryset = queryset.filter(filters)
+        
+        # 4. Validar y aplicar ordenamiento
+        campos_orden_validos = [
+            '-fecha_creacion', 'fecha_creacion',
+            'nomina__tipo_nomina__tipo_nomina', '-nomina__tipo_nomina__tipo_nomina',
+            '-nomina__fecha_cierre', 'nomina__fecha_cierre'
+        ]
+        
+        if orden not in campos_orden_validos:
+            orden = '-fecha_creacion'
+            
+        queryset = queryset.order_by(orden)
+        
+        # 5. Paginación con manejo de errores
+        page_number = request.GET.get('page', 1)
+        paginator = Paginator(queryset, 25)  # 25 items por página
+        
+        try:
+            prenominas_paginadas = paginator.page(page_number)
+        except:
+            prenominas_paginadas = paginator.page(1)  # Fallback a primera página
+        
+        # 6. Preparar datos para respuesta con manejo de valores nulos
+        prenominas_data = []
+        for prenomina_obj in prenominas_paginadas:
+            # Calcular el total de la prenomina
+            total = prenomina_obj.detalles.aggregate(total=Sum('total_monto'))['total'] or 0
+            
+            prenominas_data.append({
+                'id_prenomina': prenomina_obj.id_prenomina,
+                'tipo_nomina': prenomina_obj.nomina.tipo_nomina.tipo_nomina if prenomina_obj.nomina.tipo_nomina else '',
+                'periodo': prenomina_obj.nomina.periodo if prenomina_obj.nomina else '',
+                'secuencia': prenomina_obj.nomina.secuencia.nombre_secuencia if prenomina_obj.nomina.secuencia else '',
+                'fecha_cierre': prenomina_obj.nomina.fecha_cierre.strftime('%d/%m/%Y') if prenomina_obj.nomina.fecha_cierre else '',
+                'fecha_creacion': prenomina_obj.fecha_creacion.strftime('%d/%m/%Y %H:%M') if prenomina_obj.fecha_creacion else '',
+                'total': total
+            })
+        
+        # 7. Retornar respuesta estructurada
+        return JsonResponse({
+            'success': True,
+            'prenominas': prenominas_data,
+            'total': paginator.count,
+            'paginas': paginator.num_pages,
+            'actual': prenominas_paginadas.number,
+            'params': {  # Para debugging
+                'tipo': tipo,
+                'mes': mes,
+                'anio': anio,
+                'orden': orden
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en listar_prenominas: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al procesar la solicitud',
+            'detail': str(e)
+        }, status=500)
 
 @csrf_exempt
 @transaction.atomic

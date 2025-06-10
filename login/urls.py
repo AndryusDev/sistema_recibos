@@ -32,6 +32,8 @@ urlpatterns = [
     path('api/nominas/importar/', views.importar_nominas, name= 'importar_nominas'),
 
     path('ver_prenomina/', views.ver_prenomina, name= 'ver_prenomina'),
+    path('listar_prenominas/', views.listar_prenominas, name= 'listar_prenominas'),
+
     path('gestion_respaldo/', views.gestion_respaldo, name= 'gestion_respaldo'),
     
     path('crear_usuarios/', views.crear_usuarios, name= 'crear_usuarios'),
@@ -53,7 +55,7 @@ urlpatterns = [
     path('api/roles/crear/', views.crear_roles_api, name='crear_roles'),
     path('api/roles/actualizar/<str:rol_id>/', views.actualizar_roles, name='actualizar_roles'),
     path('api/roles/eliminar/<str:rol_id>/', views.eliminar_roles, name='eliminar_roles'),
-   
+    
     path('api/permisos/', views.listar_permisos, name='listar_permisos'),
     path('api/roles/<str:codigo_rol>/', views.obtener_rol, name='obtener_rol'),
     

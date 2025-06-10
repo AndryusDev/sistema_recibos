@@ -97,7 +97,8 @@ function loadTemplateScripts(templateName) {
         "crear_usuarios.html": "/static/javascript/menu_principal/subs_menus/crear_usuarios.js",
         "roles_usuarios.html": "/static/javascript/menu_principal/subs_menus/roles_usuarios.js",
         "crear_roles.html": "/static/javascript/menu_principal/subs_menus/crear_roles.js",
-        "gestion_respaldo.html": "/static/javascript/menu_principal/subs_menus/gestion_respaldo.js"
+        "gestion_respaldo.html": "/static/javascript/menu_principal/subs_menus/gestion_respaldo.js",
+        "ver_prenomina.html": "/static/javascript/menu_principal/subs_menus/ver_prenomina.js"
     };
 
 
@@ -210,6 +211,12 @@ function initializeTemplateFunctions(templateName) {
             if (window.inicializarModuloRoles) {
                 console.log("Ejecutando inicializarModuloRoles");
                 inicializarModuloRoles();
+            }
+        }
+        if (templateName === "ver_prenomina.html") {
+            if (window.initializeVerPrenomina) {
+                console.log("Ejecutando initializeVerPrenomina");
+                initializeVerPrenomina();
             }
         }
     } catch (error) {

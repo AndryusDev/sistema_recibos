@@ -6,81 +6,122 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pre-Nómina</title>
     <link rel="stylesheet" href="{% static 'css/prenomina.css' %}">
+    <link rel="stylesheet" href="{% static 'css/importar_nomina.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <!-- Título de la página -->
-    <div class="prenomina-titulo">
+    <div class="titulo-pagina">
         <h1>Listado de Pre-Nóminas</h1>
     </div>
 
     <!-- Contenedor principal -->
     <div class="prenomina-contenedor">
-        <!-- Panel de búsqueda -->
-        <div class="prenomina-busqueda">
-            <div class="prenomina-busqueda__grupo">
-                <input type="text" id="buscarFecha" class="prenomina-busqueda__input" placeholder="Buscar por período (ej: Mar/2025)">
-                <button onclick="buscarPorFecha()" class="prenomina-busqueda__boton">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                </button>
-                <button onclick="limpiarBusqueda()" class="prenomina-busqueda__boton secundario">
-                    <i class="fa-solid fa-broom"></i>
-                </button>
+        <!-- Panel de filtros -->
+        <div class="panel-busqueda">
+            <div class="busqueda-grupo">
+                <div class="form-group">
+                    <label for="tipo-filter">
+                        <i class="fa-solid fa-filter"></i>
+                        Tipo:
+                    </label>
+                    <select id="tipo-filter" class="busqueda-input">
+                        <option value="">Todos</option>
+                        <option value="empleado">Empleado</option>
+                        <option value="obrero">Obrero</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="mes-filter">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        Mes:
+                    </label>
+                    <select id="mes-filter" class="busqueda-input">
+                        <option value="">Todos</option>
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="anio-filter">
+                        <i class="fa-solid fa-calendar"></i>
+                        Año:
+                    </label>
+                    <select id="anio-filter" class="busqueda-input">
+                        <option value="">Todos</option>
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="orden-filter">
+                        <i class="fa-solid fa-sort"></i>
+                        Ordenar por:
+                    </label>
+                    <select id="orden-filter" class="busqueda-input">
+                        <option value="-fecha_creacion">Fecha de creación (descendente)</option>
+                        <option value="fecha_creacion">Fecha de creación (ascendente)</option>
+                        <option value="-total">Total (descendente)</option>
+                        <option value="total">Total (ascendente)</option>
+                    </select>
+                </div>
             </div>
         </div>
 
         <!-- Tabla de pre-nóminas -->
-        <div class="prenomina-tabla__contenedor">
-            <table class="prenomina-tabla">
-                <thead class="prenomina-tabla__thead">
-                    <tr class="prenomina-tabla__fila">
-                        <th class="prenomina-tabla__columna">ID</th>
-                        <th class="prenomina-tabla__columna">Período</th>
-                        <th class="prenomina-tabla__columna">Tipo</th>
-                        <th class="prenomina-tabla__columna">Secuencia</th>
-                        <th class="prenomina-tabla__columna">Total</th>
-                        <th class="prenomina-tabla__columna">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="prenomina-tabla__tbody">
-                    {% for p in prenominas %}
-                    <tr class="prenomina-tabla__fila">
-                        <td class="prenomina-tabla__celda">{{ p.id_prenomina }}</td>
-                        <td class="prenomina-tabla__celda">{{ p.periodo }}</td>
-                        <td class="prenomina-tabla__celda">{{ p.tipo }}</td>
-                        <td class="prenomina-tabla__celda">{{ p.secuencia }}</td> 
-                        <td class="prenomina-tabla__celda">{{ p.total }}</td>
-                        <td class="prenomina-tabla__celda">
-                            <button class="prenomina-tabla__boton"
-                                    data-prenomina-id="{{ p.id_prenomina }}"
-                                    onclick="mostrarRecibo(this)">
-                                Ver Detalles
-                            </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="contenedor-tabla-recibos">
+            <div class="tabla-recibo-linea">
+                <table class="tabla-recibos" id="prenomina-table">
+                    <thead class="tabla-recibos__thead">
+                        <tr>
+                            <th class="tabla-recibos__columna">ID</th>
+                            <th class="tabla-recibos__columna">Tipo</th>
+                            <th class="tabla-recibos__columna">Periodo</th>
+                            <th class="tabla-recibos__columna">Secuencia</th>
+                            <th class="tabla-recibos__columna">Fecha de Cierre</th>
+                            <th class="tabla-recibos__columna">Fecha de Creación</th>
+                            <th class="tabla-recibos__columna">Total</th>
+                            <th class="prenomina-tabla__columna">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="tabla-recibos__tbody">
+                        <!-- Aquí se insertarán las filas de la tabla -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <!-- Modal de Pre-Nómina -->
-    <div class="prenomina-modal" id="preNominaModal">
-        <div class="prenomina-modal__contenido" id="contenidoPreNomina">
+    <div class="importarnomina-modal" id="preNominaModal">
+        <div class="importarnomina-modal__contenido" id="contenidoPreNomina">
             <!-- Contenido dinámico aquí -->
         </div>
-        <div class="prenomina-modal__acciones">
-            <button class="prenomina-modal__boton" onclick="exportarPDF()">
+        <div class="recibo-modal__acciones">
+            <button class="recibo-modal__boton" onclick="exportarPDF()">
                 <i class="fa-solid fa-file-pdf"></i> Exportar PDF
             </button>
-            <button class="prenomina-modal__boton" onclick="imprimirPreNomina()">
+            <button class="recibo-modal__boton" onclick="imprimirPreNomina()">
                 <i class="fa-solid fa-print"></i> Imprimir
             </button>
-            <button class="prenomina-modal__boton" onclick="preNominaModal__cerrar()">Cerrar</button>
+            <button class="recibo-modal__boton" onclick="preNominaModal__cerrar()">Cerrar</button>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script src="{% static 'javascript/menu_principal/subs_menus/prenomina.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'javascript/menu_principal/subs_menus/ver_prenomina.js' %}"></script>
+
 </body>
 </html>
