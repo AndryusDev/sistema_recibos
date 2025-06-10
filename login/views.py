@@ -1733,3 +1733,21 @@ def listar_roles(request):
             'error': 'Error al obtener los roles',
             'detail': str(e)
         }, status=500)
+
+@require_http_methods(["GET"])
+def listar_permisos(request):
+    """API para listar todos los permisos disponibles"""
+    try:
+        permisos = permiso.objects.all().order_by('nombre')
+        permisos_data = list(permisos.values('codigo', 'nombre', 'descripcion'))
+        return JsonResponse({
+            'success': True,
+            'permisos': permisos_data
+        })
+    except Exception as e:
+        logger.error(f"Error en listar_permisos: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al obtener los permisos',
+            'detail': str(e)
+        }, status=500)

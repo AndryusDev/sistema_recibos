@@ -49,7 +49,7 @@ urlpatterns = [
     path('crear_roles/', views.crear_roles, name='crear_roles'),
     path('api/crear_roles/', views.manejar_usuario, name = 'manejar_usuario'),
     path('api/roles_listar/', views.listar_roles, name = 'listar_roles'),
-
+    path('api/permisos/', views.listar_permisos, name='listar_permisos'),
     
     path('logout/', views.logout_empleado, name='logout'),
     
@@ -61,4 +61,6 @@ urlpatterns = [
     
     # URLs para servir archivos estáticos en desarrollo (solo para DEBUG=True)
     path('static/javascript/menu_principal/subs_menus/<str:script_name>', views.serve_js, name='serve_js'),
+    
+
 ]
