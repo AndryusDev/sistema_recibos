@@ -56,23 +56,11 @@
                                     </tr>
                                 </thead>
                                 <tbody class="tabla-datos__tbody">
-                                    <!-- Ejemplo de filas - en producción esto vendría de tu backend -->
-                                    <tr class="tabla-datos__fila" data-rol-id="1">
-                                        <td class="tabla-datos__celda">
-                                            <span></span>
-                                        </td>
-                                        <td class="tabla-datos__celda"></td>
-                                        <td class="tabla-datos__celda"></td>
-                                        <td class="tabla-datos__celda"></td>
-                                        <td class="tabla-datos__celda">
-                                            <button class="tabla-datos__boton btn-editar" data-idusuario="{{ usuario.id }}" onclick="editarUsuario(this)">
-                                                <i class="fas fa-edit"></i> Editar
-                                            </button>
-                                            <button class="tabla-datos__boton btn-eliminar" data-usuarioid="{{ usuario.id }}" onclick="confirmarEliminarUsuario(this)">
-                                                <i class="fas fa-trash"></i> Eliminar
-                                            </button>
-                                        </td>
-                                    </tr>
+                                <tr>
+                                    <td colspan="7" class="text-center">
+                                        <i class="fas fa-spinner fa-spin"></i> Cargando nóminas...
+                                    </td>
+                                </tr>
                                 </tbody>
                             </table>
                         </div>

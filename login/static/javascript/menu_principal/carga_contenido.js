@@ -30,7 +30,8 @@ function loadRegularTemplate(templateName) {
         "ver_prenomina.html": "/ver_prenomina",
         "crear_usuarios.html": "/crear_usuarios",
         "roles_usuarios.html": "/roles_usuarios",
-        "crear_roles.html" : "/crear_roles.html",
+        "crear_roles.html" : "/crear_roles",
+
         "gestion_respaldo.html": "/gestion_respaldo"
     };
 
@@ -96,8 +97,10 @@ function loadTemplateScripts(templateName) {
         "crear_usuarios.html": "/static/javascript/menu_principal/subs_menus/crear_usuarios.js",
         "roles_usuarios.html": "/static/javascript/menu_principal/subs_menus/roles_usuarios.js",
         "crear_roles.html": "/static/javascript/menu_principal/subs_menus/crear_roles.js",
-        "gestion_respaldo.html": "/static/javascript/menu_principal/subs_menus/gestion_respaldo.html"
+        "gestion_respaldo.html": "/static/javascript/menu_principal/subs_menus/gestion_respaldo.js"
     };
+
+
 
     if (templateScripts[templateName]) {
         const scriptUrl = templateScripts[templateName];
@@ -203,10 +206,17 @@ function initializeTemplateFunctions(templateName) {
             // Iniciar el proceso con un tiempo de espera inicial
             setTimeout(checkAndInitialize, 100);
         }
+        if (templateName === "crear_roles.html") {
+            if (window.inicializarModuloRoles) {
+                console.log("Ejecutando inicializarModuloRoles");
+                inicializarModuloRoles();
+            }
+        }
     } catch (error) {
         console.error(`Error inicializando funciones para ${templateName}:`, error);
     }
 }
+
 
 // Funciones para cargar Chart.js y Dashboard.js
 function loadChartJs() {
@@ -236,4 +246,3 @@ function loadDashboardJs() {
         document.head.appendChild(script);
     });
 }
-
