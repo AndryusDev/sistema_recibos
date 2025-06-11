@@ -71,6 +71,11 @@ urlpatterns = [
     
     # URLs para servir archivos estáticos en desarrollo (solo para DEBUG=True)
     path('static/javascript/menu_principal/subs_menus/<str:script_name>', views.serve_js, name='serve_js'),
+
+    path('list_backups/', views.list_backups, name='list_backups'),
+    path('create_backup/', views.create_backup, name='create_backup'),
+    path('restore_backup/', views.restore_backup, name='restore_backup'),
+    path('delete_backup/', views.delete_backup, name='delete_backup'),
     
 
 ]

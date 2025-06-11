@@ -25,6 +25,31 @@ def login(request):
     enable_fields_json = json.dumps(enable_fields)
     return render(request, 'login.html', {'enable_fields_json': enable_fields_json})
 
+@csrf_exempt
+def list_backups(request):
+    backup_dir = settings.BASE_DIR
+    backups = [f for f in os.listdir(backup_dir) if f.startswith('backup_') and f.endswith('.dump')]
+    return JsonResponse({'backups': backups})
+
+@csrf_exempt
+def create_backup(request):
+    from django.core.management import call_command
+    call_command('backup_db')
+    return JsonResponse({'message': 'Backup created successfully'})
+
+@csrf_exempt
+def restore_backup(request):
+    backup_file = request.POST.get('backup_file')
+    from django.core.management import call_command
+    call_command('restore_db', backup_file)
+    return JsonResponse({'message': 'Backup restored successfully'})
+
+@csrf_exempt
+def delete_backup(request):
+    backup_file = request.POST.get('backup_file')
+    os.remove(backup_file)
+    return JsonResponse({'message': 'Backup deleted successfully'})
+
 def crear_cuenta(request):
     # Obtener preguntas de seguridad activas
     preguntas = pregunta_seguridad.objects.filter(activa=True)
