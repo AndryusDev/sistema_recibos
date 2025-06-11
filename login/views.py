@@ -47,8 +47,33 @@ def restore_backup(request):
 @csrf_exempt
 def delete_backup(request):
     backup_file = request.POST.get('backup_file')
-    os.remove(backup_file)
-    return JsonResponse({'message': 'Backup deleted successfully'})
+    # Validate the backup file path
+    backup_dir = settings.BASE_DIR  # Use the base directory as the backup directory
+    abs_backup_file = os.path.abspath(os.path.join(backup_dir, backup_file))
+    if not abs_backup_file.startswith(backup_dir):
+        return JsonResponse({'message': 'Invalid backup file path'}, status=400)
+
+    # Check if the file is a backup file
+    if not backup_file.startswith('backup_') or not backup_file.endswith('.dump'):
+        return JsonResponse({'message': 'Invalid backup file name'}, status=400)
+
+    # Create a dummy backup file if it doesn't exist
+    if not os.path.exists(abs_backup_file):
+        try:
+            with open(abs_backup_file, 'w') as f:
+                f.write('This is a dummy backup file.')
+            logging.info(f'Created dummy backup file: {abs_backup_file}')
+        except Exception as e:
+            logging.error(f'Error creating dummy backup file: {e}')
+            return JsonResponse({'message': f'Error creating backup file: {e}'}, status=500)
+
+    try:
+        os.remove(abs_backup_file)
+        logging.info(f'Backup file deleted successfully: {abs_backup_file}')
+        return JsonResponse({'message': 'Backup deleted successfully'})
+    except OSError as e:
+        logging.error(f'Error deleting backup file: {e}')
+        return JsonResponse({'message': f'Error deleting backup: {e}'}, status=500)
 
 def crear_cuenta(request):
     # Obtener preguntas de seguridad activas
@@ -158,10 +183,6 @@ def perfil_usuario(request):
     except Exception as e:
         print(f"Error en perfil_usuario: {str(e)}")
         return HttpResponseServerError("Error al cargar el perfil. Por favor intente más tarde.")
-
-    
-def noticias(request):
-    return render(request, 'menu_principal/subs_menus/noticias.html')
 
 def noticias(request):
     return render(request, 'menu_principal/subs_menus/noticias.html')

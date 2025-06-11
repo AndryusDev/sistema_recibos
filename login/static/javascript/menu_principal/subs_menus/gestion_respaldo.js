@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Listar todos los backups disponibles
+// Listar todos los backups disponibles
 function listBackups() {
     fetch('/list_backups/')
         .then(response => {
@@ -62,6 +63,7 @@ function listBackups() {
                 const selectCheckbox = document.createElement('input');
                 selectCheckbox.type = 'checkbox';
                 selectCheckbox.classList.add('backup-checkbox');
+                selectCheckbox.value = backup;
                 selectCell.appendChild(selectCheckbox);
                 row.appendChild(selectCell);
 
@@ -79,14 +81,21 @@ function listBackups() {
                 const restoreButton = document.createElement('button');
                 restoreButton.classList.add('tabla-respaldos__boton');
                 restoreButton.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Restaurar';
-                restoreButton.onclick = () => confirmarRestauracion(backup);
+                restoreButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    confirmarRestauracion(backup);
+                });
                 optionsCell.appendChild(restoreButton);
                 
-                // Botón de eliminar
+                // Botón de eliminar (versión mejorada)
                 const deleteButton = document.createElement('button');
                 deleteButton.classList.add('tabla-respaldos__boton', 'secundario');
                 deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i> Eliminar';
-                deleteButton.onclick = () => confirmarEliminacion(backup);
+                deleteButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    confirmarEliminacion(backup);
+                });
                 optionsCell.appendChild(deleteButton);
 
                 row.appendChild(optionsCell);
@@ -173,40 +182,61 @@ function restaurarRespaldo(backupFile) {
 }
 
 // Función para confirmar eliminación
-function confirmarEliminacion(backupFile) {
+function confirmarEliminacion(backupFile, event) {  // Añadir event como parámetro
+    if(event) event.preventDefault();
+    
     mostrarModal(
         'Confirmar eliminación',
-        `¿Está seguro que desea eliminar permanentemente el respaldo "${backupFile}"? Esta acción no se puede deshacer.`,
+        `¿Está seguro que desea eliminar "${backupFile}"?`,
         () => eliminarRespaldo(backupFile)
     );
 }
 
+// En listBackups(), cambiar el evento del botón:
+deleteButton.addEventListener('click', function(e) {
+    confirmarEliminacion(backup, e); // Pasar el evento explícitamente
+});
+
 // Función para eliminar un respaldo
 function eliminarRespaldo(backupFile) {
-    const formData = new FormData();
-    formData.append('backup_file', backupFile);
+    console.log('eliminarRespaldo called with backupFile:', backupFile);
+    const confirmBtn = document.getElementById('modalConfirmar');
+    const originalText = confirmBtn.innerHTML;
+    
+    // Mostrar estado de carga
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Eliminando...';
 
-    fetch('/delete_backup/', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    })
+    console.log('Sending fetch request to /delete_backup/ with backupFile:', backupFile);
+    // En la consola del navegador prueba:
+fetch('/delete_backup/', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]
+    },
+    body: JSON.stringify({backup_file: 'nombre_archivo.backup'})
+}).then(r => r.json()).then(console.log).catch(console.error)
     .then(response => {
         if (!response.ok) {
-            throw new Error('Error en la respuesta del servidor');
+            return response.json().then(err => { 
+                throw new Error(err.message || 'Error del servidor'); 
+            });
         }
         return response.json();
     })
     .then(data => {
         alert(data.message || 'Respaldo eliminado correctamente');
-        listBackups();
-        cerrarModal();
+        listBackups(); // Actualizar la lista después de eliminar
     })
     .catch(error => {
         console.error('Error:', error);
         alert('Error al eliminar respaldo: ' + error.message);
+    })
+    .finally(() => {
+        cerrarModal();
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = originalText;
     });
 }
 

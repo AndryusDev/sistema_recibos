@@ -97,39 +97,23 @@
     </div>
     
     <script>
-        // Elimina la función getCookie() de aquí (ya está en el JS)
-        // Solo deja el código del modal que no está en tu JS
+    // Elimina todo el código JavaScript del HTML excepto esto:
+    document.addEventListener('DOMContentLoaded', function() {
+        const csrftoken = getCookie('csrftoken');
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrftoken;
+        document.getElementById('contenidoRespaldo').appendChild(csrfInput);
         
-        // Configuración inicial del modal
-        document.addEventListener('DOMContentLoaded', function() {
-            const csrftoken = getCookie('csrftoken');
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrfmiddlewaretoken';
-            csrfInput.value = csrftoken;
-            document.getElementById('contenidoRespaldo').appendChild(csrfInput);
-            
-            document.getElementById('selectAll').addEventListener('change', function(e) {
-                const checkboxes = document.querySelectorAll('.tabla-respaldos__tbody input[type="checkbox"]');
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = e.target.checked;
-                });
+        document.getElementById('selectAll').addEventListener('change', function(e) {
+            const checkboxes = document.querySelectorAll('.tabla-respaldos__tbody input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
             });
         });
-        
-        function mostrarModal(titulo, mensaje, accion) {
-            document.getElementById('modalTitulo').textContent = titulo;
-            document.getElementById('modalMensaje').textContent = mensaje;
-            document.getElementById('respaldoModal').style.display = 'block';
-            
-            const confirmarBtn = document.getElementById('modalConfirmar');
-            confirmarBtn.onclick = accion;
-        }
-        
-        function cerrarModal() {
-            document.getElementById('respaldoModal').style.display = 'none';
-        }
-    </script>
+    });
+</script>
     <script src="{% static 'javascript/menu_principal/subs_menus/gestion_respaldo.js' %}"></script>
 </body>
 </html>
