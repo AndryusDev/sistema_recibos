@@ -79,4 +79,5 @@ urlpatterns = [
 
     path('asistencias/', views.asistencias_personal, name='asistencias'),
     path('api/asistencias/', views.crear_asistencia, name='asistencias'),
+    #path('api/permisos_asistencia/', views.listar_permisos_asistencia, name='listar_permisos_asistencia'),
 ]
