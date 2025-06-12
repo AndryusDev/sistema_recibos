@@ -417,6 +417,36 @@ def crear_asistencia(request):
             return JsonResponse({'success': False, 'message': str(e)}, status=500)
     else:
         return JsonResponse({'success': False, 'message': 'Método no permitido.'}, status=405)
+    
+@csrf_exempt
+@require_http_methods(["GET"])
+def listar_asistencias(request):
+    """API endpoint para listar asistencias filtradas por cedula, fecha de inicio y fecha final."""
+    cedula = request.GET.get('cedula')
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+
+    asistencias_queryset = asistencias.objects.all()
+
+    if cedula:
+        asistencias_queryset = asistencias_queryset.filter(empleado__cedula=cedula)
+    if fecha_inicio:
+        asistencias_queryset = asistencias_queryset.filter(fecha_asistencia__gte=fecha_inicio)
+    if fecha_fin:
+        asistencias_queryset = asistencias_queryset.filter(fecha_asistencia__lte=fecha_fin)
+
+    asistencias_lista = []
+    for asistencia in asistencias_queryset:
+        asistencias_lista.append({
+            'empleado': asistencia.empleado.cedula,
+            'fecha': asistencia.fecha.strftime('%d-%m-%Y'),
+            'hora_inicio': str(asistencia.hora_entrada),
+            'hora_fin': str(asistencia.hora_salida),
+            'observaciones': asistencia.observaciones,
+        })
+
+    return JsonResponse(asistencias_lista, safe=False)
+
 
 from django.utils.crypto import get_random_string
 

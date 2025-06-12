@@ -48,6 +48,40 @@ function submitAsistenciaForm() {
     });
 }
 
+// Function to fetch and display asistencias
+function fetchAsistencias() {
+    fetch('/api/asistencias_listar/')  // Use the correct URL here
+        .then(response => response.json())
+        .then(data => {
+            const tablaAsistencias = document.getElementById('cuerpoTablaAsistencias');
+            tablaAsistencias.innerHTML = ''; // Clear existing table rows
+
+            if (data.length > 0) {
+                data.forEach(asistencia => {
+                    const row = tablaAsistencias.insertRow();
+                    row.innerHTML = `
+                        <td>${asistencia.empleado}</td>
+                        <td>${asistencia.fecha}</td>
+                        <td>${asistencia.hora_inicio}</td>
+                        <td>${asistencia.hora_fin}</td>
+                        <td>${asistencia.observaciones}</td>
+                        <td></td>  // Add action buttons here if needed
+                    `;
+                });
+            } else {
+                tablaAsistencias.innerHTML = '<tr><td colspan="5">No se encontraron asistencias.</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching asistencias:', error);
+            const tablaAsistencias = document.getElementById('cuerpoTablaAsistencias');
+            tablaAsistencias.innerHTML = '<tr><td colspan="5">Error al cargar las asistencias.</td></tr>';
+        });
+}
+
+// Call fetchAsistencias when the page loads
+document.addEventListener('DOMContentLoaded', fetchAsistencias);
+
 function submitJustificacionForm() {
     // Get the form values
     var empleado = document.getElementById("justificacion-empleado").value;

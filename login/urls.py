@@ -78,6 +78,6 @@ urlpatterns = [
     path('delete_backup/', views.delete_backup, name='delete_backup'),
 
     path('asistencias/', views.asistencias_personal, name='asistencias'),
-    path('api/asistencias/', views.crear_asistencia, name='asistencias'),
-    #path('api/permisos_asistencia/', views.listar_permisos_asistencia, name='listar_permisos_asistencia'),
+    path('api/asistencias/', views.crear_asistencia, name='crear_asistencias'),
+    path('api/asistencias_listar/', views.listar_asistencias, name='asistencias_listar'),
 ]
