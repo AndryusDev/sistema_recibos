@@ -83,5 +83,6 @@ urlpatterns = [
     
     path('api/get_faltas_justificables/', views.get_faltas_justificables, name='get_faltas_justificables'),
     path('api/justificaciones/', views.crear_justificacion, name = 'crear_justificacion'),
+    path('justificacion/', views.listar_justificaciones, name='justificacion'),
 
 ]

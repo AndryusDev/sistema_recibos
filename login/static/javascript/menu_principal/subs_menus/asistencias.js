@@ -50,35 +50,61 @@ function submitAsistenciaForm() {
     });
 }
 
-// Function to fetch and display asistencias
 function fetchAsistencias(filters = {}) {
     const params = new URLSearchParams(filters);
-    fetch(`/api/asistencias_listar/?${params.toString()}`)  // Use the correct URL here
+    fetch(`/api/asistencias_listar/?${params.toString()}`)
         .then(response => response.json())
         .then(data => {
             const tablaAsistencias = document.getElementById('cuerpoTablaAsistencias');
-            tablaAsistencias.innerHTML = ''; // Clear existing table rows
+            tablaAsistencias.innerHTML = '';
 
             if (data.length > 0) {
                 data.forEach(asistencia => {
                     const row = tablaAsistencias.insertRow();
+
+                    // Create action buttons: View Document and Edit
+                    const viewDocButton = document.createElement('button');
+                    viewDocButton.className = 'tabla-recibos__boton btn-ver-documento';
+                    viewDocButton.innerHTML = '<i class="fas fa-file-alt"></i> Ver Documento';
+                    viewDocButton.title = 'Ver Documento';
+                    viewDocButton.onclick = () => {
+                        if (asistencia.documento_url) {
+                            window.open(asistencia.documento_url, '_blank');
+                        } else {
+                            alert('No hay documento disponible para esta asistencia.');
+                        }
+                    };
+
+                    const editButton = document.createElement('button');
+                    editButton.className = 'tabla-recibos__boton btn-editar';
+                    editButton.innerHTML = '<i class="fas fa-edit"></i> Editar';
+                    editButton.title = 'Editar Asistencia';
+                    editButton.onclick = () => {
+                        openEditAsistenciaModal(asistencia);
+                    };
+
+                    const actionCell = document.createElement('td');
+                    actionCell.appendChild(viewDocButton);
+                    actionCell.appendChild(editButton);
+
                     row.innerHTML = `
                         <td>${asistencia.empleado}</td>
+                        <td>${asistencia.estado}</td>
                         <td>${asistencia.fecha}</td>
                         <td>${asistencia.hora_inicio}</td>
                         <td>${asistencia.hora_fin}</td>
                         <td>${asistencia.observaciones}</td>
-                        <td></td>  // Add action buttons here if needed
                     `;
+                    row.appendChild(actionCell);
                 });
             } else {
-                tablaAsistencias.innerHTML = '<tr><td colspan="5">No se encontraron asistencias.</td></tr>';
+                tablaAsistencias.innerHTML = '<tr><td colspan="7">No se encontraron asistencias.</td></tr>';
             }
         })
         .catch(error => {
             console.error('Error fetching asistencias:', error);
             const tablaAsistencias = document.getElementById('cuerpoTablaAsistencias');
-            tablaAsistencias.innerHTML = '<tr><td colspan="5">Error al cargar las asistencias.</td></tr>';
+            tablaAsistencias.innerHTML = '<tr><td colspan="7">Error al cargar las asistencias.</td></tr>';
         });
 }
 
@@ -118,7 +144,69 @@ function fetchFaltasJustificables(cedula) {
     });
 }
 
-// Call fetchAsistencias when the page loads
+function fetchJustificaciones(filters = {}) {
+    const params = new URLSearchParams(filters);
+    fetch(`/justificacion/?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            const tablaJustificaciones = document.getElementById('cuerpoTablaJustificaciones');
+            tablaJustificaciones.innerHTML = ''; // Clear existing table rows
+
+            if (data.length > 0) {
+                data.forEach(justificacion => {
+                    const aprobadoPor = justificacion.aprobado_por ? justificacion.aprobado_por : 'N/A';
+                    const fechaAprobacion = justificacion.fecha_aprobacion ? justificacion.fecha_aprobacion : 'N/A';
+                    const documentoLink = justificacion.documento_url ? 
+                        `<a href="\${justificacion.documento_url}" target="_blank">Ver documento</a>` : 'No disponible';
+
+                    const row = tablaJustificaciones.insertRow();
+
+                    // Create Edit button
+                    const editButton = document.createElement('button');
+                    editButton.className = 'tabla-recibos__boton btn-editar';
+                    editButton.innerHTML = '<i class="fas fa-edit"></i> Editar';
+                    editButton.title = 'Editar Justificación';
+                    editButton.onclick = () => {
+                        openEditJustificacionModal(justificacion);
+                    };
+
+                    const actionCell = document.createElement('td');
+                    actionCell.innerHTML = documentoLink;
+                    actionCell.appendChild(editButton);
+
+                    row.innerHTML = `
+                        <td>${justificacion.empleado_cedula || ''}</td>
+                        <td>${justificacion.fecha_asistencia || ''}</td>
+                        <td>${justificacion.tipo || ''}</td>
+                        <td>${justificacion.descripcion || ''}</td>
+                        <td>${justificacion.fecha_creacion || ''}</td>
+                    `;
+                    row.appendChild(actionCell);
+                });
+            } else {
+                tablaJustificaciones.innerHTML = '<tr><td colspan="7">No se encontraron justificaciones.</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching justificaciones:', error);
+            const tablaJustificaciones = document.getElementById('cuerpoTablaJustificaciones');
+            tablaJustificaciones.innerHTML = '<tr><td colspan="7">Error al cargar las justificaciones.</td></tr>';
+        });
+}
+
+/*usar posteriormentee para mostrar informacion*/                        /*<td>${aprobadoPor}</td>
+                        <td>${fechaAprobacion}</td>*/
+
+/* Placeholder functions for opening edit modals - to be implemented */
+function openEditAsistenciaModal(asistencia) {
+    alert('Abrir modal para editar asistencia: ' + JSON.stringify(asistencia));
+}
+
+function openEditJustificacionModal(justificacion) {
+    alert('Abrir modal para editar justificación: ' + JSON.stringify(justificacion));
+}
+
+// Call fetchAsistencias and fetchJustificaciones when the page loads
 document.addEventListener('DOMContentLoaded', function() {
     fetchAsistencias();
 
@@ -160,6 +248,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Justificaciones filter and fetch
+    const filterButtonJustificaciones = document.getElementById('btn-aplicar-filtros-justificaciones');
+    if (filterButtonJustificaciones) {
+        filterButtonJustificaciones.addEventListener('click', () => {
+            const cedula = document.getElementById('filtro-cedula-justificaciones').value;
+            const fechaInicio = document.getElementById('filtro-fecha-inicio-justificaciones').value;
+            const fechaFin = document.getElementById('filtro-fecha-fin-justificaciones').value;
+
+            const filters = {};
+            if (cedula) filters.cedula = cedula;
+            if (fechaInicio) filters.fecha_inicio = new Date(fechaInicio).toISOString().slice(0, 10);
+            if (fechaFin) filters.fecha_fin = new Date(fechaFin).toISOString().slice(0, 10);
+
+            fetchJustificaciones(filters);
+        });
+    }
+
+    // Initial fetch of justificaciones
+    fetchJustificaciones();
 });
 
 function submitJustificacionForm() {

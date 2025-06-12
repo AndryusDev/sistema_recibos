@@ -49,9 +49,11 @@
                 <thead class="tabla-recibos__thead">
                     <tr class="tabla-recibos__fila">
                         <th class="tabla-recibos__columna">Empleado</th>
+                        <th class="tabla-recibos__columna">Estado</th>
                         <th class="tabla-recibos__columna">Fecha</th>
                         <th class="tabla-recibos__columna">Hora Entrada</th>
                         <th class="tabla-recibos__columna">Hora Salida</th>
+                        <th class="tabla-recibos__columna">Observaciones</th>
                         <th class="tabla-recibos__columna">Acciones</th>
                     </tr>
                 </thead>
@@ -113,11 +115,11 @@
             <table class="tabla-recibos" id="tablaJustificaciones">
                 <thead class="tabla-recibos__thead">
                     <tr class="tabla-recibos__fila">
-                        <th class="tabla-recibos__columna">ID</th>
                         <th class="tabla-recibos__columna">Empleado</th>
                         <th class="tabla-recibos__columna">Fecha</th>
                         <th class="tabla-recibos__columna">Motivo</th>
                         <th class="tabla-recibos__columna">Estado</th>
+                        <th class="tabla-recibos__columna">Fecha de Registro</th>
                         <th class="tabla-recibos__columna">Acciones</th>
                     </tr>
                 </thead>
@@ -253,7 +255,7 @@
                     <button class="recibo-modal__boton btn-cancelar" onclick="registrarJustificacionModal__cerrar()">
                         <i class="fas fa-times"></i> Cancelar
                     </button>
-                    <button class="recibo-modal__boton btn-guardar" onclick="submitJustificacionForm()">
+                    <button type="button" class="recibo-modal__boton btn-guardar">
                         <i class="fas fa-save"></i> Guardar
                     </button>
                 </div>

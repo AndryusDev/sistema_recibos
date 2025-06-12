@@ -450,6 +450,7 @@ def listar_asistencias(request):
             'fecha': asistencia.fecha.strftime('%d-%m-%Y'),
             'hora_inicio': str(asistencia.hora_entrada),
             'hora_fin': str(asistencia.hora_salida),
+            'estado': asistencia.estado,
             'observaciones': asistencia.observaciones,
         })
 
@@ -479,6 +480,60 @@ def get_faltas_justificables(request):
     except Exception as e:
         # Captura cualquier otro error inesperado
         return JsonResponse({'error': f'Error del servidor: {str(e)}'}, status=500)
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def listar_justificaciones(request):
+    try:
+        cedula = request.GET.get('cedula', '').strip()
+        fecha_inicio = request.GET.get('fecha_inicio', '').strip()
+        fecha_fin = request.GET.get('fecha_fin', '').strip()
+
+        justificaciones_qs = Justificacion.objects.select_related(
+            'asistencias__empleado',
+            'aprobado_por'
+        ).all()
+
+        if cedula:
+            justificaciones_qs = justificaciones_qs.filter(asistencias__empleado__cedula__icontains=cedula)
+
+        if fecha_inicio:
+            try:
+                fecha_inicio_date = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                justificaciones_qs = justificaciones_qs.filter(asistencias__fecha__gte=fecha_inicio_date)
+            except ValueError:
+                return JsonResponse({'error': 'Formato de fecha_inicio inválido. Use YYYY-MM-DD.'}, status=400)
+
+        if fecha_fin:
+            try:
+                fecha_fin_date = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+                justificaciones_qs = justificaciones_qs.filter(asistencias__fecha__lte=fecha_fin_date)
+            except ValueError:
+                return JsonResponse({'error': 'Formato de fecha_fin inválido. Use YYYY-MM-DD.'}, status=400)
+
+        justificaciones_list = []
+        for justificacion in justificaciones_qs:
+            aprobado_por_nombre = None
+            if justificacion.aprobado_por:
+                aprobado_por_nombre = f"{justificacion.aprobado_por.primer_nombre} {justificacion.aprobado_por.primer_apellido}".strip()
+
+            justificaciones_list.append({
+                'id': justificacion.id,
+                'tipo': justificacion.get_tipo_display(),
+                'descripcion': justificacion.descripcion,
+                'fecha_creacion': justificacion.fecha_creacion.strftime('%d-%m-%Y %H:%M'),
+                'aprobado_por': aprobado_por_nombre,
+                'fecha_aprobacion': justificacion.fecha_aprobacion.strftime('%d-%m-%Y %H:%M') if justificacion.fecha_aprobacion else None,
+                'documento_url': justificacion.documento.url if justificacion.documento else None,
+                'empleado_cedula': justificacion.asistencias.empleado.cedula if justificacion.asistencias and justificacion.asistencias.empleado else None,
+                'fecha_asistencia': justificacion.asistencias.fecha.strftime('%d-%m-%Y') if justificacion.asistencias and justificacion.asistencias.fecha else None,
+            })
+
+        return JsonResponse(justificaciones_list, safe=False)
+
+    except Exception as e:
+        logger.error(f"Error en listar_justificaciones: {str(e)}", exc_info=True)
+        return JsonResponse({'error': 'Error interno del servidor', 'detail': str(e)}, status=500)
 
 from django.utils.crypto import get_random_string
 
@@ -997,6 +1052,22 @@ def importar_nominas(request):
         'error': 'Método no permitido'
     }, status=405)
 
+
+
+
+def extract_codigo_from_colname(col_name):
+    """
+    Extrae el código de concepto del nombre de columna.
+    Implementa según tu mapeo específico.
+    """
+    codigo_map = {
+        'MTO_VACAC': '1401c',
+        'PRM_HJOS': '1101c',
+        'DEDUC_FAOV': '20003c',
+        # Agrega todos los mapeos necesarios
+    }
+    return codigo_map.get(col_name, col_name)
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def crear_justificacion(request):
@@ -1049,21 +1120,7 @@ def crear_justificacion(request):
                 'success': False,
                 'message': f'Error del servidor: {str(e)}'
             }, status=500)
-
-
-def extract_codigo_from_colname(col_name):
-    """
-    Extrae el código de concepto del nombre de columna.
-    Implementa según tu mapeo específico.
-    """
-    codigo_map = {
-        'MTO_VACAC': '1401c',
-        'PRM_HJOS': '1101c',
-        'DEDUC_FAOV': '20003c',
-        # Agrega todos los mapeos necesarios
-    }
-    return codigo_map.get(col_name, col_name)
-
+        
 from django.shortcuts import get_object_or_404
 from django.db.models import Prefetch
 
