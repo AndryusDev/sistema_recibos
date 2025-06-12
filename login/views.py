@@ -6,7 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 import pandas as pd
 from django.http import JsonResponse
-from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado
+from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion
 from datetime import datetime
 import os
 from django.conf import settings
@@ -422,18 +422,26 @@ def crear_asistencia(request):
 @require_http_methods(["GET"])
 def listar_asistencias(request):
     """API endpoint para listar asistencias filtradas por cedula, fecha de inicio y fecha final."""
-    cedula = request.GET.get('cedula')
-    fecha_inicio = request.GET.get('fecha_inicio')
-    fecha_fin = request.GET.get('fecha_fin')
+    cedula = request.GET.get('cedula', '')
+    fecha_inicio = request.GET.get('fecha_inicio', '')
+    fecha_fin = request.GET.get('fecha_fin', '')
 
     asistencias_queryset = asistencias.objects.all()
 
     if cedula:
         asistencias_queryset = asistencias_queryset.filter(empleado__cedula=cedula)
     if fecha_inicio:
-        asistencias_queryset = asistencias_queryset.filter(fecha_asistencia__gte=fecha_inicio)
+        try:
+            fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+            asistencias_queryset = asistencias_queryset.filter(fecha__gte=fecha_inicio)
+        except ValueError:
+            return JsonResponse({'error': 'Formato de fecha de inicio inválido. Use YYYY-MM-DD.'}, status=400)
     if fecha_fin:
-        asistencias_queryset = asistencias_queryset.filter(fecha_asistencia__lte=fecha_fin)
+        try:
+            fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+            asistencias_queryset = asistencias_queryset.filter(fecha__lte=fecha_fin)
+        except ValueError:
+            return JsonResponse({'error': 'Formato de fecha de fin inválido. Use YYYY-MM-DD.'}, status=400)
 
     asistencias_lista = []
     for asistencia in asistencias_queryset:
@@ -447,16 +455,38 @@ def listar_asistencias(request):
 
     return JsonResponse(asistencias_lista, safe=False)
 
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_faltas_justificables(request):
+    try:
+        cedula = request.GET.get('cedula')
+        if not cedula:
+            return JsonResponse({'error': 'Cédula del empleado es requerida'}, status=400)
+
+        empleado_obj = empleado.objects.get(cedula=cedula)
+        
+        # Filtrar faltas no justificadas (que pueden ser justificadas)
+        faltas = asistencias.objects.filter(
+            empleado=empleado_obj,
+            estado="F"  # Cambié a "F" (Falta) en lugar de "J" (Justificada)
+        ).values('id', 'fecha', 'hora_entrada', 'hora_salida', 'observaciones')
+
+        # Convertir el QuerySet a lista y retornar
+        return JsonResponse(list(faltas), safe=False)
+        
+    except empleado.DoesNotExist:
+        return JsonResponse({'error': 'Empleado no encontrado'}, status=404)
+    except Exception as e:
+        # Captura cualquier otro error inesperado
+        return JsonResponse({'error': f'Error del servidor: {str(e)}'}, status=500)
 
 from django.utils.crypto import get_random_string
 
 @csrf_exempt
 @require_http_methods(["GET"])
 def obtener_detalle_prenomina(request, prenomina_id):
-    """
-    API endpoint para obtener los detalles de una prenomina específica.
-    Ahora incluye el conteo de personas por cada concepto.
-    """
+
+
     try:
         # Obtener la prenomina con sus detalles relacionados
         prenomina_obj = prenomina.objects.prefetch_related(
@@ -966,6 +996,60 @@ def importar_nominas(request):
         'success': False,
         'error': 'Método no permitido'
     }, status=405)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def crear_justificacion(request):
+    if request.method == 'POST':
+        try:
+            # Obtener datos del formulario (usando los nombres correctos)
+            falta_id = request.POST.get('falta')
+            tipo = request.POST.get('tipo')  # Nombre correcto del select
+            descripcion = request.POST.get('motivo')  # Nombre correcto del textarea
+            documento = request.FILES.get('documento')
+
+            # Validación modificada (el documento es opcional)
+            if not all([falta_id, tipo]):
+                return JsonResponse({
+                    'success': False, 
+                    'message': 'Falta ID y Tipo son campos requeridos.'
+                }, status=400)
+
+            # Obtener la asistencia
+            try:
+                asistencia_obj = asistencias.objects.get(pk=falta_id)
+            except asistencias.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Asistencia no encontrada.'
+                }, status=404)
+
+            # Actualizar la asistencia
+            asistencia_obj.estado = "J"
+            if descripcion:
+                asistencia_obj.observaciones = descripcion
+            asistencia_obj.save()
+
+            # Crear la justificación
+            justificacion = Justificacion.objects.create(
+                asistencias=asistencia_obj,
+                tipo=tipo,
+                descripcion=descripcion or "",  # Asegurar que no sea None
+                documento=documento
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Justificación registrada correctamente',
+                'justificacion_id': justificacion.id
+            }, status=201)
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error del servidor: {str(e)}'
+            }, status=500)
+
 
 def extract_codigo_from_colname(col_name):
     """

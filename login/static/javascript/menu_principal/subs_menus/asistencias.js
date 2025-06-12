@@ -35,8 +35,10 @@ function submitAsistenciaForm() {
                 text: 'Asistencia registrada correctamente',
                 icon: 'success',
                 confirmButtonText: 'Aceptar'
+            }).then(() => {
+                fetchAsistencias(); // Refresh the attendance table
+                registrarAsistenciaModal__cerrar();
             });
-            registrarAsistenciaModal__cerrar();
         } else {
             Swal.fire({
                 title: 'Error',
@@ -49,8 +51,9 @@ function submitAsistenciaForm() {
 }
 
 // Function to fetch and display asistencias
-function fetchAsistencias() {
-    fetch('/api/asistencias_listar/')  // Use the correct URL here
+function fetchAsistencias(filters = {}) {
+    const params = new URLSearchParams(filters);
+    fetch(`/api/asistencias_listar/?${params.toString()}`)  // Use the correct URL here
         .then(response => response.json())
         .then(data => {
             const tablaAsistencias = document.getElementById('cuerpoTablaAsistencias');
@@ -79,57 +82,120 @@ function fetchAsistencias() {
         });
 }
 
+function fetchFaltasJustificables(cedula) {
+    fetch(`/api/get_faltas_justificables/?cedula=${cedula}`)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al obtener las faltas');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const selectFaltas = document.getElementById('justificacion-falta');
+        selectFaltas.innerHTML = '<option value="">-- Seleccione una falta --</option>';
+        
+        if (data.length > 0) {
+            data.forEach(falta => {
+                const option = document.createElement('option');
+                option.value = falta.id;
+                option.textContent = `Falta del ${falta.fecha} (${falta.hora_entrada || 'Sin hora'} - ${falta.hora_salida || 'Sin hora'}) - ${falta.observaciones || 'Sin observaciones'}`;
+                selectFaltas.appendChild(option);
+            });
+        } else {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No hay faltas justificables para este empleado';
+            selectFaltas.appendChild(option);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'No se pudieron cargar las faltas justificables',
+            icon: 'error'
+        });
+    });
+}
+
 // Call fetchAsistencias when the page loads
-document.addEventListener('DOMContentLoaded', fetchAsistencias);
+document.addEventListener('DOMContentLoaded', function() {
+    fetchAsistencias();
+
+    const empleadoSelect = document.getElementById('justificacion-empleado');
+    empleadoSelect.addEventListener('change', function() {
+        const cedula = this.value;
+        fetchFaltasJustificables(cedula);
+    });
+
+
+    // Function to handle filtering
+    function handleAsistenciaFilter() {
+        const empleado = document.getElementById('filtro-empleado-asistencia').value;
+        const fechaInicio = document.getElementById('filtro-fecha-inicio-asistencia').value;
+        const fechaFin = document.getElementById('filtro-fecha-fin-asistencia').value;
+
+        const filters = {};
+        filters.cedula = empleado;
+        if (fechaInicio) {
+            filters.fecha_inicio = new Date(fechaInicio).toISOString().slice(0, 10);
+        }
+        if (fechaFin) {
+            filters.fecha_fin = new Date(fechaFin).toISOString().slice(0, 10);
+        }
+
+        fetchAsistencias(filters);
+    }
+
+    // Add event listeners to the filter button
+    const filterButton = document.getElementById('btn-aplicar-filtros-asistencia');
+    filterButton.addEventListener('click', handleAsistenciaFilter);
+
+    // Add event listeners to the filter input fields for Enter key
+    const filterInputs = document.querySelectorAll('.busqueda-input');
+    filterInputs.forEach(input => {
+        input.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                handleAsistenciaFilter();
+            }
+        });
+    });
+});
 
 function submitJustificacionForm() {
-    // Get the form values
-    var empleado = document.getElementById("justificacion-empleado").value;
-    var falta = document.getElementById("justificacion-falta").value;
-    var motivo = document.getElementById("justificacion-tipo").value;
-    var documento = document.getElementById("justificacion-documento").files[0];
-    var notas = document.getElementById("justificacion-notas").value;
+    const faltaId = document.getElementById("justificacion-falta").value;
+    const tipo = document.getElementById("justificacion-tipo").value;
+    const descripcion = document.getElementById("justificacion-notas").value;
 
-    // Create the data object
-    var formData = new FormData();
-    formData.append('empleado', empleado);
-    formData.append('falta', falta);
-    formData.append('motivo', motivo);
-    if (documento) {
-        formData.append('documento', documento);
+    if (!faltaId || !tipo) {
+        Swal.fire({title: 'Error', text: 'Seleccione una falta y el tipo', icon: 'error'});
+        return;
     }
-    formData.append('notas', notas);
 
-    // Send the data to the API
+
+    const formData = new FormData();
+    formData.append('falta', faltaId);
+    formData.append('tipo', tipo);
+    formData.append('descripcion', descripcion);  // Nombre alineado con el modelo
+    
+    const documento = document.getElementById("justificacion-documento").files[0];
+    if (documento) formData.append('documento', documento);
+
     fetch('/api/justificaciones/', {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': CSRF_TOKEN
-        },
+        headers: {'X-CSRFToken': CSRF_TOKEN},
         body: formData
     })
     .then(response => response.json())
     .then(data => {
-        // Handle the response
-        if (data.success) {
-            Swal.fire({
-                title: 'Éxito',
-                text: 'Justificación registrada correctamente',
-                icon: 'success',
-                confirmButtonText: 'Aceptar'
-            });
-            registrarJustificacionModal__cerrar();
-        } else {
-            Swal.fire({
-                title: 'Error',
-                text: data.message,
-                icon: 'error',
-                confirmButtonText: 'Aceptar'
-            });
-        }
+        if (!data.success) throw new Error(data.message);
+        Swal.fire({title: 'Éxito', text: data.message, icon: 'success'});
+        registrarJustificacionModal__cerrar();
+    })
+    .catch(error => {
+        Swal.fire({title: 'Error', text: error.message, icon: 'error'});
     });
 }
-
 function submitVPLForm() {
     // Get the form values
     var empleado = document.getElementById("vpl-empleado").value;
@@ -154,6 +220,7 @@ function submitVPLForm() {
     fetch('/api/vpl/', {
         method: 'POST',
         headers: {
+            'Content-Type': 'application/json',
             'X-CSRFToken': CSRF_TOKEN
         },
         body: formData
