@@ -14,7 +14,7 @@ from decimal import Decimal
 import logging
 from django.db import transaction
 from login.models import usuario, recibo_pago
-from .models import usuario, empleado, rol
+from .models import usuario, empleado, rol, asistencias
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.timezone import now
 from django.db.models.functions import ExtractMonth
@@ -352,6 +352,16 @@ def roles_usuarios(request):
 def crear_roles(request):
     return render(request, 'menu_principal/subs_menus/crear_roles.html')
 
+def asistencias_personal(request):
+    return render(request, 'menu_principal/subs_menus/asistencias.html')
+
+def vacaciones_permisos_panel(request):
+        return render(request, 'menu_principal/subs_menus/vacaciones_permisos.html')
+
+def vacaciones_permisos_panel(request):
+        return render(request, 'menu_principal/subs_menus/vacaciones_permisos.html')
+
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
@@ -363,6 +373,51 @@ from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime
 from django.db.models import Sum
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def crear_asistencia(request):
+    """API endpoint para crear un registro de asistencia."""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Validar que los campos requeridos estén presentes
+            required_fields = ['empleado', 'fecha', 'hora_entrada', 'hora_salida', 'estado']
+            if not all(field in data for field in required_fields):
+                return JsonResponse({'success': False, 'message': 'Faltan campos requeridos.'}, status=400)
+            
+            # Obtener el empleado
+            try:
+                empleado_obj = empleado.objects.get(cedula=data['empleado'])
+            except empleado.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
+
+            # Verificar si ya existe una asistencia para este empleado en esta fecha
+            if asistencias.objects.filter(empleado=empleado_obj, fecha=data['fecha']).exists():
+                return JsonResponse({'success': False, 'message': 'Ya existe una asistencia registrada para este empleado en esta fecha.'}, status=400)
+            
+            # Crear la asistencia
+            asistencia = asistencias.objects.create(
+                empleado=empleado_obj,
+                fecha=data['fecha'],
+                hora_entrada=data['hora_entrada'],
+                hora_salida=data['hora_salida'],
+                estado=data['estado'],
+                observaciones=data.get('notas', '')  # Campo opcional
+            )
+            
+            return JsonResponse({'success': True, 'message': 'Asistencia registrada correctamente.'}, status=201)
+        
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Datos JSON inválidos.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    else:
+        return JsonResponse({'success': False, 'message': 'Método no permitido.'}, status=405)
+
 from django.utils.crypto import get_random_string
 
 @csrf_exempt

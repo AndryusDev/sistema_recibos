@@ -1,0 +1,379 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Asistencias - Sistema Policial</title>
+    <link rel="stylesheet" href="{% static 'css/asistencias.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+</head>
+<body>
+    <div class="titulo-pagina">
+        <h1>Gestión de Asistencias</h1>
+    </div>
+
+    <div class="contenedor-tabla-recibos">
+        <!-- Panel de Búsqueda/Filtros - Asistencias -->
+        <div class="panel-busqueda">
+            <h4>Filtros de Asistencias</h4>
+            <div class="busqueda-grupo">
+                <div class="form-group">
+                    <label for="filtro-empleado-asistencia"><i class="fas fa-user"></i> Empleado:</label>
+                    <input type="text" id="filtro-empleado-asistencia" class="busqueda-input">
+                </div>
+                <div class="form-group">
+                    <label for="filtro-fecha-inicio-asistencia"><i class="fas fa-calendar"></i> Fecha Inicio:</label>
+                    <input type="date" id="filtro-fecha-inicio-asistencia" class="busqueda-input">
+                </div>
+                <div class="form-group">
+                    <label for="filtro-fecha-fin-asistencia"><i class="fas fa-calendar"></i> Fecha Fin:</label>
+                    <input type="date" id="filtro-fecha-fin-asistencia" class="busqueda-input">
+                </div>
+                <button id="btn-aplicar-filtros-asistencia" class="busqueda-boton">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <button id="btn-limpiar-filtros-asistencia" class="busqueda-boton secundario">
+                    <i class="fas fa-broom"></i> Limpiar
+                </button>
+                <button class="busqueda-boton" onclick="registrarAsistenciaModal__abrir()">
+                    <i class="fas fa-plus"></i> Registrar Asistencia
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de Asistencias -->
+        <div class="tabla-recibo-linea">
+            <table class="tabla-recibos" id="tablaAsistencias">
+                <thead class="tabla-recibos__thead">
+                    <tr class="tabla-recibos__fila">
+                        <th class="tabla-recibos__columna">ID</th>
+                        <th class="tabla-recibos__columna">Empleado</th>
+                        <th class="tabla-recibos__columna">Fecha</th>
+                        <th class="tabla-recibos__columna">Hora Entrada</th>
+                        <th class="tabla-recibos__columna">Hora Salida</th>
+                        <th class="tabla-recibos__columna">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="tabla-recibos__tbody" id="cuerpoTablaAsistencias">
+                    <tr>
+                        <td colspan="6" class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando asistencias...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div id="sin-resultados-asistencias" class="text-center" style="display: none;">
+                <p>No se encontraron asistencias con los filtros aplicados</p>
+            </div>
+            <div class="paginacion" id="paginacion-asistencias">
+                <!-- Paginación dinámica -->
+            </div>
+        </div>
+
+        <!-- Panel de Búsqueda/Filtros - Justificaciones -->
+        <div class="panel-busqueda">
+            <h4>Filtros de Justificaciones</h4>
+            <div class="busqueda-grupo">
+                <div class="form-group">
+                    <label for="filtro-empleado-justificacion"><i class="fas fa-user"></i> Empleado:</label>
+                    <input type="text" id="filtro-empleado-justificacion" class="busqueda-input">
+                </div>
+                <div class="form-group">
+                    <label for="filtro-fecha-inicio-justificacion"><i class="fas fa-calendar"></i> Fecha Inicio:</label>
+                    <input type="date" id="filtro-fecha-inicio-justificacion" class="busqueda-input">
+                </div>
+                <div class="form-group">
+                    <label for="filtro-fecha-fin-justificacion"><i class="fas fa-calendar"></i> Fecha Fin:</label>
+                    <input type="date" id="filtro-fecha-fin-justificacion" class="busqueda-input">
+                </div>
+                <div class="form-group">
+                    <label for="filtro-estado-justificacion"><i class="fas fa-filter"></i> Estado:</label>
+                    <select id="filtro-estado-justificacion" class="busqueda-input">
+                        <option value="">Todos los estados</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="aprobada">Aprobada</option>
+                        <option value="rechazada">Rechazada</option>
+                    </select>
+                </div>
+                <button id="btn-aplicar-filtros-justificacion" class="busqueda-boton">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <button id="btn-limpiar-filtros-justificacion" class="busqueda-boton secundario">
+                    <i class="fas fa-broom"></i> Limpiar
+                </button>
+                <button class="busqueda-boton" onclick="registrarJustificacionModal__abrir()">
+                    <i class="fas fa-plus"></i> Registrar Justificación
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de Justificaciones -->
+        <div class="tabla-recibo-linea">
+            <table class="tabla-recibos" id="tablaJustificaciones">
+                <thead class="tabla-recibos__thead">
+                    <tr class="tabla-recibos__fila">
+                        <th class="tabla-recibos__columna">ID</th>
+                        <th class="tabla-recibos__columna">Empleado</th>
+                        <th class="tabla-recibos__columna">Fecha</th>
+                        <th class="tabla-recibos__columna">Motivo</th>
+                        <th class="tabla-recibos__columna">Estado</th>
+                        <th class="tabla-recibos__columna">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="tabla-recibos__tbody" id="cuerpoTablaJustificaciones">
+                    <tr>
+                        <td colspan="6" class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando justificaciones...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div id="sin-resultados-justificaciones" class="text-center" style="display: none;">
+                <p>No se encontraron justificaciones con los filtros aplicados</p>
+            </div>
+            <div class="paginacion" id="paginacion-justificaciones">
+                <!-- Paginación dinámica -->
+            </div>
+        </div>
+
+        <!-- Calendario de Asistencias -->
+        <div class="panel-busqueda">
+            <h4>Calendario de Asistencias</h4>
+            <div class="busqueda-grupo">
+                <div class="form-group">
+                    <label for="calendario-empleado"><i class="fas fa-user"></i> Empleado:</label>
+                    <input type="text" id="calendario-empleado" class="busqueda-input">
+                </div>
+                <button id="btn-cargar-calendario" class="busqueda-boton">
+                    <i class="fas fa-calendar"></i> Cargar Calendario
+                </button>
+            </div>
+        </div>
+
+        <div id="calendario-asistencias">
+            <!-- Calendario dinámico -->
+        </div>
+    </div>
+
+    <!-- Modal de Registro de Asistencia -->
+    <div class="importarnomina-modal" id="registrarAsistenciaModal">
+        <div class="importarnomina-modal__contenido">
+            <div class="recibo-modal__contenido">
+                <div class="modal-header">
+                    <h3><i class="fas fa-plus"></i> Registrar Asistencia</h3>
+                    <button class="btn-cerrar" onclick="registrarAsistenciaModal__cerrar()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Formulario de registro de asistencia -->
+                    <div class="form-group">
+                        <label for="asistencia-empleado"><i class="fas fa-user"></i> Empleado:</label>
+                        <input type="text" id="asistencia-empleado" class="busqueda-input modal-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="asistencia-fecha"><i class="fas fa-calendar"></i> Fecha:</label>
+                        <input type="date" id="asistencia-fecha" class="busqueda-input modal-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="asistencia-hora-entrada"><i class="fas fa-clock"></i> Hora Entrada:</label>
+                        <input type="time" id="asistencia-hora-entrada" class="busqueda-input modal-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="asistencia-hora-salida"><i class="fas fa-clock"></i> Hora Salida:</label>
+                        <input type="time" id="asistencia-hora-salida" class="busqueda-input modal-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="asistencia-estado"><i class="fas fa-info-circle"></i> Estado:</label>
+                        <select id="asistencia-estado" class="busqueda-input modal-input">
+                            <option value="A">Asistió</option>
+                            <option value="F">Falta</option>
+                            <option value="J">Falta Justificada</option>
+                            <option value="V">Vacaciones</option>
+                            <option value="P">Permiso</option>
+                            <option value="L">Licencia</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="asistencia-notas"><i class="fas fa-sticky-note"></i> Notas:</label>
+                        <textarea id="asistencia-notas" class="busqueda-input modal-input"></textarea>
+                    </div>
+                </div>
+                <div class="recibo-modal__acciones">
+                    <button class="recibo-modal__boton btn-cancelar" onclick="registrarAsistenciaModal__cerrar()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button class="recibo-modal__boton btn-guardar" onclick="submitAsistenciaForm()">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Registro de Justificacion -->
+    <div class="importarnomina-modal" id="registrarJustificacionModal">
+        <div class="importarnomina-modal__contenido">
+            <div class="recibo-modal__contenido">
+                <div class="modal-header">
+                    <h3><i class="fas fa-plus"></i> Registrar Justificación</h3>
+                    <button class="btn-cerrar" onclick="registrarJustificacionModal__cerrar()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Formulario de registro de justificación -->
+                    <div class="form-group">
+                        <label for="justificacion-empleado"><i class="fas fa-user"></i> Empleado:</label>
+                        <input type="text" id="justificacion-empleado" class="busqueda-input modal-input">
+                    </div>
+                    <div class="form-group">
+                    <label for="justificacion-falta"><i class="fas fa-list-ol"></i> Falta a Justificar:</label>
+                    <select id="justificacion-falta" class="busqueda-input modal-input" required>
+                        <option value="">-- Seleccione una falta --</option>
+                        <!-- Se llenará dinámicamente con JavaScript -->
+                    </select>
+                </div>
+                    <div class="form-group">
+                        <label for="justificacion-tipo"><i class="fas fa-tag"></i> Tipo:</label>
+                        <select id="justificacion-tipo" class="busqueda-input modal-input" required>
+                            <option value="">-- Seleccione tipo --</option>
+                            <option value="M">Enfermedad</option>
+                            <option value="P">Permiso</option>
+                            <option value="O">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="justificacion-documento"><i class="fas fa-upload"></i> Documento:</label>
+                        <input type="file" id="justificacion-documento" class="busqueda-input modal-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="justificacion-notas"><i class="fas fa-sticky-note"></i> Notas:</label>
+                        <textarea id="justificacion-notas" class="busqueda-input modal-input"></textarea>
+                    </div>
+                </div>
+
+                <div class="recibo-modal__acciones">
+                    <button class="recibo-modal__boton btn-cancelar" onclick="registrarJustificacionModal__cerrar()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button class="recibo-modal__boton btn-guardar" onclick="submitJustificacionForm()">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Registro de Vacaciones, Permisos y Licencias -->
+    <div class="importarnomina-modal" id="registrarVPLModal">
+        <div class="importarnomina-modal__contenido">
+            <div class="recibo-modal__contenido">
+                <div class="modal-header">
+                    <h3><i class="fas fa-sun"></i> Vacaciones, Permisos y Licencias</h3>
+                    <button class="btn-cerrar" onclick="registrarVPLModal__cerrar()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Formulario de registro de vacaciones, permisos y licencias -->
+                    <div class="form-group">
+                        <label for="vpl-empleado"><i class="fas fa-user"></i> Empleado:</label>
+                        <input type="text" id="vpl-empleado" class="busqueda-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="vpl-tipo"><i class="fas fa-list"></i> Tipo:</label>
+                        <select id="vpl-tipo" class="busqueda-input">
+                            <option value="vacaciones">Vacaciones</option>
+                            <option value="permiso">Permiso</option>
+                            <option value="licencia">Licencia</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="vpl-fecha-inicio"><i class="fas fa-calendar"></i> Fecha Inicio:</label>
+                        <input type="date" id="vpl-fecha-inicio" class="busqueda-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="vpl-fecha-fin"><i class="fas fa-calendar"></i> Fecha Fin:</label>
+                        <input type="date" id="vpl-fecha-fin" class="busqueda-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="vpl-notas"><i class="fas fa-sticky-note"></i> Notas:</label>
+                        <textarea id="vpl-notas" class="busqueda-input"></textarea>
+                    </div>
+                    <div class="form-group" id="vpl-documento-group" style="display: none;">
+                        <label for="vpl-documento"><i class="fas fa-upload"></i> Documento:</label>
+                        <input type="file" id="vpl-documento" class="busqueda-input">
+                    </div>
+                </div>
++
++
++
++                <div class="recibo-modal__acciones">
++                    <button class="recibo-modal__boton btn-cancelar" onclick="registrarVPLModal__cerrar()">
++                        <i class="fas fa-times"></i> Cancelar
++                    </button>
++                    <button class="recibo-modal__boton btn-guardar" onclick="submitVPLForm()">
++                        <i class="fas fa-save"></i> Guardar
++                    </button>
++                </div>
++            </div>
++        </div>
++    </div>
++
+
+    <script>
+        document.getElementById('vpl-tipo').addEventListener('change', function() {
+            var documentoGroup = document.getElementById('vpl-documento-group');
+            if (this.value === 'licencia') {
+                documentoGroup.style.display = 'block';
+            } else {
+                documentoGroup.style.display = 'none';
+            }
+        });
+    </script>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Configuración global
+        const CSRF_TOKEN = "{{ csrf_token }}";
+        const API_ASISTENCIAS_URL = '/api/asistencias/';  // O la ruta correcta a tu endpoint
+    </script>
+    <script>
+        function registrarAsistenciaModal__abrir() {
+            document.getElementById("registrarAsistenciaModal").style.display = "flex";
+        }
+
+        function registrarAsistenciaModal__cerrar() {
+            document.getElementById("registrarAsistenciaModal").style.display = "none";
+        }
+
+        function registrarJustificacionModal__abrir() {
+            document.getElementById("registrarJustificacionModal").style.display = "flex";
+        }
+
+        function registrarJustificacionModal__cerrar() {
+            document.getElementById("registrarJustificacionModal").style.display = "none";
+        }
+
+        function registrarVPLModal__abrir() {
+            document.getElementById("registrarVPLModal").style.display = "flex";
+        }
+
+        function registrarVPLModal__cerrar() {
+            document.getElementById("registrarVPLModal").style.display = "none";
+        }
+    </script>
+    <script src="{% static 'javascript/menu_principal/subs_menus/asistencias.js' %}"></script>
+    <script>
+        document.querySelector('#registrarAsistenciaModal .btn-guardar').addEventListener('click', function() {
+            submitAsistenciaForm();
+        });
+
+        document.querySelector('#registrarJustificacionModal .btn-guardar').addEventListener('click', function() {
+            submitJustificacionForm();
+        });
+
+        document.querySelector('#registrarVPLModal .btn-guardar').addEventListener('click', function() {
+            submitVPLForm();
+        });
+    </script>
+</body>
+</html>

@@ -3,7 +3,6 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.utils import timezone
 from django.db.models import Sum
 
-
 class rol(models.Model):
 
     codigo_rol = models.IntegerField(unique=True, primary_key=True)
@@ -50,7 +49,42 @@ class tipo_trabajador(models.Model):
 
     class Meta:
         db_table = 'tipo_trabajador'
-
+        
+# /////////////////// proceso nomina automatico   ///////////////
+class nivel_salarial(models.Model):
+    GRADO_CHOICES = [
+        ('BI', 'BI - Bachiller I'),
+        ('BII', 'BII - Bachiller II'),
+        ('BIII', 'BIII - Bachiller III'),
+        ('TI', 'TI - Técnico I'),
+        ('TII', 'TII - Técnico II'),
+        ('PI', 'PI - Profesional I'),
+        ('PII', 'PII - Profesional II'),
+        ('PIII', 'PIII - Profesional III'),
+    ]
+    
+    NIVEL_CHOICES = [
+        ('I', 'I'),
+        ('II', 'II'),
+        ('III', 'III'),
+        ('IV', 'IV'),
+        ('V', 'V'),
+        ('VI', 'VI'),
+        ('VII', 'VII'),
+    ]
+    
+    grado = models.CharField(max_length=4, choices=GRADO_CHOICES)
+    nivel = models.CharField(max_length=3, choices=NIVEL_CHOICES)
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    tipo_trabajador = models.ForeignKey(tipo_trabajador, on_delete=models.CASCADE)
+    
+    class Meta:
+        db_table = 'niveles_salariales'
+        unique_together = ('grado', 'nivel', 'tipo_trabajador')
+    
+    def __str__(self):
+        return f"{self.grado}-{self.nivel} (${self.monto})"
+    
 class nivel_cargo(models.Model):
     NIVELES = [
         ('I', 'I'),
@@ -102,16 +136,7 @@ class cargo(models.Model):
         on_delete=models.PROTECT,  # Impide la eliminación pero permite cambios en el nivel
         related_name='cargos'
     )
-    
-    # Atributos específicos del cargo
-    """sueldo_base = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        verbose_name="Sueldo base"
-    )"""
-    
     activo = models.BooleanField(default=True)
-    
     # Metadata
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
@@ -232,6 +257,8 @@ class empleado(models.Model):
     #sueldo_base = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.BooleanField(default=True)  # Activo/Inactivo
     
+    nivel_salarial = models.ForeignKey(nivel_salarial, on_delete=models.PROTECT, null=True)
+    
     # Información bancaria
     
     # Contacto
@@ -276,6 +303,57 @@ class empleado(models.Model):
     @property
     def nombre_completo(self):
         return self.get_nombre_completo()
+    
+
+class asistencias(models.Model):
+    ESTADOS_ASISTENCIA = [
+        ('A', 'Asistió'),
+        ('F', 'Falta'),
+        ('J', 'Falta Justificada'),
+        ('V', 'Vacaciones'),
+        ('P', 'Permiso'),
+        ('L', 'Licencia'),
+    ]
+    
+    empleado = models.ForeignKey(empleado, on_delete=models.CASCADE, related_name='asistencias')
+    fecha = models.DateField()
+    hora_entrada = models.TimeField(null=True, blank=True)
+    hora_salida = models.TimeField(null=True, blank=True)
+    estado = models.CharField(max_length=1, choices=ESTADOS_ASISTENCIA, default='A')
+    observaciones = models.TextField(blank=True, null=True)
+    registrado_por = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        db_table = 'asistencias'
+        verbose_name = 'Asistencia del personal'
+        verbose_name_plural = 'Asistencias del personal'
+    
+    def __str__(self):
+        return f"{self.empleado} - {self.fecha} ({self.get_estado_display()})"
+
+class Justificacion(models.Model):
+    TIPOS_JUSTIFICACION = [
+        ('M', 'Enfermedad'),
+        ('P', 'Permiso'),
+        ('O', 'Otro'),
+    ]
+    
+    asistencias = models.ForeignKey(asistencias, on_delete=models.CASCADE, related_name='justificaciones')
+    tipo = models.CharField(max_length=1, choices=TIPOS_JUSTIFICACION)
+    descripcion = models.TextField()
+    documento = models.FileField(upload_to='justificaciones/', null=True, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    aprobado = models.BooleanField(default=False)
+    aprobado_por = models.ForeignKey(empleado, on_delete=models.SET_NULL, null=True, blank=True, related_name='justificaciones_aprobadas')
+    fecha_aprobacion = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = 'justificaciones'
+        verbose_name = 'Justificación de Falta'
+        verbose_name_plural = 'Justificaciones de Faltas'
+    
+    def __str__(self):
+        return f"Justificación {self.id} - {self.asistencias.empleado}"
 
 class usuario(models.Model):
     """Modelo de usuarios del sistema"""
@@ -339,6 +417,47 @@ class usuario_pregunta(models.Model):
     
     def __str__(self):
         return f"{self.usuario} - {self.pregunta}"
+
+class registro_vacaciones(models.Model):
+    empleado = models.ForeignKey("empleado", on_delete=models.CASCADE)
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    dias = models.PositiveIntegerField()
+    aprobado_por = models.ForeignKey('empleado', on_delete=models.SET_NULL, null=True, related_name='vacaciones_aprobadas')
+    documento = models.FileField(upload_to='vacaciones/', null=True, blank=True)
+
+    def __str__(self):
+        return f"Vacaciones de {self.empleado} desde {self.fecha_inicio} hasta {self.fecha_fin}"
+
+class permiso_asistencias(models.Model):
+    TIPOS_PERMISO = [
+        ('REM', 'Remunerado'),
+        ('NREM', 'No Remunerado'),
+        ('ESP', 'Especial')
+    ]
+    empleado = models.ForeignKey("empleado", on_delete=models.CASCADE)
+    tipo = models.CharField(max_length=4, choices=TIPOS_PERMISO)
+    fecha = models.DateField()
+    horas = models.DecimalField(max_digits=4, decimal_places=2)
+    motivo = models.TextField()
+
+    def __str__(self):
+        return f"Permiso {self.get_tipo_display()} para {self.empleado} el {self.fecha}"
+
+class licencia(models.Model):
+    TIPOS_LICENCIA = [
+        ('MED', 'Médica'),
+        ('MAT', 'Maternidad/Paternidad'),
+        ('STU', 'Estudio')
+    ]
+    empleado = models.ForeignKey("empleado", on_delete=models.CASCADE)
+    tipo = models.CharField(max_length=3, choices=TIPOS_LICENCIA)
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    documento = models.FileField(upload_to='licencias/', null=True, blank=True)
+
+    def __str__(self):
+        return f"Licencia {self.get_tipo_display()} para {self.empleado} desde {self.fecha_inicio} hasta {self.fecha_fin}"
     
 
     #carga nomina
@@ -535,9 +654,3 @@ class detalle_prenomina(models.Model):
         return f"{self.codigo.nombre} - Total: {self.total_monto} (Prenómina {self.prenomina.id_prenomina})"
 
 
-"""class LineaRecibo(models.Model):
-    recibo = models.ForeignKey(ReciboPago, on_delete=models.CASCADE, related_name='lineas')
-    concepto = models.ForeignKey(ConceptoNomina, on_delete=models.PROTECT)
-    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
-    valor = models.DecimalField(max_digits=12, decimal_places=2)
-    tipo = models.CharField(max_length=1, choices=[('I', 'Ingreso'), ('D', 'Deducción')])"""

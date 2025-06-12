@@ -76,6 +76,7 @@ urlpatterns = [
     path('create_backup/', views.create_backup, name='create_backup'),
     path('restore_backup/', views.restore_backup, name='restore_backup'),
     path('delete_backup/', views.delete_backup, name='delete_backup'),
-    
 
+    path('asistencias/', views.asistencias_personal, name='asistencias'),
+    path('api/asistencias/', views.crear_asistencia, name='asistencias'),
 ]

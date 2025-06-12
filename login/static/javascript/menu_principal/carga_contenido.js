@@ -31,6 +31,7 @@ function loadRegularTemplate(templateName) {
         "crear_usuarios.html": "/crear_usuarios",
         "roles_usuarios.html": "/roles_usuarios",
         "crear_roles.html" : "/crear_roles",
+        "asistencias" : "/asistencias",
 
         "gestion_respaldo.html": "/gestion_respaldo"
     };
@@ -98,7 +99,8 @@ function loadTemplateScripts(templateName) {
         "roles_usuarios.html": "/static/javascript/menu_principal/subs_menus/roles_usuarios.js",
         "crear_roles.html": "/static/javascript/menu_principal/subs_menus/crear_roles.js",
         "gestion_respaldo.html": "/static/javascript/menu_principal/subs_menus/gestion_respaldo.js",
-        "ver_prenomina.html": "/static/javascript/menu_principal/subs_menus/ver_prenomina.js"
+        "ver_prenomina.html": "/static/javascript/menu_principal/subs_menus/ver_prenomina.js",
+        "asistencias.html": "/static/javascript/menu_principal/subs_menus/asistencias.js",
     };
 
 
