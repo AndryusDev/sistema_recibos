@@ -118,26 +118,30 @@
         <!-- Tabla de Vacaciones -->
         <div class="tabla-recibo-linea">
             <h3>Vacaciones Registradas</h3>
-            <table class="tabla-recibos" id="tablaVacaciones">
-                <thead class="tabla-recibos__thead">
-                    <tr class="tabla-recibos__fila">
-                        <th class="tabla-recibos__columna">ID</th>
-                        <th class="tabla-recibos__columna">Empleado</th>
-                        <th class="tabla-recibos__columna">Fecha Inicio</th>
-                        <th class="tabla-recibos__columna">Fecha Fin</th>
-                        <th class="tabla-recibos__columna">Aprobado Por</th>
-                        <th class="tabla-recibos__columna">Documento</th>
-                        <th class="tabla-recibos__columna">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="tabla-recibos__tbody" id="cuerpoTablaVacaciones">
-                    <tr>
-                        <td colspan="7" class="text-center">
-                            <i class="fas fa-spinner fa-spin"></i> Cargando vacaciones...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                <table class="tabla-recibos" id="tablaVacaciones">
+                    <thead class="tabla-recibos__thead">
+                        <tr class="tabla-recibos__fila">
+                            <th class="tabla-recibos__columna">ID</th>
+                            <th class="tabla-recibos__columna">Empleado</th>
+                            <th class="tabla-recibos__columna">Fecha Inicio</th>
+                            <th class="tabla-recibos__columna">Fecha Fin</th>
+                            <th class="tabla-recibos__columna">Estado</th>
+                            <th class="tabla-recibos__columna">Días Planificados</th>
+                            <th class="tabla-recibos__columna">Días Efectivos</th>
+                            <th class="tabla-recibos__columna">Días Habilitados</th>
+                            <th class="tabla-recibos__columna">Aprobado Por</th>
+                            <th class="tabla-recibos__columna">Documento</th>
+                            <th class="tabla-recibos__columna">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="tabla-recibos__tbody" id="cuerpoTablaVacaciones">
+                        <tr>
+                            <td colspan="11" class="text-center">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando vacaciones...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             <div id="sin-resultados-vacaciones" class="text-center" style="display: none;">
                 <p>No se encontraron vacaciones con los filtros aplicados</p>
             </div>
@@ -223,15 +227,48 @@
                         </div>
                         <div class="form-group">
                             <label for="nombreVacaciones">Nombre:</label>
-                            <input type="text" id="nombreVacaciones" name="nombre" class="busqueda-input" required />
+                            <input type="text" id="nombreVacaciones" name="nombre" class="busqueda-input" required readonly />
+                        </div>
+                        <div class="form-group" id="marcadorVacaciones" style="margin-top: 1rem;">
+                            <!-- Marcador visual o indicador para Vacaciones -->
+                            <span>Marcador: <i class="fas fa-calendar-check"></i></span>
                         </div>
                         <div class="form-group">
                             <label for="fechaInicioVacaciones">Fecha Inicio:</label>
                             <input type="date" id="fechaInicioVacaciones" name="fecha_inicio" class="busqueda-input" required />
                         </div>
                         <div class="form-group">
+                            <label>Días:</label>
+                            <input type="number" id="diasVacaciones" name="dias" class="busqueda-input" min="1" value="1" required />
+                            <button type="button" id="btnDiasContinuosVacaciones" class="busqueda-boton">Días Continuos</button>
+                            <button type="button" id="btnDiasHabilesVacaciones" class="busqueda-boton">Días Hábiles</button>
+                        </div>
+                        <div class="form-group">
                             <label for="fechaFinVacaciones">Fecha Fin:</label>
                             <input type="date" id="fechaFinVacaciones" name="fecha_fin" class="busqueda-input" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="estadoVacaciones">Estado:</label>
+                            <select id="estadoVacaciones" name="estado" class="busqueda-input" required>
+                                <option value="PLAN">Planificado</option>
+                                <option value="APRO">Aprobado</option>
+                                <option value="EN_C">En Curso</option>
+                                <option value="PAUS">Pausado</option>
+                                <option value="COMP">Completado</option>
+                                <option value="CANC">Cancelado</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="grupoMotivoInhabilitacion" style="display:none;">
+                            <label for="motivoInhabilitacion">Motivo de Inhabilitación:</label>
+                            <textarea id="motivoInhabilitacion" name="motivo_inhabilitacion" class="busqueda-input"></textarea>
+                        </div>
+                        <div class="form-group" id="grupoFechaInhabilitacion" style="display:none;">
+                            <label for="fechaInhabilitacion">Fecha de Inhabilitación:</label>
+                            <input type="date" id="fechaInhabilitacion" name="fecha_inhabilitacion" class="busqueda-input" />
+                        </div>
+                        <div class="form-group" id="grupoFechaReanudacion" style="display:none;">
+                            <label for="fechaReanudacion">Fecha de Reanudación:</label>
+                            <input type="date" id="fechaReanudacion" name="fecha_reanudacion" class="busqueda-input" />
                         </div>
                         <div class="form-group">
                             <label for="aprobadoPorVacaciones">Aprobado Por:</label>
@@ -241,11 +278,12 @@
                             <label for="hechoPorVacaciones">Hecho Por:</label>
                             <input type="text" id="hechoPorVacaciones" name="hecho_por" class="busqueda-input" />
                         </div>
-                        <div class="form-group botones-navegacion">
-                            <button type="button" class="busqueda-boton btn-cancelar" id="btnCancelarVacaciones">Cancelar</button>
-                            <button type="submit" class="busqueda-boton btn-guardar">Guardar</button>
-                        </div>
-                    </form>
+                <div class="form-group botones-navegacion">
+                    <button type="button" class="busqueda-boton btn-cancelar" id="btnCancelarVacaciones">Cancelar</button>
+                    <button type="submit" class="busqueda-boton btn-guardar">Guardar</button>
+                </div>
+            </form>
+        </div>
                 </div>
             </div>
         </div>

@@ -1,5 +1,7 @@
+from datetime import date, timedelta
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
+from django.forms import ValidationError
 from django.utils import timezone
 from django.db.models import Sum
 
@@ -417,48 +419,188 @@ class usuario_pregunta(models.Model):
     
     def __str__(self):
         return f"{self.usuario} - {self.pregunta}"
+    
+class permiso_asistencias(models.Model):
+    empleado = models.ForeignKey('empleado', on_delete=models.CASCADE)
+    fecha_inicio = models.DateField(default=date.today)  # Corregido
+    fecha_fin = models.DateField( default=date.today)
+    descriptcion = models.CharField(
+        max_length=100,
+        default='Permiso de asistencia'  # Corregido (era timezone.now)
+    )
+    aprobado_por = models.ForeignKey(
+        'usuario',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,  # Añadido para formularios
+        related_name="aprobador"
+    )
+    
+    def __str__(self):
+        return f"Permiso de {self.empleado} ({self.fecha_inicio} - {self.fecha_fin})"
+
+    class Meta:
+        verbose_name_plural = "Permisos_asistencias"
+
+class control_vacaciones(models.Model):
+    """
+    Control anual de días acumulados, pendientes y tomados
+    """
+    empleado = models.ForeignKey(
+        'empleado',  # Ajusta según tu app
+        on_delete=models.CASCADE,
+        related_name='vacaciones_control', default=30480815
+    )
+    año = models.PositiveIntegerField()
+    dias_acumulados = models.PositiveIntegerField(default=0)
+    dias_tomados = models.PositiveIntegerField(default=0, editable=False)
+    dias_pendientes = models.PositiveIntegerField(default=0, editable=False)
+    ultima_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('empleado', 'año')
+        verbose_name_plural = 'Controles de Vacaciones'
+
+    def __str__(self):
+        return f"Control {self.año} - {self.empleado}"
+
+    def save(self, *args, **kwargs):
+        self.dias_pendientes = self.dias_acumulados - self.dias_tomados
+        super().save(*args, **kwargs)
+
+    def actualizar_contadores(self):
+        """Actualiza días tomados sumando registros válidos"""
+        resultado = self.registros_vacaciones.aggregate(
+            total_tomados=Sum('dias_efectivos'),
+            total_habilitados=Sum('dias_habilitados')
+        )
+        self.dias_tomados = resultado['total_tomados'] or 0
+        self.save()
 
 class registro_vacaciones(models.Model):
-    empleado = models.ForeignKey("empleado", on_delete=models.CASCADE)
+    """
+    Registro completo del ciclo de vida de cada período vacacional
+    con capacidad de inhabilitar y reanudar
+    """
+    ESTADOS = (
+        ('PLAN', 'Planificado'),
+        ('APRO', 'Aprobado'),
+        ('EN_C', 'En Curso'),
+        ('PAUS', 'Pausado'),
+        ('COMP', 'Completado'),
+        ('CANC', 'Cancelado'),
+    )
+
+    control = models.ForeignKey(
+    'control_vacaciones',
+    on_delete=models.CASCADE,
+    null=True,  # Permite nulos temporalmente
+    blank=True  # Permite blanco en formularios
+)
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
-    dias = models.PositiveIntegerField()
-    aprobado_por = models.ForeignKey('empleado', on_delete=models.SET_NULL, null=True, related_name='vacaciones_aprobadas')
-    documento = models.FileField(upload_to='vacaciones/', null=True, blank=True)
-
-    def __str__(self):
-        return f"Vacaciones de {self.empleado} desde {self.fecha_inicio} hasta {self.fecha_fin}"
-
-class permiso_asistencias(models.Model):
-    TIPOS_PERMISO = [
-        ('REM', 'Remunerado'),
-        ('NREM', 'No Remunerado'),
-        ('ESP', 'Especial')
-    ]
-    empleado = models.ForeignKey("empleado", on_delete=models.CASCADE)
-    tipo = models.CharField(max_length=4, choices=TIPOS_PERMISO)
-    fecha = models.DateField()
-    horas = models.DecimalField(max_digits=4, decimal_places=2)
-    motivo = models.TextField()
-
-    def __str__(self):
-        return f"Permiso {self.get_tipo_display()} para {self.empleado} el {self.fecha}"
-
-class licencia(models.Model):
-    TIPOS_LICENCIA = [
-        ('MED', 'Médica'),
-        ('MAT', 'Maternidad/Paternidad'),
-        ('STU', 'Estudio')
-    ]
-    empleado = models.ForeignKey("empleado", on_delete=models.CASCADE)
-    tipo = models.CharField(max_length=3, choices=TIPOS_LICENCIA)
-    fecha_inicio = models.DateField()
-    fecha_fin = models.DateField()
-    documento = models.FileField(upload_to='licencias/', null=True, blank=True)
-
-    def __str__(self):
-        return f"Licencia {self.get_tipo_display()} para {self.empleado} desde {self.fecha_inicio} hasta {self.fecha_fin}"
+    dias_planificados = models.PositiveIntegerField(
+        default=0,  # Valor por defecto para registros existentes
+        verbose_name="Días planificados de vacaciones"
+    )
+    dias_efectivos = models.PositiveIntegerField(default=0, help_text="Días realmente disfrutados")
+    dias_habilitados = models.PositiveIntegerField(default=0, help_text="Días disponibles para usar")
+    estado = models.CharField(max_length=4, choices=ESTADOS, default='PLAN')
     
+    # Para manejo de interrupciones
+    fecha_inhabilitacion = models.DateField(null=True, blank=True)
+    fecha_reanudacion = models.DateField(null=True, blank=True)
+    motivo_inhabilitacion = models.TextField(null=True, blank=True)
+    
+    # Auditoría
+    creado_en = models.DateTimeField(
+    auto_now_add=True,
+    null=True,  # Permite nulos temporalmente
+    blank=True  # Permite blanco en formularios
+)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-fecha_inicio']
+        verbose_name_plural = 'Registros de Vacaciones'
+
+    def __str__(self):
+        return f"Vacaciones {self.id} - {self.empleado} ({self.get_estado_display()})"
+
+    @property
+    def empleado(self):
+        return self.control.empleado
+
+    def clean(self):
+        if self.fecha_fin <= self.fecha_inicio:
+            raise ValidationError("La fecha de fin debe ser posterior al inicio")
+
+    def save(self, *args, **kwargs):
+        # Cálculo automático al crear
+        if not self.pk:
+            self.dias_planificados = (self.fecha_fin - self.fecha_inicio).days + 1
+            self.dias_habilitados = self.dias_planificados
+        
+        super().save(*args, **kwargs)
+        self.control.actualizar_contadores()
+
+    def aprobar(self):
+        """Transición a estado Aprobado"""
+        if self.estado != 'PLAN':
+            raise ValidationError("Solo vacaciones planificadas pueden aprobarse")
+        self.estado = 'APRO'
+        self.save()
+
+    def iniciar(self):
+        """Comienza el período vacacional"""
+        if self.estado != 'APRO':
+            raise ValidationError("Solo vacaciones aprobadas pueden iniciarse")
+        self.estado = 'EN_C'
+        self.save()
+
+    def inhabilitar(self, fecha_inhabilitacion, motivo):
+        """Pausa las vacaciones por emergencia"""
+        if self.estado != 'EN_C':
+            raise ValidationError("Solo vacaciones en curso pueden inhabilitares")
+        
+        dias_usados = (fecha_inhabilitacion - self.fecha_inicio).days + 1
+        if dias_usados <= 0:
+            raise ValidationError("Fecha de inhabilitación inválida")
+        
+        self.estado = 'PAUS'
+        self.fecha_inhabilitacion = fecha_inhabilitacion
+        self.motivo_inhabilitacion = motivo
+        self.dias_efectivos = dias_usados
+        self.dias_habilitados = self.dias_planificados - dias_usados
+        self.save()
+
+    def reanudar(self, fecha_reanudacion):
+        """Reanuda vacaciones previamente inhabilitadas"""
+        if self.estado != 'PAUS':
+            raise ValidationError("Solo vacaciones pausadas pueden reanudarse")
+        
+        if fecha_reanudacion <= self.fecha_inhabilitacion:
+            raise ValidationError("La reanudación debe ser después de la inhabilitación")
+        
+        # Actualiza fechas y días
+        dias_pausa = (fecha_reanudacion - self.fecha_inhabilitacion).days - 1
+        self.fecha_fin = self.fecha_fin + timedelta(days=dias_pausa)
+        self.fecha_reanudacion = fecha_reanudacion
+        self.estado = 'EN_C'
+        self.save()
+
+    def completar(self):
+        """Marca como completadas normalmente"""
+        if self.estado not in ['EN_C', 'PAUS']:
+            raise ValidationError("Solo vacaciones activas o pausadas pueden completarse")
+        
+        if self.estado == 'PAUS':
+            self.dias_efectivos = (self.fecha_inhabilitacion - self.fecha_inicio).days + 1
+        else:
+            self.dias_efectivos = (date.today() - self.fecha_inicio).days + 1
+        
+        self.estado = 'COMP'
+        self.save()
 
     #carga nomina
 
