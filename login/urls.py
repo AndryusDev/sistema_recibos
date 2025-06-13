@@ -1,4 +1,4 @@
-from django.urls import path, include 
+from django.urls import path
 from . import views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.contrib import admin
@@ -85,4 +85,9 @@ urlpatterns = [
     path('api/justificaciones/', views.crear_justificacion, name = 'crear_justificacion'),
     path('justificacion/', views.listar_justificaciones, name='justificacion'),
 
+    path('vacaciones_permisos/', views.vacaciones_permisos, name='vacaciones_permisos'),
+
+    path('api/vacaciones_permisos/listar/', views.listar_vacaciones_permisos, name='listar_vacaciones_permisos'),
+    path('api/vacaciones_permisos/crear/', views.crear_vacacion_permiso, name='crear_vacacion_permiso'),
+    path('api/empleado_por_cedula/', views.empleado_por_cedula, name='empleado_por_cedula'),
 ]

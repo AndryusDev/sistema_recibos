@@ -250,17 +250,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Justificaciones filter and fetch
-    const filterButtonJustificaciones = document.getElementById('btn-aplicar-filtros-justificaciones');
+    const filterButtonJustificaciones = document.getElementById('btn-aplicar-filtros-justificacion');
     if (filterButtonJustificaciones) {
         filterButtonJustificaciones.addEventListener('click', () => {
-            const cedula = document.getElementById('filtro-cedula-justificaciones').value;
-            const fechaInicio = document.getElementById('filtro-fecha-inicio-justificaciones').value;
-            const fechaFin = document.getElementById('filtro-fecha-fin-justificaciones').value;
+            const cedula = document.getElementById('filtro-empleado-justificacion').value;
+            const fechaInicio = document.getElementById('filtro-fecha-inicio-justificacion').value;
+            const fechaFin = document.getElementById('filtro-fecha-fin-justificacion').value;
+            const estado = document.getElementById('filtro-estado-justificacion').value;
 
             const filters = {};
             if (cedula) filters.cedula = cedula;
             if (fechaInicio) filters.fecha_inicio = new Date(fechaInicio).toISOString().slice(0, 10);
             if (fechaFin) filters.fecha_fin = new Date(fechaFin).toISOString().slice(0, 10);
+            if (estado) filters.estado = estado;
 
             fetchJustificaciones(filters);
         });

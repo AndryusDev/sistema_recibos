@@ -1,0 +1,257 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gestión de Vacaciones y Permisos - Sistema Policial</title>
+    <link rel="stylesheet" href="{% static 'css/asistencias.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/vacaciones_permisos.css' %}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+</head>
+<body>
+    <script>
+        // Expose current session user's full name to JavaScript
+        const CURRENT_SESSION_USER_NAME = "{{ request.user.get_full_name|escapejs }}";
+    </script>
+    <div class="titulo-pagina">
+        <h1>Gestión de Vacaciones y Permisos</h1>
+    </div>
+
+    <div class="contenedor-tabla-recibos">
+        <!-- Panel de Búsqueda/Filtros - Permisos -->
+        <div class="panel-busqueda">
+            <h4>Filtros de Permisos</h4>
+            <div class="busqueda-grupo">
+                <div class="form-group">
+                    <label for="filtro-empleado-permiso"><i class="fas fa-user"></i> Empleado:</label>
+                    <input type="text" id="filtro-empleado-permiso" class="busqueda-input" placeholder="Nombre o cédula" />
+                </div>
+                <div class="form-group">
+                    <label for="filtro-tipo-permiso"><i class="fas fa-filter"></i> Tipo Permiso:</label>
+                    <select id="filtro-tipo-permiso" class="busqueda-input">
+                        <option value="">Todos</option>
+                        <option value="permiso">Permiso</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filtro-fecha-inicio-permiso"><i class="fas fa-calendar"></i> Fecha Inicio:</label>
+                    <input type="date" id="filtro-fecha-inicio-permiso" class="busqueda-input" />
+                </div>
+                <div class="form-group">
+                    <label for="filtro-fecha-fin-permiso"><i class="fas fa-calendar"></i> Fecha Fin:</label>
+                    <input type="date" id="filtro-fecha-fin-permiso" class="busqueda-input" />
+                </div>
+                <button id="btn-aplicar-filtros-permiso" class="busqueda-boton">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <button id="btn-limpiar-filtros-permiso" class="busqueda-boton secundario">
+                    <i class="fas fa-broom"></i> Limpiar
+                </button>
+                <button class="busqueda-boton" id="btn-registrar-permiso">
+                    <i class="fas fa-plus"></i> Registrar Permiso
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de Permisos -->
+        <div class="tabla-recibo-linea">
+            <h3>Permisos Registrados</h3>
+            <table class="tabla-recibos" id="tablaPermisos">
+                <thead class="tabla-recibos__thead">
+                    <tr class="tabla-recibos__fila">
+                        <th class="tabla-recibos__columna">ID</th>
+                        <th class="tabla-recibos__columna">Empleado</th>
+                        <th class="tabla-recibos__columna">Fecha Inicio</th>
+                        <th class="tabla-recibos__columna">Fecha Fin</th>
+                        <th class="tabla-recibos__columna">Tipo Permiso</th>
+                        <th class="tabla-recibos__columna">Aprobado Por</th>
+                        <th class="tabla-recibos__columna">Documento</th>
+                        <th class="tabla-recibos__columna">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="tabla-recibos__tbody" id="cuerpoTablaPermisos">
+                    <tr>
+                        <td colspan="8" class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando permisos...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div id="sin-resultados-permisos" class="text-center" style="display: none;">
+                <p>No se encontraron permisos con los filtros aplicados</p>
+            </div>
+            <div class="paginacion" id="paginacion-permisos">
+                <!-- Paginación dinámica -->
+            </div>
+        </div>
+
+        <!-- Panel de Búsqueda/Filtros - Vacaciones -->
+        <div class="panel-busqueda" style="margin-top: 2rem;">
+            <h4>Filtros de Vacaciones</h4>
+            <div class="busqueda-grupo">
+                <div class="form-group">
+                    <label for="filtro-empleado-vacaciones"><i class="fas fa-user"></i> Empleado:</label>
+                    <input type="text" id="filtro-empleado-vacaciones" class="busqueda-input" placeholder="Nombre o cédula" />
+                </div>
+                <div class="form-group">
+                    <label for="filtro-fecha-inicio-vacaciones"><i class="fas fa-calendar"></i> Fecha Inicio:</label>
+                    <input type="date" id="filtro-fecha-inicio-vacaciones" class="busqueda-input" />
+                </div>
+                <div class="form-group">
+                    <label for="filtro-fecha-fin-vacaciones"><i class="fas fa-calendar"></i> Fecha Fin:</label>
+                    <input type="date" id="filtro-fecha-fin-vacaciones" class="busqueda-input" />
+                </div>
+                <button id="btn-aplicar-filtros-vacaciones" class="busqueda-boton">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <button id="btn-limpiar-filtros-vacaciones" class="busqueda-boton secundario">
+                    <i class="fas fa-broom"></i> Limpiar
+                </button>
+                <button class="busqueda-boton" id="btn-registrar-vacaciones">
+                    <i class="fas fa-plus"></i> Registrar Vacación
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de Vacaciones -->
+        <div class="tabla-recibo-linea">
+            <h3>Vacaciones Registradas</h3>
+            <table class="tabla-recibos" id="tablaVacaciones">
+                <thead class="tabla-recibos__thead">
+                    <tr class="tabla-recibos__fila">
+                        <th class="tabla-recibos__columna">ID</th>
+                        <th class="tabla-recibos__columna">Empleado</th>
+                        <th class="tabla-recibos__columna">Fecha Inicio</th>
+                        <th class="tabla-recibos__columna">Fecha Fin</th>
+                        <th class="tabla-recibos__columna">Aprobado Por</th>
+                        <th class="tabla-recibos__columna">Documento</th>
+                        <th class="tabla-recibos__columna">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="tabla-recibos__tbody" id="cuerpoTablaVacaciones">
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando vacaciones...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div id="sin-resultados-vacaciones" class="text-center" style="display: none;">
+                <p>No se encontraron vacaciones con los filtros aplicados</p>
+            </div>
+            <div class="paginacion" id="paginacion-vacaciones">
+                <!-- Paginación dinámica -->
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal para registrar Permiso -->
+    <div class="importarnomina-modal" id="modalRegistrarPermiso">
+        <div class="importarnomina-modal__contenido">
+            <div class="recibo-modal__contenido">
+                <div class="modal-header">
+                    <h3>Registrar Permiso</h3>
+                    <button class="btn-cerrar" id="btnCerrarModalPermiso">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="formRegistrarPermiso">
+                        <div class="form-group">
+                            <label for="cedulaPermiso">Cédula:</label>
+                            <input type="text" id="cedulaPermiso" name="cedula" class="busqueda-input" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="nombrePermiso">Nombre:</label>
+                            <input type="text" id="nombrePermiso" name="nombre" class="busqueda-input" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="descripcionPermiso">Descripción del Permiso:</label>
+                            <input type="text" id="descripcionPermiso" name="descripcion" class="busqueda-input" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="fechaInicioPermiso">Fecha Inicio:</label>
+                            <input type="date" id="fechaInicioPermiso" name="fecha_inicio" class="busqueda-input" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="diasPermiso">Días:</label>
+                            <input type="number" id="diasPermiso" name="dias" class="busqueda-input" min="1" value="1" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="fechaInicioPermiso">Fecha Final:</label>
+                            <input type="date" id="fechaFinalPermiso" name="fecha_final" class="busqueda-input" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Días:</label>
+                            <div>
+                                <button type="button" id="btnDiasContinuos" class="busqueda-boton">Días Continuos</button>
+                                <button type="button" id="btnDiasHabiles" class="busqueda-boton">Días Hábiles</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="aprobadoPorPermiso">Aprobado Por:</label>
+                            <input type="text" id="aprobadoPorPermiso" name="aprobado_por" class="busqueda-input" />
+                        </div>
+                        <div class="form-group">
+                            <label for="hechoPorPermiso">Hecho Por:</label>
+                            <input type="text" id="hechoPorPermiso" name="hecho_por" class="busqueda-input" />
+                        </div>
+                        <div class="form-group botones-navegacion">
+                            <button type="button" class="busqueda-boton btn-cancelar" id="btnCancelarPermiso">Cancelar</button>
+                            <button type="submit" class="busqueda-boton btn-guardar">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para registrar Vacaciones -->
+    <div class="importarnomina-modal" id="modalRegistrarVacaciones">
+        <div class="importarnomina-modal__contenido">
+            <div class="recibo-modal__contenido">
+                <div class="modal-header">
+                    <h3>Registrar Vacaciones</h3>
+                    <button class="btn-cerrar" id="btnCerrarModalVacaciones">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="formRegistrarVacaciones">
+                        <div class="form-group">
+                            <label for="cedulaVacaciones">Cédula:</label>
+                            <input type="text" id="cedulaVacaciones" name="cedula" class="busqueda-input" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="nombreVacaciones">Nombre:</label>
+                            <input type="text" id="nombreVacaciones" name="nombre" class="busqueda-input" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="fechaInicioVacaciones">Fecha Inicio:</label>
+                            <input type="date" id="fechaInicioVacaciones" name="fecha_inicio" class="busqueda-input" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="fechaFinVacaciones">Fecha Fin:</label>
+                            <input type="date" id="fechaFinVacaciones" name="fecha_fin" class="busqueda-input" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="aprobadoPorVacaciones">Aprobado Por:</label>
+                            <input type="text" id="aprobadoPorVacaciones" name="aprobado_por" class="busqueda-input" />
+                        </div>
+                        <div class="form-group">
+                            <label for="hechoPorVacaciones">Hecho Por:</label>
+                            <input type="text" id="hechoPorVacaciones" name="hecho_por" class="busqueda-input" />
+                        </div>
+                        <div class="form-group botones-navegacion">
+                            <button type="button" class="busqueda-boton btn-cancelar" id="btnCancelarVacaciones">Cancelar</button>
+                            <button type="submit" class="busqueda-boton btn-guardar">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'javascript/menu_principal/subs_menus/vacaciones_permisos.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</body>
+</html>

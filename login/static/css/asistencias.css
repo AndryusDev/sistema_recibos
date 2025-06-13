@@ -638,3 +638,12 @@
 #btn-importar {
     display: none;
 }
+
+/* Center text horizontally and vertically in asistencias and justificaciones tables */
+#tablaAsistencias td,
+#tablaAsistencias th,
+#tablaJustificaciones td,
+#tablaJustificaciones th {
+    text-align: center;
+    vertical-align: middle;
+}

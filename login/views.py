@@ -355,12 +355,117 @@ def crear_roles(request):
 def asistencias_personal(request):
     return render(request, 'menu_principal/subs_menus/asistencias.html')
 
-def vacaciones_permisos_panel(request):
+def vacaciones_permisos(request):
         return render(request, 'menu_principal/subs_menus/vacaciones_permisos.html')
 
-def vacaciones_permisos_panel(request):
-        return render(request, 'menu_principal/subs_menus/vacaciones_permisos.html')
+from .models import registro_vacaciones, permiso_asistencias, empleado
 
+@csrf_exempt
+@require_http_methods(["GET"])
+def listar_vacaciones_permisos(request):
+    try:
+        vacaciones = registro_vacaciones.objects.select_related('empleado', 'aprobado_por').all()
+        permisos = permiso_asistencias.objects.select_related('empleado').all()
+
+        lista_registros = []
+
+        for vac in vacaciones:
+            lista_registros.append({
+                'id': f'vac_{vac.id}',
+                'tipo': 'Vacaciones',
+                'empleado': f"{vac.empleado.primer_nombre} {vac.empleado.primer_apellido}",
+                'fecha_inicio': vac.fecha_inicio.strftime('%Y-%m-%d'),
+                'fecha_fin': vac.fecha_fin.strftime('%Y-%m-%d'),
+                'aprobado_por': f"{vac.aprobado_por.primer_nombre} {vac.aprobado_por.primer_apellido}" if vac.aprobado_por else '',
+                'documento_url': vac.documento.url if vac.documento else '',
+            })
+
+        for perm in permisos:
+            lista_registros.append({
+                'id': f'perm_{perm.id}',
+                'tipo': f"Permiso ({perm.get_tipo_display()})",
+                'empleado': f"{perm.empleado.primer_nombre} {perm.empleado.primer_apellido}",
+                'fecha_inicio': perm.fecha.strftime('%Y-%m-%d'),
+                'fecha_fin': perm.fecha.strftime('%Y-%m-%d'),
+                'aprobado_por': '',
+                'documento_url': '',
+            })
+
+        return JsonResponse({'success': True, 'registros': lista_registros})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def crear_vacacion_permiso(request):
+    try:
+        data = json.loads(request.body)
+        tipo = data.get('tipo')
+        empleado_cedula = data.get('empleado_cedula')
+        fecha_inicio = data.get('fecha_inicio')
+        fecha_fin = data.get('fecha_fin')
+        aprobado_por_cedula = data.get('aprobado_por_cedula')
+        documento = None  # File upload handling not implemented here
+
+        if not all([tipo, empleado_cedula, fecha_inicio, fecha_fin]):
+            return JsonResponse({'success': False, 'message': 'Faltan campos requeridos.'}, status=400)
+
+        try:
+            empleado_obj = empleado.objects.get(cedula=empleado_cedula)
+        except ObjectDoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
+
+        aprobado_por_obj = None
+        if aprobado_por_cedula:
+            try:
+                aprobado_por_obj = empleado.objects.get(cedula=aprobado_por_cedula)
+            except ObjectDoesNotExist:
+                aprobado_por_obj = None
+
+        if tipo.lower() == 'vacaciones':
+            dias = (datetime.strptime(fecha_fin, '%Y-%m-%d') - datetime.strptime(fecha_inicio, '%Y-%m-%d')).days + 1
+            vac = registro_vacaciones.objects.create(
+                empleado=empleado_obj,
+                fecha_inicio=fecha_inicio,
+                fecha_fin=fecha_fin,
+                dias=dias,
+                aprobado_por=aprobado_por_obj,
+                documento=documento
+            )
+            return JsonResponse({'success': True, 'message': 'Vacación registrada correctamente.'})
+
+        elif tipo.lower() == 'permiso':
+            perm = permiso_asistencias.objects.create(
+                empleado=empleado_obj,
+                tipo='REM',  # Default type, could be extended to accept from data
+                fecha=fecha_inicio,
+                horas=8,  # Default hours, could be extended
+                motivo=data.get('motivo', '')
+            )
+            return JsonResponse({'success': True, 'message': 'Permiso registrado correctamente.'})
+
+        else:
+            return JsonResponse({'success': False, 'message': 'Tipo no válido.'}, status=400)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'JSON inválido.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    
+@require_http_methods(["GET"])
+def empleado_por_cedula(request):
+    cedula = request.GET.get('cedula')
+    if not cedula:
+        return JsonResponse({'success': False, 'message': 'Cédula no proporcionada.'}, status=400)
+    try:
+        empleado_obj = empleado.objects.get(cedula=cedula)
+        empleado_data = {
+            'primer_nombre': empleado_obj.primer_nombre,
+            'primer_apellido': empleado_obj.primer_apellido,
+        }
+        return JsonResponse({'success': True, 'empleado': empleado_data})
+    except empleado.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
