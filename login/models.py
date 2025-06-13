@@ -435,12 +435,12 @@ class permiso_asistencias(models.Model):
         blank=True,  # Añadido para formularios
         related_name="aprobador"
     )
-    
+    class Meta:
+        db_table = 'permiso_asistencias'
+        verbose_name_plural = "Permisos_asistencias"
+
     def __str__(self):
         return f"Permiso de {self.empleado} ({self.fecha_inicio} - {self.fecha_fin})"
-
-    class Meta:
-        verbose_name_plural = "Permisos_asistencias"
 
 class control_vacaciones(models.Model):
     """
@@ -458,6 +458,7 @@ class control_vacaciones(models.Model):
     ultima_actualizacion = models.DateTimeField(auto_now=True)
 
     class Meta:
+        db_table = 'control_vacaciones'
         unique_together = ('empleado', 'año')
         verbose_name_plural = 'Controles de Vacaciones'
 
@@ -521,6 +522,7 @@ class registro_vacaciones(models.Model):
     actualizado_en = models.DateTimeField(auto_now=True)
 
     class Meta:
+        db_table = 'registros_vacaciones'
         ordering = ['-fecha_inicio']
         verbose_name_plural = 'Registros de Vacaciones'
 

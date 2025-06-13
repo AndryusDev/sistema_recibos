@@ -437,10 +437,10 @@ def crear_vacacion_permiso(request):
         elif tipo.lower() == 'permiso':
             perm = permiso_asistencias.objects.create(
                 empleado=empleado_obj,
-                tipo='REM',  # Default type, could be extended to accept from data
-                fecha=fecha_inicio,
-                horas=8,  # Default hours, could be extended
-                motivo=data.get('motivo', '')
+                fecha_inicio=fecha_inicio,
+                fecha_fin=fecha_fin,
+                descriptcion=data.get('motivo', 'Permiso de asistencia'),
+                aprobado_por=aprobado_por_obj
             )
             return JsonResponse({'success': True, 'message': 'Permiso registrado correctamente.'})
 
