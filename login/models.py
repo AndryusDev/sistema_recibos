@@ -428,7 +428,7 @@ class permiso_asistencias(models.Model):
         max_length=100,
         default='Permiso de asistencia'  # Corregido (era timezone.now)
     )
-    aprobado_por = models.ForeignKey(
+    hecho_por = models.ForeignKey(
         'usuario',
         on_delete=models.SET_NULL,
         null=True,

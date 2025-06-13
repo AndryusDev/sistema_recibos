@@ -31,9 +31,10 @@ function loadRegularTemplate(templateName) {
         "crear_usuarios.html": "/crear_usuarios",
         "roles_usuarios.html": "/roles_usuarios",
         "crear_roles.html" : "/crear_roles",
-        "asistencias" : "/asistencias",
+        "asistencias.html" : "/asistencias",
 
-        "gestion_respaldo.html": "/gestion_respaldo"
+        "gestion_respaldo.html": "/gestion_respaldo",
+        "vacaciones_permisos.html": "/vacaciones_permisos",
     };
 
     const url = templateUrls[templateName];
@@ -101,6 +102,7 @@ function loadTemplateScripts(templateName) {
         "gestion_respaldo.html": "/static/javascript/menu_principal/subs_menus/gestion_respaldo.js",
         "ver_prenomina.html": "/static/javascript/menu_principal/subs_menus/ver_prenomina.js",
         "asistencias.html": "/static/javascript/menu_principal/subs_menus/asistencias.js",
+        "vacaciones_permisos.html": "/static/javascript/menu_principal/subs_menus/vacaciones_permisos.js",
     };
 
 
@@ -219,6 +221,15 @@ function initializeTemplateFunctions(templateName) {
             if (window.initializeVerPrenomina) {
                 console.log("Ejecutando initializeVerPrenomina");
                 initializeVerPrenomina();
+            }
+        }
+
+        if (templateName === "vacaciones_permisos.html") {
+            if (typeof window.initializeVacacionesPermisos === 'function') {
+                console.log("Ejecutando initializeVacacionesPermisos");
+                window.initializeVacacionesPermisos();
+            } else {
+                console.warn("initializeVacacionesPermisos no está disponible");
             }
         }
     } catch (error) {

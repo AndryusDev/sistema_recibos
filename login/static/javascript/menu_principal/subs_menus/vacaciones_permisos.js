@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function () {
+function initializeVacacionesPermisos() {
     const tablaRegistros = document.getElementById('tablaVacacionesPermisos')?.getElementsByTagName('tbody')[0];
     const btnBuscar = document.getElementById('btn-buscar-vacaciones-permisos');
     const btnLimpiar = document.getElementById('btn-limpiar-vacaciones-permisos');
@@ -127,9 +127,6 @@ document.addEventListener('DOMContentLoaded', function () {
         formRegistro.addEventListener('submit', enviarFormulario);
     }
 
-    // Cargar registros al iniciar
-    cargarRegistros();
-
     // Modal elements
     const modalRegistrarPermiso = document.getElementById('modalRegistrarPermiso');
     const btnRegistrarPermiso = document.getElementById('btn-registrar-permiso');
@@ -193,13 +190,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // New code for permisos modal enhancements
-
     // Auto-fill "Hecho Por" with current session user and make readonly
     const hechoPorInput = document.getElementById('hechoPorPermiso');
     if (hechoPorInput && typeof CURRENT_SESSION_USER_NAME !== 'undefined') {
         hechoPorInput.value = CURRENT_SESSION_USER_NAME;
         hechoPorInput.readOnly = true;
+    }
+
+    // Auto-fill "Hecho Por" in Registrar Vacaciones modal and make readonly
+    const hechoPorVacacionesInput = document.getElementById('hechoPorVacaciones');
+    if (hechoPorVacacionesInput && typeof CURRENT_SESSION_USER_NAME !== 'undefined') {
+        hechoPorVacacionesInput.value = CURRENT_SESSION_USER_NAME;
+        hechoPorVacacionesInput.readOnly = true;
     }
 
     // Auto-fill "Nombre" when "Cédula" input changes
@@ -347,4 +349,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-});
+
+    // Initial load
+    cargarRegistros();
+}
+
+// Expose the initialization function
+window.initializeVacacionesPermisos = initializeVacacionesPermisos;
