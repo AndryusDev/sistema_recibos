@@ -215,6 +215,7 @@ class cuenta_bancaria(models.Model):
     def __str__(self):
         return f"{self.empleado} - {self.banco} ({self.get_tipo_display()}) {self.numero_cuenta}"
 
+from dateutil.relativedelta import relativedelta
     
 class empleado(models.Model):
     TIPO_IDENTIFICACION = [
@@ -294,13 +295,54 @@ class empleado(models.Model):
         apellidos = f"{self.primer_apellido} {self.segundo_apellido or ''}".strip()
         return f"{apellidos} {nombres}"
     
-    def get_antiguedad(self):
-        from dateutil.relativedelta import relativedelta
-        from django.utils import timezone
+    def calcular_antiguedad(self, fecha_referencia=None):
+        """Calcula años completos desde el ingreso hasta la fecha de referencia"""
+        fecha_referencia = fecha_referencia or date.today()
+        return relativedelta(fecha_referencia, self.fecha_ingreso).years
+
+    def calcular_dias_vacaciones_por_año(self, año):
+        """
+        Calcula días según normativa venezolana:
+        - 15 días al 1er año
+        - +1 día por cada año adicional (máx 30)
+        """
+        if año < self.fecha_ingreso.year:
+            return 0
+            
+        try:
+            aniversario = date(año, self.fecha_ingreso.month, self.fecha_ingreso.day)
+        except ValueError:  # Para 29/feb en años no bisiestos
+            aniversario = date(año, 3, 1)
+
+        antiguedad = self.calcular_antiguedad(aniversario)
         
-        hoy = timezone.now().date()
-        delta = relativedelta(hoy, self.fecha_ingreso)
-        return f"{delta.years} años, {delta.months} meses y {delta.days} días"
+        if antiguedad < 1:
+            return 0
+        return min(15 + max(antiguedad - 1, 0), 30)
+
+    def generar_registros_vacaciones(self):
+        """Crea registros solo para años faltantes sin modificar existentes"""
+        año_actual = date.today().year
+        
+        for año in range(self.fecha_ingreso.year, año_actual + 1):
+            if not control_vacaciones.objects.filter(empleado=self, año=año).exists():
+                dias = self.calcular_dias_vacaciones_por_año(año)
+                if dias > 0:
+                    control_vacaciones.objects.create(
+                        empleado=self,
+                        año=año,
+                        dias_acumulados=dias,
+                        dias_pendientes=dias
+                    )
+
+    def save(self, *args, **kwargs):
+        es_nuevo = not self.pk
+        super().save(*args, **kwargs)
+        if es_nuevo:
+            self.generar_registros_vacaciones()
+
+    def __str__(self):
+        return self.get_nombre_completo()
     
     @property
     def nombre_completo(self):
@@ -449,7 +491,7 @@ class control_vacaciones(models.Model):
     empleado = models.ForeignKey(
         'empleado',  # Ajusta según tu app
         on_delete=models.CASCADE,
-        related_name='vacaciones_control', default=30480815
+        related_name='vacaciones_control',
     )
     año = models.PositiveIntegerField()
     dias_acumulados = models.PositiveIntegerField(default=0)
@@ -462,21 +504,16 @@ class control_vacaciones(models.Model):
         unique_together = ('empleado', 'año')
         verbose_name_plural = 'Controles de Vacaciones'
 
-    def __str__(self):
-        return f"Control {self.año} - {self.empleado}"
+    def clean(self):
+        if self.dias_pendientes < 0:
+            raise ValidationError("Los días pendientes no pueden ser negativos")
 
     def save(self, *args, **kwargs):
         self.dias_pendientes = self.dias_acumulados - self.dias_tomados
         super().save(*args, **kwargs)
 
-    def actualizar_contadores(self):
-        """Actualiza días tomados sumando registros válidos"""
-        resultado = self.registros_vacaciones.aggregate(
-            total_tomados=Sum('dias_efectivos'),
-            total_habilitados=Sum('dias_habilitados')
-        )
-        self.dias_tomados = resultado['total_tomados'] or 0
-        self.save()
+    def __str__(self):
+        return f"Control {self.año} - {self.empleado}"
 
 class registro_vacaciones(models.Model):
     """

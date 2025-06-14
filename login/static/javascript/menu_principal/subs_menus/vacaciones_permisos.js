@@ -59,8 +59,12 @@ function initializeVacacionesPermisos() {
         const motivo = formData.get('motivo');
 
         if (!tipo || !empleado_cedula || !fecha_inicio || !fecha_fin) {
-            alert('Por favor complete todos los campos obligatorios.');
-            return;
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campos incompletos',
+                    text: 'Por favor complete todos los campos obligatorios.',
+                });
+                return;
         }
 
         const payload = {
@@ -82,17 +86,25 @@ function initializeVacacionesPermisos() {
                 body: JSON.stringify(payload)
             });
             const data = await response.json();
-            if (data.success) {
-                alert(data.message);
-                form.reset();
-                cargarRegistros();
-            } else {
-                alert('Error al registrar: ' + data.message);
+                if (data.success) {
+                    alert(data.message);
+                    form.reset();
+                    cargarRegistros();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al registrar',
+                        text: data.message,
+                    });
+                }
+            } catch (error) {
+                console.error('Error al enviar formulario:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al enviar formulario',
+                });
             }
-        } catch (error) {
-            console.error('Error al enviar formulario:', error);
-            alert('Error al enviar formulario');
-        }
     }
 
     async function getCurrentUserInfo() {
@@ -274,6 +286,35 @@ function initializeVacacionesPermisos() {
         });
     }
 
+    // Auto-fill "Nombre" in Registrar Vacaciones modal when "Cédula" input changes
+    const cedulaVacacionesInput = document.getElementById('cedulaVacaciones');
+    const nombreVacacionesInput = document.getElementById('nombreVacaciones');
+    if (cedulaVacacionesInput && nombreVacacionesInput) {
+        cedulaVacacionesInput.addEventListener('change', async () => {
+            const cedula = cedulaVacacionesInput.value.trim();
+            if (cedula.length === 0) {
+                nombreVacacionesInput.value = '';
+                return;
+            }
+            try {
+                const response = await fetch(`/api/empleado_por_cedula/?cedula=${encodeURIComponent(cedula)}`);
+                if (!response.ok) {
+                    nombreVacacionesInput.value = '';
+                    return;
+                }
+                const data = await response.json();
+                if (data.success && data.empleado) {
+                    nombreVacacionesInput.value = `${data.empleado.primer_nombre} ${data.empleado.primer_apellido}`;
+                } else {
+                    nombreVacacionesInput.value = '';
+                }
+            } catch (error) {
+                console.error('Error fetching empleado:', error);
+                nombreVacacionesInput.value = '';
+            }
+        });
+    }
+
     // Date calculation helpers
     function addDays(date, days) {
         const result = new Date(date);
@@ -343,16 +384,28 @@ function initializeVacacionesPermisos() {
         formRegistrarPermiso.addEventListener('submit', async (event) => {
             event.preventDefault();
 
-            const cedula = cedulaInput.value.trim();
-            const nombre = nombreInput.value.trim();
-            const descripcion = document.getElementById('descripcionPermiso').value.trim();
-            const fechaInicio = fechaInicioInput.value;
-            const fechaFinal = fechaFinalInput.value;
-            const aprobadoPor = document.getElementById('aprobadoPorPermiso').value.trim();
-            const hechoPor = hechoPorInput.value.trim();
+            const cedulaInputLocal = document.getElementById('cedulaPermiso');
+            const nombreInputLocal = document.getElementById('nombrePermiso');
+            const descripcionInput = document.getElementById('descripcionPermiso');
+            const fechaInicioInputLocal = document.getElementById('fechaInicioPermiso');
+            const fechaFinalInputLocal = document.getElementById('fechaFinalPermiso');
+            const aprobadoPorInput = document.getElementById('aprobadoPorPermiso');
+            const hechoPorInputLocal = document.getElementById('hechoPorPermiso');
+
+            const cedula = cedulaInputLocal ? cedulaInputLocal.value.trim() : '';
+            const nombre = nombreInputLocal ? nombreInputLocal.value.trim() : '';
+            const descripcion = descripcionInput ? descripcionInput.value.trim() : '';
+            const fechaInicio = fechaInicioInputLocal ? fechaInicioInputLocal.value : '';
+            const fechaFinal = fechaFinalInputLocal ? fechaFinalInputLocal.value : '';
+            const aprobadoPor = aprobadoPorInput ? aprobadoPorInput.value.trim() : '';
+            const hechoPor = hechoPorInputLocal ? hechoPorInputLocal.value.trim() : '';
 
             if (!cedula || !nombre || !descripcion || !fechaInicio || !fechaFinal) {
-                alert('Por favor complete todos los campos obligatorios.');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campos incompletos',
+                    text: 'Por favor complete todos los campos obligatorios.',
+                });
                 return;
             }
 
@@ -382,11 +435,19 @@ function initializeVacacionesPermisos() {
                     modalRegistrarPermiso.style.display = 'none';
                     cargarRegistros();
                 } else {
-                    alert('Error al registrar permiso: ' + data.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al registrar permiso',
+                        text: data.message,
+                    });
                 }
             } catch (error) {
                 console.error('Error al registrar permiso:', error);
-                alert('Error al registrar permiso');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al registrar permiso',
+                    text: 'Error al registrar permiso',
+                });
             }
         });
     }
