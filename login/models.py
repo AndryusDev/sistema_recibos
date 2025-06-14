@@ -512,8 +512,22 @@ class control_vacaciones(models.Model):
         self.dias_pendientes = self.dias_acumulados - self.dias_tomados
         super().save(*args, **kwargs)
 
+    def actualizar_contadores(self):
+        # Calcular dias_tomados sumando dias_efectivos de registros aprobados o completados
+        from django.db.models import Q, Sum
+        total_dias_tomados = self.registros_vacaciones.filter(
+            Q(estado='APRO') | Q(estado='EN_C') | Q(estado='PAUS') | Q(estado='COMP')
+        ).aggregate(total=Sum('dias_efectivos'))['total'] or 0
+        self.dias_tomados = total_dias_tomados
+        # dias_pendientes = dias_acumulados - dias_tomados, pero no puede ser negativo
+        self.dias_pendientes = max(self.dias_acumulados - self.dias_tomados, 0)
+        self.save()
+
     def __str__(self):
         return f"Control {self.año} - {self.empleado}"
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class registro_vacaciones(models.Model):
     """
@@ -532,6 +546,7 @@ class registro_vacaciones(models.Model):
     control = models.ForeignKey(
     'control_vacaciones',
     on_delete=models.CASCADE,
+    related_name='registros_vacaciones',
     null=True,  # Permite nulos temporalmente
     blank=True  # Permite blanco en formularios
 )
@@ -582,7 +597,66 @@ class registro_vacaciones(models.Model):
         
         super().save(*args, **kwargs)
         self.control.actualizar_contadores()
-
+    
+    def descontar_dia_habil(self):
+        """
+        Descuenta un día hábil de dias_habilitados y aumenta dias_efectivos si está en curso.
+        """
+        if self.estado == 'EN_C' and self.dias_habilitados > 0:
+            self.dias_habilitados -= 1
+            self.dias_efectivos += 1
+            self.save()
+    
+    def iniciar(self):
+        """Comienza el período vacacional"""
+        if self.estado != 'APRO':
+            raise ValidationError("Solo vacaciones aprobadas pueden iniciarse")
+        self.estado = 'EN_C'
+        self.save()
+    
+    def inhabilitar(self, fecha_inhabilitacion, motivo):
+        """Pausa las vacaciones por emergencia"""
+        if self.estado != 'EN_C':
+            raise ValidationError("Solo vacaciones en curso pueden inhabilitares")
+        
+        dias_usados = (fecha_inhabilitacion - self.fecha_inicio).days + 1
+        if dias_usados <= 0:
+            raise ValidationError("Fecha de inhabilitación inválida")
+        
+        self.estado = 'PAUS'
+        self.fecha_inhabilitacion = fecha_inhabilitacion
+        self.motivo_inhabilitacion = motivo
+        self.dias_efectivos = dias_usados
+        self.dias_habilitados = self.dias_planificados - dias_usados
+        self.save()
+    
+    def reanudar(self, fecha_reanudacion):
+        """Reanuda vacaciones previamente inhabilitadas"""
+        if self.estado != 'PAUS':
+            raise ValidationError("Solo vacaciones pausadas pueden reanudarse")
+        
+        if fecha_reanudacion <= self.fecha_inhabilitacion:
+            raise ValidationError("La reanudación debe ser después de la inhabilitación")
+        
+        # Actualiza fechas y días
+        dias_pausa = (fecha_reanudacion - self.fecha_inhabilitacion).days - 1
+        self.fecha_fin = self.fecha_fin + timedelta(days=dias_pausa)
+        self.fecha_reanudacion = fecha_reanudacion
+        self.estado = 'EN_C'
+        self.save()
+    
+    def completar(self):
+        """Marca como completadas normalmente"""
+        if self.estado not in ['EN_C', 'PAUS']:
+            raise ValidationError("Solo vacaciones activas o pausadas pueden completarse")
+        
+        if self.estado == 'PAUS':
+            self.dias_efectivos = (self.fecha_inhabilitacion - self.fecha_inicio).days + 1
+        else:
+            self.dias_efectivos = (date.today() - self.fecha_inicio).days + 1
+        
+        self.estado = 'COMP'
+        self.save()
     def aprobar(self):
         """Transición a estado Aprobado"""
         if self.estado != 'PLAN':
@@ -640,6 +714,20 @@ class registro_vacaciones(models.Model):
         
         self.estado = 'COMP'
         self.save()
+
+
+@receiver(post_save, sender=registro_vacaciones)
+def actualizar_control_vacaciones(sender, instance, created, **kwargs):
+    """
+    Señal para actualizar dias_pendientes en control_vacaciones cuando se crea o actualiza un registro_vacaciones
+    """
+    if instance.control:
+        # Al crear un nuevo registro, poner dias_pendientes en control a 0
+        if created:
+            instance.control.dias_pendientes = 0
+            instance.control.save()
+        # Actualizar contadores siempre
+        instance.control.actualizar_contadores()
 
     #carga nomina
 

@@ -28,13 +28,11 @@ def vacaciones_por_cedula(request):
     try:
         empleado_obj = empleado.objects.get(cedula=cedula)
         
-        # Group pending days by year from control_vacaciones
-        pendientes_por_anio = control_vacaciones.objects.filter(empleado=empleado_obj).values('año').annotate(
-            dias_pendientes=Sum('dias_pendientes')
-        ).order_by('año')
+        # Group pending days by year from control_vacaciones, include id
+        pendientes_por_anio = control_vacaciones.objects.filter(empleado=empleado_obj).values('id', 'año', 'dias_pendientes').order_by('año')
         
-        # Format for select: list of {year, dias_pendientes}
-        pendientes_list = [{'anio': p['año'], 'dias_pendientes': p['dias_pendientes']} for p in pendientes_por_anio]
+        # Format for select: list of {id, anio, dias_pendientes}
+        pendientes_list = [{'id': p['id'], 'anio': p['año'], 'dias_pendientes': p['dias_pendientes']} for p in pendientes_por_anio]
 
         return JsonResponse({
             'success': True,
@@ -2548,3 +2546,99 @@ def get_current_user_info(request):
         'email': usuario.email,
         'nombre': empleado.primer_nombre
     })
+
+# New API for registro_vacaciones lifecycle management
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import json
+from datetime import datetime
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from .models import registro_vacaciones, control_vacaciones
+
+@csrf_exempt
+@require_http_methods(["POST", "PATCH"])
+@transaction.atomic
+def api_registro_vacaciones(request):
+    try:
+        if request.method == "POST":
+            data = json.loads(request.body)
+            control_id = data.get("control_id")
+            fecha_inicio = data.get("fecha_inicio")
+            fecha_fin = data.get("fecha_fin")
+
+            if not all([control_id, fecha_inicio, fecha_fin]):
+                return JsonResponse({"success": False, "message": "Faltan campos requeridos."}, status=400)
+
+            try:
+                control = control_vacaciones.objects.get(id=control_id)
+            except control_vacaciones.DoesNotExist:
+                return JsonResponse({"success": False, "message": "Control de vacaciones no encontrado."}, status=404)
+
+            # Validate dates
+            try:
+                fecha_inicio_dt = datetime.strptime(fecha_inicio, "%Y-%m-%d").date()
+                fecha_fin_dt = datetime.strptime(fecha_fin, "%Y-%m-%d").date()
+                if fecha_fin_dt <= fecha_inicio_dt:
+                    return JsonResponse({"success": False, "message": "La fecha de fin debe ser posterior a la fecha de inicio."}, status=400)
+            except ValueError:
+                return JsonResponse({"success": False, "message": "Formato de fecha inválido."}, status=400)
+
+            registro = registro_vacaciones(
+                control=control,
+                fecha_inicio=fecha_inicio_dt,
+                fecha_fin=fecha_fin_dt,
+                estado='PLAN'
+            )
+            registro.save()
+            return JsonResponse({"success": True, "message": "Vacaciones registradas correctamente.", "id": registro.id})
+
+        elif request.method == "PATCH":
+            data = json.loads(request.body)
+            registro_id = data.get("id")
+            if not registro_id:
+                return JsonResponse({"success": False, "message": "ID de registro requerido."}, status=400)
+
+            try:
+                registro = registro_vacaciones.objects.get(id=registro_id)
+            except registro_vacaciones.DoesNotExist:
+                return JsonResponse({"success": False, "message": "Registro de vacaciones no encontrado."}, status=404)
+
+            # Handle inhabilitacion (pausa)
+            if data.get("accion") == "inhabilitar":
+                fecha_inhabilitacion = data.get("fecha_inhabilitacion")
+                motivo = data.get("motivo_inhabilitacion", "")
+                if not fecha_inhabilitacion:
+                    return JsonResponse({"success": False, "message": "Fecha de inhabilitación requerida."}, status=400)
+                try:
+                    fecha_inh_dt = datetime.strptime(fecha_inhabilitacion, "%Y-%m-%d").date()
+                except ValueError:
+                    return JsonResponse({"success": False, "message": "Formato de fecha de inhabilitación inválido."}, status=400)
+                try:
+                    registro.inhabilitar(fecha_inh_dt, motivo)
+                except ValidationError as e:
+                    return JsonResponse({"success": False, "message": str(e)}, status=400)
+                return JsonResponse({"success": True, "message": "Vacaciones inhabilitadas correctamente."})
+
+            # Handle reanudacion (resume)
+            elif data.get("accion") == "reanudar":
+                fecha_reanudacion = data.get("fecha_reanudacion")
+                if not fecha_reanudacion:
+                    return JsonResponse({"success": False, "message": "Fecha de reanudación requerida."}, status=400)
+                try:
+                    fecha_rean_dt = datetime.strptime(fecha_reanudacion, "%Y-%m-%d").date()
+                except ValueError:
+                    return JsonResponse({"success": False, "message": "Formato de fecha de reanudación inválido."}, status=400)
+                try:
+                    registro.reanudar(fecha_rean_dt)
+                except ValidationError as e:
+                    return JsonResponse({"success": False, "message": str(e)}, status=400)
+                return JsonResponse({"success": True, "message": "Vacaciones reanudadas correctamente."})
+
+            else:
+                return JsonResponse({"success": False, "message": "Acción no válida."}, status=400)
+
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "message": "JSON inválido."}, status=400)
+    except Exception as e:
+        return JsonResponse({"success": False, "message": str(e)}, status=500)

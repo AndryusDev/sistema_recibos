@@ -77,7 +77,11 @@ function initializeVacacionesPermisos() {
         };
 
         try {
-            const response = await fetch('/api/vacaciones_permisos/crear/', {
+            let url = '/api/vacaciones_permisos/crear/';
+            if (tipo.toLowerCase() === 'vacaciones') {
+                url = '/api/vacaciones_permisos/crear_vacaciones/';
+            }
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -428,6 +432,19 @@ function initializeVacacionesPermisos() {
         });
     }
 
+    if (btnDiasHabiles && fechaInicioInput && diasInput && fechaFinalInput) {
+        btnDiasHabiles.addEventListener('click', () => {
+            const startDate = new Date(fechaInicioInput.value);
+            const days = parseInt(diasInput.value, 10);
+            if (isNaN(startDate.getTime()) || isNaN(days) || days < 1) {
+                alert('Por favor ingrese una fecha de inicio válida y un número de días mayor a 0.');
+                return;
+            }
+            const endDate = addBusinessDays(startDate, days - 1);
+            fechaFinalInput.value = formatDate(endDate);
+        });
+    }
+
     if (btnDiasHabilesVacaciones && fechaInicioVacaciones && fechaFinVacaciones) {
         btnDiasHabilesVacaciones.addEventListener('click', () => {
             const startDate = new Date(fechaInicioVacaciones.value);
@@ -514,10 +531,108 @@ function initializeVacacionesPermisos() {
             }
         });
     }
-    // Add event listener for formRegistrarVacaciones to call enviarFormulario
+    // Add event listener for formRegistrarVacaciones to call enviarFormularioVacaciones
     const formRegistrarVacaciones = document.getElementById('formRegistrarVacaciones');
+
+    // Function obtenerControlId removed as it is not needed
+
+    async function enviarFormularioVacaciones(event) {
+        event.preventDefault();
+        const form = event.target;
+        if (!form) return;
+        const formData = new FormData(form);
+
+        const empleado_cedula = formData.get('empleado_cedula') || formData.get('cedula');
+        const anio_vacaciones = formData.get('anio_vacaciones');
+        const fecha_inicio = formData.get('fecha_inicio');
+        const fecha_fin = formData.get('fecha_fin') || formData.get('fecha_final');
+        const estado = formData.get('estado');
+        const motivo_inhabilitacion = formData.get('motivo_inhabilitacion');
+        const fecha_inhabilitacion = formData.get('fecha_inhabilitacion');
+        const fecha_reanudacion = formData.get('fecha_reanudacion');
+        const tipo = 'vacaciones';
+
+        if (!empleado_cedula || !anio_vacaciones || !fecha_inicio || !fecha_fin || !estado) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Campos incompletos',
+                text: 'Por favor complete todos los campos obligatorios.',
+            });
+            return;
+        }
+
+        // Fetch control_id from vacaciones_por_cedula API
+        let control_id = null;
+        try {
+            const response = await fetch(`/api/vacaciones_permisos/?cedula=${encodeURIComponent(empleado_cedula)}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && Array.isArray(data.vacaciones_pendientes_por_anio)) {
+                    const control = data.vacaciones_pendientes_por_anio.find(v => v.anio == anio_vacaciones);
+                    if (control) {
+                        control_id = control.id;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching control_id:', error);
+        }
+
+        if (!control_id) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo obtener el control de vacaciones para el empleado y año seleccionados.',
+            });
+            return;
+        }
+
+        const payload = {
+            tipo,
+            empleado_cedula,
+            control_id,
+            fecha_inicio,
+            fecha_fin,
+            estado,
+            motivo_inhabilitacion,
+            fecha_inhabilitacion,
+            fecha_reanudacion
+        };
+
+        try {
+            const response = await fetch('/api/vacaciones_permisos/crear_vacaciones/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert(data.message);
+                form.reset();
+                cargarRegistros();
+                modalRegistrarVacaciones.style.display = 'none';
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al registrar vacaciones',
+                    text: data.message,
+                });
+            }
+        } catch (error) {
+            console.error('Error al registrar vacaciones:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al registrar vacaciones',
+            });
+        }
+    }
+
     if (formRegistrarVacaciones) {
-        formRegistrarVacaciones.addEventListener('submit', enviarFormulario);
+        formRegistrarVacaciones.addEventListener('submit', enviarFormularioVacaciones);
     }
 
     // Initial load

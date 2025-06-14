@@ -87,10 +87,12 @@ urlpatterns = [
 
     path('vacaciones_permisos/', views.vacaciones_permisos, name='vacaciones_permisos'),
     path('api/vacaciones_permisos/', views.vacaciones_por_cedula, name='vacaciones_por_cedula'),
+    path('api/vacaciones_permisos/crear_vacaciones/', views.api_registro_vacaciones, name='vacaciones_permiso_crear'),
 
     path('api/vacaciones_permisos/listar/', views.listar_vacaciones_permisos, name='listar_vacaciones_permisos'),
     path('api/vacaciones_permisos/crear/', views.crear_vacacion_permiso, name='crear_vacacion_permiso'),
     path('api/empleado_por_cedula/', views.empleado_por_cedula, name='empleado_por_cedula'),
 
     path('api/current-user-info/', views.get_current_user_info, name='current_user_info'),
+    #path('api/control_vacaciones/', views.api_control_vacaciones, name='api_control_vacaciones'),
 ]
