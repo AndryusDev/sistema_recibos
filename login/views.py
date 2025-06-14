@@ -2566,6 +2566,7 @@ def api_registro_vacaciones(request):
             control_id = data.get("control_id")
             fecha_inicio = data.get("fecha_inicio")
             fecha_fin = data.get("fecha_fin")
+            estado = data.get("estado", "PLAN")  # Valor por defecto 'PLAN' si no se envía
 
             if not all([control_id, fecha_inicio, fecha_fin]):
                 return JsonResponse({"success": False, "message": "Faltan campos requeridos."}, status=400)
@@ -2588,7 +2589,7 @@ def api_registro_vacaciones(request):
                 control=control,
                 fecha_inicio=fecha_inicio_dt,
                 fecha_fin=fecha_fin_dt,
-                estado='PLAN'
+                estado=estado
             )
             registro.save()
             return JsonResponse({"success": True, "message": "Vacaciones registradas correctamente.", "id": registro.id})

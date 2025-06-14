@@ -509,17 +509,29 @@ class control_vacaciones(models.Model):
             raise ValidationError("Los días pendientes no pueden ser negativos")
 
     def save(self, *args, **kwargs):
-        self.dias_pendientes = self.dias_acumulados - self.dias_tomados
+        self.dias_pendientes = max(self.dias_acumulados - self.dias_tomados, 0)
         super().save(*args, **kwargs)
 
     def actualizar_contadores(self):
-        # Calcular dias_tomados sumando dias_efectivos de registros aprobados o completados
+        """
+        Recalcula los días tomados y pendientes basado en los registros de vacaciones
+        Considera todos los registros en estados que consumen días de vacación
+        """
         from django.db.models import Q, Sum
-        total_dias_tomados = self.registros_vacaciones.filter(
-            Q(estado='APRO') | Q(estado='EN_C') | Q(estado='PAUS') | Q(estado='COMP')
-        ).aggregate(total=Sum('dias_efectivos'))['total'] or 0
-        self.dias_tomados = total_dias_tomados
-        # dias_pendientes = dias_acumulados - dias_tomados, pero no puede ser negativo
+        
+        # Estados que consumen días de vacación
+        estados_activos = ['APRO', 'EN_C', 'PAUS', 'COMP']
+        
+        # Calculamos la suma de días planificados (no efectivos) para estos estados
+        total_dias = self.registros_vacaciones.filter(
+            estado__in=estados_activos
+        ).aggregate(
+            total_planificados=Sum('dias_planificados'),
+            total_efectivos=Sum('dias_efectivos')
+        )
+        
+        # Usamos días planificados para APRO y días efectivos para otros estados
+        self.dias_tomados = (total_dias['total_planificados'] or 0)
         self.dias_pendientes = max(self.dias_acumulados - self.dias_tomados, 0)
         self.save()
 
@@ -596,7 +608,6 @@ class registro_vacaciones(models.Model):
             self.dias_habilitados = self.dias_planificados
         
         super().save(*args, **kwargs)
-        self.control.actualizar_contadores()
     
     def descontar_dia_habil(self):
         """
@@ -719,15 +730,40 @@ class registro_vacaciones(models.Model):
 @receiver(post_save, sender=registro_vacaciones)
 def actualizar_control_vacaciones(sender, instance, created, **kwargs):
     """
-    Señal para actualizar dias_pendientes en control_vacaciones cuando se crea o actualiza un registro_vacaciones
+    Señal para actualizar el control de vacaciones cuando se crea o modifica un registro
     """
-    if instance.control:
-        # Al crear un nuevo registro, poner dias_pendientes en control a 0
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    if not instance.control:
+        logger.warning(f"Registro de vacaciones {instance.id} no tiene control asociado")
+        return
+    
+    logger.info(f"Actualizando control para registro_vacaciones id={instance.id}, estado={instance.estado}")
+    
+    # Solo procesamos registros en estados relevantes
+    if instance.estado not in ['APRO', 'EN_C', 'PAUS', 'COMP']:
+        logger.info(f"Estado {instance.estado} no requiere actualización de control")
+        return
+    
+    try:
+        # Actualización principal
         if created:
-            instance.control.dias_pendientes = 0
+            logger.info(f"Nuevo registro - descontando {instance.dias_planificados} días")
+            instance.control.dias_tomados += instance.dias_planificados
+            instance.control.dias_pendientes = max(
+                instance.control.dias_acumulados - instance.control.dias_tomados, 
+                0
+            )
             instance.control.save()
-        # Actualizar contadores siempre
-        instance.control.actualizar_contadores()
+        else:
+            # Para actualizaciones, recalculamos todo desde cero
+            logger.info("Recalculando contadores para registro existente")
+            instance.control.actualizar_contadores()
+            
+    except Exception as e:
+        logger.error(f"Error actualizando control: {str(e)}")
+        raise
 
     #carga nomina
 
