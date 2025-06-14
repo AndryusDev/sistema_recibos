@@ -3,10 +3,10 @@ import json
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
+from django.db.models import Q, Sum
 import pandas as pd
 from django.http import JsonResponse
-from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion
+from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion, control_vacaciones, registro_vacaciones
 from datetime import datetime
 import os
 from django.conf import settings
@@ -18,6 +18,36 @@ from .models import usuario, empleado, rol, asistencias
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.timezone import now
 from django.db.models.functions import ExtractMonth
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def vacaciones_por_cedula(request):
+    cedula = request.GET.get('cedula')
+    if not cedula:
+        return JsonResponse({'success': False, 'message': 'Cédula no proporcionada.'}, status=400)
+    try:
+        empleado_obj = empleado.objects.get(cedula=cedula)
+        
+        # Group pending days by year from control_vacaciones
+        pendientes_por_anio = control_vacaciones.objects.filter(empleado=empleado_obj).values('año').annotate(
+            dias_pendientes=Sum('dias_pendientes')
+        ).order_by('año')
+        
+        # Format for select: list of {year, dias_pendientes}
+        pendientes_list = [{'anio': p['año'], 'dias_pendientes': p['dias_pendientes']} for p in pendientes_por_anio]
+
+        return JsonResponse({
+            'success': True,
+            'empleado': {
+                'cedula': empleado_obj.cedula,
+                'nombre_completo': empleado_obj.get_nombre_completo(),
+            },
+            'vacaciones_pendientes_por_anio': pendientes_list
+        })
+    except empleado.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 # Create your views here.
 def login(request):

@@ -86,6 +86,7 @@ urlpatterns = [
     path('justificacion/', views.listar_justificaciones, name='justificacion'),
 
     path('vacaciones_permisos/', views.vacaciones_permisos, name='vacaciones_permisos'),
+    path('api/vacaciones_permisos/', views.vacaciones_por_cedula, name='vacaciones_por_cedula'),
 
     path('api/vacaciones_permisos/listar/', views.listar_vacaciones_permisos, name='listar_vacaciones_permisos'),
     path('api/vacaciones_permisos/crear/', views.crear_vacacion_permiso, name='crear_vacacion_permiso'),

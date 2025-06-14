@@ -231,18 +231,21 @@
                             <label for="nombreVacaciones">Nombre:</label>
                             <input type="text" id="nombreVacaciones" name="nombre" class="busqueda-input" required readonly />
                         </div>
-                        <div class="form-group" id="marcadorVacaciones" style="margin-top: 1rem;">
-                            <!-- Marcador visual o indicador para Vacaciones -->
-                            <span>Marcador: <i class="fas fa-calendar-check"></i></span>
+                        <div class="form-group">
+                            <label for="selectAnioVacaciones">Año de Vacaciones Disponibles:</label>
+                            <select id="selectAnioVacaciones" name="anio_vacaciones" class="busqueda-input">
+                                <option value="">Seleccione un año</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="diasDisponiblesContainer" style="display:none;">
+                            <label>Días Disponibles:</label>
+                            <span id="diasDisponiblesVacaciones">0</span>
                         </div>
                         <div class="form-group">
                             <label for="fechaInicioVacaciones">Fecha Inicio:</label>
                             <input type="date" id="fechaInicioVacaciones" name="fecha_inicio" class="busqueda-input" required />
                         </div>
                         <div class="form-group">
-                            <label>Días:</label>
-                            <input type="number" id="diasVacaciones" name="dias" class="busqueda-input" min="1" value="1" required />
-                            <button type="button" id="btnDiasContinuosVacaciones" class="busqueda-boton">Días Continuos</button>
                             <button type="button" id="btnDiasHabilesVacaciones" class="busqueda-boton">Días Hábiles</button>
                         </div>
                         <div class="form-group">

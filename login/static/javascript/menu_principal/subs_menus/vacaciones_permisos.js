@@ -289,28 +289,91 @@ function initializeVacacionesPermisos() {
     // Auto-fill "Nombre" in Registrar Vacaciones modal when "Cédula" input changes
     const cedulaVacacionesInput = document.getElementById('cedulaVacaciones');
     const nombreVacacionesInput = document.getElementById('nombreVacaciones');
-    if (cedulaVacacionesInput && nombreVacacionesInput) {
+    const selectAnioVacaciones = document.getElementById('selectAnioVacaciones');
+    const diasDisponiblesContainer = document.getElementById('diasDisponiblesContainer');
+    const diasDisponiblesVacaciones = document.getElementById('diasDisponiblesVacaciones');
+    const empleadoCedulaVacaciones = document.getElementById('empleadoCedulaVacaciones');
+
+    if (cedulaVacacionesInput && nombreVacacionesInput && selectAnioVacaciones && diasDisponiblesContainer && diasDisponiblesVacaciones && empleadoCedulaVacaciones) {
         cedulaVacacionesInput.addEventListener('change', async () => {
             const cedula = cedulaVacacionesInput.value.trim();
+            empleadoCedulaVacaciones.value = cedula; // Update hidden input for form submission
             if (cedula.length === 0) {
                 nombreVacacionesInput.value = '';
+                selectAnioVacaciones.innerHTML = '<option value="">Seleccione un año</option>';
+                diasDisponiblesContainer.style.display = 'none';
+                diasDisponiblesVacaciones.textContent = '0';
                 return;
             }
             try {
-                const response = await fetch(`/api/empleado_por_cedula/?cedula=${encodeURIComponent(cedula)}`);
-                if (!response.ok) {
+                const responseEmpleado = await fetch(`/api/empleado_por_cedula/?cedula=${encodeURIComponent(cedula)}`);
+                if (!responseEmpleado.ok) {
                     nombreVacacionesInput.value = '';
+                    selectAnioVacaciones.innerHTML = '<option value="">Seleccione un año</option>';
+                    diasDisponiblesContainer.style.display = 'none';
+                    diasDisponiblesVacaciones.textContent = '0';
                     return;
                 }
-                const data = await response.json();
-                if (data.success && data.empleado) {
-                    nombreVacacionesInput.value = `${data.empleado.primer_nombre} ${data.empleado.primer_apellido}`;
+                const dataEmpleado = await responseEmpleado.json();
+                if (dataEmpleado.success && dataEmpleado.empleado) {
+                    nombreVacacionesInput.value = `${dataEmpleado.empleado.primer_nombre} ${dataEmpleado.empleado.primer_apellido}`;
                 } else {
                     nombreVacacionesInput.value = '';
                 }
+
+                // Fetch vacation years and available days for the employee
+                const responseVacaciones = await fetch(`/api/vacaciones_permisos/?cedula=${encodeURIComponent(cedula)}`);
+                if (!responseVacaciones.ok) {
+                    selectAnioVacaciones.innerHTML = '<option value="">Seleccione un año</option>';
+                    diasDisponiblesContainer.style.display = 'none';
+                    diasDisponiblesVacaciones.textContent = '0';
+                    return;
+                }
+                const dataVacaciones = await responseVacaciones.json();
+                if (dataVacaciones.success && Array.isArray(dataVacaciones.vacaciones_pendientes_por_anio)) {
+                    console.log('Vacaciones data:', dataVacaciones.vacaciones_pendientes_por_anio);
+                    selectAnioVacaciones.innerHTML = '<option value="">Seleccione un año</option>';
+                    dataVacaciones.vacaciones_pendientes_por_anio.forEach(vacacion => {
+                        const option = document.createElement('option');
+                        option.value = vacacion.anio;
+                        option.textContent = `${vacacion.anio} - Días disponibles: ${vacacion.dias_pendientes}`;
+                        option.dataset.diasDisponibles = vacacion.dias_pendientes;
+                        selectAnioVacaciones.appendChild(option);
+                    });
+                    // Show the container if there is at least one year
+                    if (dataVacaciones.vacaciones_pendientes_por_anio.length > 0) {
+                        diasDisponiblesContainer.style.display = 'none';
+                        diasDisponiblesVacaciones.textContent = '0';
+                        // Do not select any year initially, keep placeholder
+                        // selectAnioVacaciones.value = dataVacaciones.vacaciones_pendientes_por_anio[0].anio;
+                    } else {
+                        diasDisponiblesContainer.style.display = 'none';
+                        diasDisponiblesVacaciones.textContent = '0';
+                    }
+                } else {
+                    console.log('No vacation data found or invalid format');
+                    selectAnioVacaciones.innerHTML = '<option value="">Seleccione un año</option>';
+                    diasDisponiblesContainer.style.display = 'none';
+                    diasDisponiblesVacaciones.textContent = '0';
+                }
             } catch (error) {
-                console.error('Error fetching empleado:', error);
+                console.error('Error fetching empleado o vacaciones:', error);
                 nombreVacacionesInput.value = '';
+                selectAnioVacaciones.innerHTML = '<option value="">Seleccione un año</option>';
+                diasDisponiblesContainer.style.display = 'none';
+                diasDisponiblesVacaciones.textContent = '0';
+            }
+        });
+
+        // Update available days display when year selection changes
+        selectAnioVacaciones.addEventListener('change', () => {
+            const selectedOption = selectAnioVacaciones.options[selectAnioVacaciones.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                diasDisponiblesVacaciones.textContent = selectedOption.dataset.diasDisponibles || '0';
+                diasDisponiblesContainer.style.display = 'block';
+            } else {
+                diasDisponiblesVacaciones.textContent = '0';
+                diasDisponiblesContainer.style.display = 'none';
             }
         });
     }
@@ -365,16 +428,16 @@ function initializeVacacionesPermisos() {
         });
     }
 
-    if (btnDiasHabiles && fechaInicioInput && diasInput && fechaFinalInput) {
-        btnDiasHabiles.addEventListener('click', () => {
-            const startDate = new Date(fechaInicioInput.value);
-            const days = parseInt(diasInput.value, 10);
-            if (isNaN(startDate.getTime()) || isNaN(days) || days < 1) {
-                alert('Por favor ingrese una fecha de inicio válida y un número de días mayor a 0.');
+    if (btnDiasHabilesVacaciones && fechaInicioVacaciones && fechaFinVacaciones) {
+        btnDiasHabilesVacaciones.addEventListener('click', () => {
+            const startDate = new Date(fechaInicioVacaciones.value);
+            const diasDisponibles = parseInt(diasDisponiblesVacaciones.textContent, 10);
+            if (isNaN(startDate.getTime()) || isNaN(diasDisponibles) || diasDisponibles < 1) {
+                alert('Por favor ingrese una fecha de inicio válida y asegúrese de que haya días disponibles.');
                 return;
             }
-            const endDate = addBusinessDays(startDate, days - 1);
-            fechaFinalInput.value = formatDate(endDate);
+            const endDate = addBusinessDays(startDate, diasDisponibles - 1);
+            fechaFinVacaciones.value = formatDate(endDate);
         });
     }
 
