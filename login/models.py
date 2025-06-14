@@ -428,13 +428,13 @@ class permiso_asistencias(models.Model):
         max_length=100,
         default='Permiso de asistencia'  # Corregido (era timezone.now)
     )
-    hecho_por = models.ForeignKey(
+    """hecho_por = models.ForeignKey(
         'usuario',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,  # Añadido para formularios
         related_name="aprobador"
-    )
+    )"""
     class Meta:
         db_table = 'permiso_asistencias'
         verbose_name_plural = "Permisos_asistencias"

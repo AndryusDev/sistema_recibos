@@ -48,13 +48,14 @@ function initializeVacacionesPermisos() {
     // Función para enviar el formulario
     async function enviarFormulario(event) {
         event.preventDefault();
-        if (!formRegistro) return;
-        const formData = new FormData(formRegistro);
+        const form = event.target;
+        if (!form) return;
+        const formData = new FormData(form);
         const tipo = formData.get('tipo');
         const empleado_cedula = formData.get('empleado_cedula');
         const fecha_inicio = formData.get('fecha_inicio');
         const fecha_fin = formData.get('fecha_fin');
-        const aprobado_por_cedula = formData.get('aprobado_por_cedula');
+        /*const aprobado_por_cedula = formData.get('aprobado_por_cedula');*/
         const motivo = formData.get('motivo');
 
         if (!tipo || !empleado_cedula || !fecha_inicio || !fecha_fin) {
@@ -67,7 +68,7 @@ function initializeVacacionesPermisos() {
             empleado_cedula,
             fecha_inicio,
             fecha_fin,
-            aprobado_por_cedula,
+            /*aprobado_por_cedula,*/
             motivo
         };
 
@@ -83,7 +84,7 @@ function initializeVacacionesPermisos() {
             const data = await response.json();
             if (data.success) {
                 alert(data.message);
-                limpiarFormulario();
+                form.reset();
                 cargarRegistros();
             } else {
                 alert('Error al registrar: ' + data.message);
@@ -95,77 +96,45 @@ function initializeVacacionesPermisos() {
     }
 
     async function getCurrentUserInfo() {
-    try {
-        const response = await fetch('/api/current-user-info/', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Error al obtener información del usuario');
-        }
-        
-        return await response.json();
-    } catch (error) {
-        console.error('Error:', error);
-        return { success: false, error: error.message };
-    }
-}
-
-// Función para abrir el modal de permisos
-async function openRegistrarPermisoModal() {
-    try {
-        // Mostrar loader o estado de carga
-        document.getElementById('hechoPorPermiso').value = "Cargando...";
-        
-        // Obtener info del usuario
-        const userInfo = await getCurrentUserInfo();
-        
-        if (userInfo.success) {
-            // Llenar los campos
-            document.getElementById('hechoPorPermiso').value = userInfo.nombre_completo;
-            document.getElementById('cedulaPermiso').value = userInfo.cedula;
-            // Puedes autocompletar más campos si necesitas
-            
-            // Mostrar el modal
-            document.getElementById('modalRegistrarPermiso').style.display = 'block';
-        } else {
-            Swal.fire('Error', 'No se pudo obtener la información del usuario: ' + userInfo.error, 'error');
-        }
-    } catch (error) {
-        console.error('Error al abrir modal:', error);
-        Swal.fire('Error', 'Ocurrió un error al preparar el formulario', 'error');
-    }
-}
-
-// Asignar el evento al botón
-document.getElementById('btn-registrar-permiso').addEventListener('click', openRegistrarPermisoModal);
-
-    // Similar para vacaciones
-    async function openRegistrarVacacionesModal() {
         try {
-            document.getElementById('hechoPorVacaciones').value = "Cargando...";
-            
-            const userInfo = await getCurrentUserInfo();
-            
-            if (userInfo.success) {
-                document.getElementById('hechoPorVacaciones').value = userInfo.nombre_completo;
-                document.getElementById('cedulaVacaciones').value = userInfo.cedula;
-                document.getElementById('modalRegistrarVacaciones').style.display = 'block';
-            } else {
-                Swal.fire('Error', userInfo.error, 'error');
+            const response = await fetch('/api/current-user-info/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    credentials: "include",
+                },
+                credentials: 'include'  // Incluir cookies para autenticación
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al obtener información del usuario');
             }
+
+            return await response.json();
         } catch (error) {
             console.error('Error:', error);
-            Swal.fire('Error', 'Error al cargar información del usuario', 'error');
+            return { success: false, error: error.message };
         }
+    }
+
+    // Función para abrir el modal de permisos
+    function openRegistrarPermisoModal() {
+        // Mostrar el modal directamente sin buscar usuario
+        document.getElementById('modalRegistrarPermiso').style.display = 'block';
+    }
+
+    // Asignar el evento al botón
+    document.getElementById('btn-registrar-permiso').addEventListener('click', openRegistrarPermisoModal);
+
+    // Similar para vacaciones
+    function openRegistrarVacacionesModal() {
+        // Mostrar el modal directamente sin buscar usuario
+        document.getElementById('modalRegistrarVacaciones').style.display = 'block';
     }
 
     document.getElementById('btn-registrar-vacaciones').addEventListener('click', openRegistrarVacacionesModal);
-    
+
     // Función para obtener cookie CSRF
     function getCookie(name) {
         let cookieValue = null;
@@ -421,6 +390,11 @@ document.getElementById('btn-registrar-permiso').addEventListener('click', openR
             }
         });
     }
+    // Add event listener for formRegistrarVacaciones to call enviarFormulario
+    const formRegistrarVacaciones = document.getElementById('formRegistrarVacaciones');
+    if (formRegistrarVacaciones) {
+        formRegistrarVacaciones.addEventListener('submit', enviarFormulario);
+    }
 
     // Initial load
     cargarRegistros();
@@ -428,3 +402,4 @@ document.getElementById('btn-registrar-permiso').addEventListener('click', openR
 
 // Expose the initialization function
 window.initializeVacacionesPermisos = initializeVacacionesPermisos;
+

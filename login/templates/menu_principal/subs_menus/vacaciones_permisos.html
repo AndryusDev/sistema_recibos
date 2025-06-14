@@ -196,11 +196,11 @@
                         <!--<div class="form-group">
                             <label for="aprobadoPorPermiso">Aprobado Por:</label>
                             <input type="text" id="aprobadoPorPermiso" name="aprobado_por" class="busqueda-input" />
-                        </div>-->
+                        </div>
                         <div class="form-group">
                             <label for="hechoPorPermiso">Hecho Por:</label>
                             <input type="text" id="hechoPorPermiso" name="hecho_por" class="busqueda-input" readonly/>
-                        </div>
+                        </div>-->
                         <div class="form-group botones-navegacion">
                             <button type="button" class="busqueda-boton btn-cancelar" id="btnCancelarPermiso">Cancelar</button>
                             <button type="submit" class="busqueda-boton btn-guardar">Guardar</button>
@@ -221,6 +221,8 @@
                 </div>
                 <div class="modal-body">
                     <form id="formRegistrarVacaciones">
+                        <input type="hidden" name="tipo" value="vacaciones" />
+                        <input type="hidden" name="empleado_cedula" id="empleadoCedulaVacaciones" />
                         <div class="form-group">
                             <label for="cedulaVacaciones">Cédula:</label>
                             <input type="text" id="cedulaVacaciones" name="cedula" class="busqueda-input" required />
@@ -270,14 +272,14 @@
                             <label for="fechaReanudacion">Fecha de Reanudación:</label>
                             <input type="date" id="fechaReanudacion" name="fecha_reanudacion" class="busqueda-input" />
                         </div>
-                        <div class="form-group">
+                        <!--<div class="form-group">
                             <label for="aprobadoPorVacaciones">Aprobado Por:</label>
                             <input type="text" id="aprobadoPorVacaciones" name="aprobado_por" class="busqueda-input" />
                         </div>
                         <div class="form-group">
                             <label for="hechoPorVacaciones">Hecho Por:</label>
                             <input type="text" id="hechoPorVacaciones" name="hecho_por" class="busqueda-input" />
-                        </div>
+                        </div>-->
                 <div class="form-group botones-navegacion">
                     <button type="button" class="busqueda-boton btn-cancelar" id="btnCancelarVacaciones">Cancelar</button>
                     <button type="submit" class="busqueda-boton btn-guardar">Guardar</button>

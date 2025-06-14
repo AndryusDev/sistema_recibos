@@ -405,7 +405,6 @@ def crear_vacacion_permiso(request):
         empleado_cedula = data.get('empleado_cedula')
         fecha_inicio = data.get('fecha_inicio')
         fecha_fin = data.get('fecha_fin')
-        aprobado_por_cedula = data.get('aprobado_por_cedula')
         documento = None  # File upload handling not implemented here
 
         if not all([tipo, empleado_cedula, fecha_inicio, fecha_fin]):
@@ -416,12 +415,12 @@ def crear_vacacion_permiso(request):
         except ObjectDoesNotExist:
             return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
 
-        aprobado_por_obj = None
+        """aprobado_por_obj = None
         if aprobado_por_cedula:
             try:
                 aprobado_por_obj = empleado.objects.get(cedula=aprobado_por_cedula)
             except ObjectDoesNotExist:
-                aprobado_por_obj = None
+                aprobado_por_obj = None"""
 
         if tipo.lower() == 'vacaciones':
             dias = (datetime.strptime(fecha_fin, '%Y-%m-%d') - datetime.strptime(fecha_inicio, '%Y-%m-%d')).days + 1
@@ -430,7 +429,7 @@ def crear_vacacion_permiso(request):
                 fecha_inicio=fecha_inicio,
                 fecha_fin=fecha_fin,
                 dias=dias,
-                aprobado_por=aprobado_por_obj,
+                #aprobado_por=aprobado_por_obj,
                 documento=documento
             )
             return JsonResponse({'success': True, 'message': 'Vacación registrada correctamente.'})
@@ -441,7 +440,7 @@ def crear_vacacion_permiso(request):
                 fecha_inicio=fecha_inicio,
                 fecha_fin=fecha_fin,
                 descriptcion=data.get('motivo', 'Permiso de asistencia'),
-                aprobado_por=aprobado_por_obj
+                #aprobado_por=aprobado_por_obj
             )
             return JsonResponse({'success': True, 'message': 'Permiso registrado correctamente.'})
 
@@ -2505,26 +2504,17 @@ def eliminar_roles(request, rol_id):
         }, status=500)
 
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
-
-
+from django.contrib.auth import get_user_model
 @require_GET
 def get_current_user_info(request):
-    try:
-        usuario = request.user
-        empleado = usuario.usuario.empleado  # Asumiendo tu estructura de modelos
-        
-        data = {
-            'success': True,
-            'nombre_completo': f"{empleado.primer_nombre} {empleado.segundo_nombre or ''} {empleado.primer_apellido} {empleado.segundo_apellido or ''}".strip(),
-            'cedula': empleado.cedula,
-            'email': usuario.email
-        }
-    except Exception as e:
-        data = {
-            'success': False,
-            'error': str(e)
-        }
+    # Forzar un usuario de prueba (SOLO PARA DEBUG!)
+    User = get_user_model()
+    usuario = User.objects.get(username='admin')  # Cambia por un usuario real
+    empleado = usuario.empleado
     
-    return JsonResponse(data)
+    return JsonResponse({
+        'success': True,
+        'email': usuario.email,
+        'nombre': empleado.primer_nombre
+    })
