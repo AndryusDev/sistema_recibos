@@ -357,7 +357,7 @@ def asistencias_personal(request):
     return render(request, 'menu_principal/subs_menus/asistencias.html')
 
 def vacaciones_permisos(request):
-        return render(request, 'menu_principal/subs_menus/vacaciones_permisos.html')
+    return render(request, 'menu_principal/subs_menus/vacaciones_permisos.html')
 
 from .models import registro_vacaciones, permiso_asistencias, empleado
 
@@ -2503,3 +2503,28 @@ def eliminar_roles(request, rol_id):
             'error': 'Error al procesar la solicitud',
             'detail': str(e)
         }, status=500)
+
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_GET
+
+
+@require_GET
+def get_current_user_info(request):
+    try:
+        usuario = request.user
+        empleado = usuario.usuario.empleado  # Asumiendo tu estructura de modelos
+        
+        data = {
+            'success': True,
+            'nombre_completo': f"{empleado.primer_nombre} {empleado.segundo_nombre or ''} {empleado.primer_apellido} {empleado.segundo_apellido or ''}".strip(),
+            'cedula': empleado.cedula,
+            'email': usuario.email
+        }
+    except Exception as e:
+        data = {
+            'success': False,
+            'error': str(e)
+        }
+    
+    return JsonResponse(data)
