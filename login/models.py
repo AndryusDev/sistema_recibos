@@ -541,13 +541,24 @@ class control_vacaciones(models.Model):
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 def contar_dias_habiles(fecha_inicio, fecha_fin):
-    from datetime import timedelta
+    """
+    Cuenta días hábiles entre dos fechas (INCLUSIVO)
+    Asegura coherencia con el cálculo en JavaScript
+    """
+    delta = fecha_fin - fecha_inicio
+    if delta.days < 0:
+        return 0
+        
+    # Ajustar fecha_inicio si es fin de semana
+    current = fecha_inicio
+    while current.weekday() >= 5:  # 5=sábado, 6=domingo
+        current += timedelta(days=1)
+    
     dias_habiles = 0
-    fecha_actual = fecha_inicio
-    while fecha_actual <= fecha_fin:
-        if fecha_actual.weekday() < 5:  # 0-4 son lunes a viernes
+    for i in range((fecha_fin - current).days + 1):
+        day = current + timedelta(days=i)
+        if day.weekday() < 5:  # 0-4 = lunes-viernes
             dias_habiles += 1
-        fecha_actual += timedelta(days=1)
     return dias_habiles
 
 class registro_vacaciones(models.Model):
@@ -613,12 +624,24 @@ class registro_vacaciones(models.Model):
     def save(self, *args, **kwargs):
         from datetime import timedelta
         def contar_dias_habiles(fecha_inicio, fecha_fin):
+            """
+            Cuenta días hábiles entre dos fechas (INCLUSIVO)
+            Asegura coherencia con el cálculo en JavaScript
+            """
+            delta = fecha_fin - fecha_inicio
+            if delta.days < 0:
+                return 0
+                
+            # Ajustar fecha_inicio si es fin de semana
+            current = fecha_inicio
+            while current.weekday() >= 5:  # 5=sábado, 6=domingo
+                current += timedelta(days=1)
+            
             dias_habiles = 0
-            fecha_actual = fecha_inicio
-            while fecha_actual <= fecha_fin:
-                if fecha_actual.weekday() < 5:  # 0-4 son lunes a viernes
+            for i in range((fecha_fin - current).days + 1):
+                day = current + timedelta(days=i)
+                if day.weekday() < 5:  # 0-4 = lunes-viernes
                     dias_habiles += 1
-                fecha_actual += timedelta(days=1)
             return dias_habiles
 
         # Cálculo automático al crear

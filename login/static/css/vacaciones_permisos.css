@@ -1,0 +1,12 @@
+.tabla-recibos {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabla-recibos__thead th,
+.tabla-recibos__tbody td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center; /* Center text in table headers and cells */
+    vertical-align: middle;
+}

@@ -389,30 +389,35 @@ function initializeVacacionesPermisos() {
         return result;
     }
 
+    /*Corregir funcion ya que el conteo de los dias no lo hace como debe ser*/
+    /*Corregir funcion ya que el conteo de los dias no lo hace como debe ser*/
+    /*Corregir funcion ya que el conteo de los dias no lo hace como debe ser*/
     function addBusinessDays(startDate, days) {
         if (days <= 0) return new Date(startDate);
         
         let count = 0;
         let currentDate = new Date(startDate);
         
-        // Asegurarnos de no modificar la fecha original
-        const resultDate = new Date(startDate);
+        // Ajuste inicial: si comienza en fin de semana, avanzamos al próximo lunes
+        while (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
         
+        // Contamos el primer día como día 1
+        count = 1;
+        
+        // Si ya cumplimos, retornamos
+        if (count >= days) return currentDate;
+        
+        // Sumamos los días restantes
         while (count < days) {
-            // Verificar si es día hábil (lunes a viernes)
+            currentDate.setDate(currentDate.getDate() + 1);
             if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
                 count++;
             }
-            
-            // Si aún no hemos alcanzado los días necesarios, avanzamos
-            if (count < days) {
-                currentDate.setDate(currentDate.getDate() + 1);
-            }
         }
         
-        // Asignar la fecha calculada al resultado
-        resultDate.setTime(currentDate.getTime());
-        return resultDate;
+        return currentDate;
     }
 
     // Format date to yyyy-mm-dd
@@ -458,6 +463,10 @@ function initializeVacacionesPermisos() {
         });
     }
 
+    /*Corregir funcion ya que el conteo de los dias no lo hace como debe ser*/
+    /*Corregir funcion ya que el conteo de los dias no lo hace como debe ser*/
+    /*Corregir funcion ya que el conteo de los dias no lo hace como debe ser*/
+
     if (btnDiasHabilesVacaciones && fechaInicioVacaciones && fechaFinVacaciones) {
         btnDiasHabilesVacaciones.addEventListener('click', () => {
             const startDate = new Date(fechaInicioVacaciones.value);
@@ -471,10 +480,12 @@ function initializeVacacionesPermisos() {
             const endDate = addBusinessDays(startDate, diasDisponibles);
             fechaFinVacaciones.value = formatDate(endDate);
             
-            // Debug: Verificar el cálculo
-            console.log('Días calculados:', 
-                countBusinessDays(startDate, endDate), 
-                'de', diasDisponibles, 'solicitados');
+            // Debug detallado
+            console.log('--- DEBUG DEL CÁLCULO ---');
+            console.log('Fecha inicio:', startDate.toDateString(), 'Día semana:', ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][startDate.getDay()]);
+            console.log('Días solicitados:', diasDisponibles);
+            console.log('Fecha fin calculada:', endDate.toDateString(), 'Día semana:', ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][endDate.getDay()]);
+            console.log('Total días hábiles calculados:', countBusinessDays(startDate, endDate));
         });
     }
 
@@ -655,8 +666,139 @@ function initializeVacacionesPermisos() {
         formRegistrarVacaciones.addEventListener('submit', enviarFormularioVacaciones);
     }
 
+    // Function to load vacation records from the API and populate the vacation table
+    async function cargarRegistrosVacaciones() {
+        const tablaVacacionesCuerpo = document.getElementById('cuerpoTablaVacaciones');
+        if (!tablaVacacionesCuerpo) return;
+        try {
+            const response = await fetch('/api/vacaciones_listar/');
+            const data = await response.json();
+            if (data.success) {
+                tablaVacacionesCuerpo.innerHTML = '';
+                if (!data.registros_vacaciones || data.registros_vacaciones.length === 0) {
+                    tablaVacacionesCuerpo.innerHTML = '<tr><td colspan="11" class="text-center">No hay registros de vacaciones disponibles</td></tr>';
+                    return;
+                }
+                data.registros_vacaciones.forEach(registro => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td>${registro.id || ''}</td>
+                        <td>${registro.control_id || ''}</td>
+                        <td>${registro.fecha_inicio || ''}</td>
+                        <td>${registro.fecha_fin || ''}</td>
+                        <td>${registro.estado || ''}</td>
+                        <td>${registro.dias_planificados || ''}</td>
+                        <td>${registro.dias_efectivos || ''}</td>
+                        <td>${registro.dias_habilitados || ''}</td>
+                        <td>${registro.aprobado_por || ''}</td>
+                        <td>${registro.documento_url ? `<a href="${registro.documento_url}" target="_blank">Ver documento</a>` : ''}</td>
+                        <td>
+                            <!-- Actions can be added here if needed -->
+                        </td>
+                    `;
+                    tablaVacacionesCuerpo.appendChild(fila);
+                });
+            } else {
+                alert('Error al cargar registros de vacaciones: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error al cargar registros de vacaciones:', error);
+            alert('Error al cargar registros de vacaciones');
+        }
+    }
+
+    // Function to load permisos asistencia records from the API and populate the permisos table
+    async function cargarRegistrosPermisosAsistencia() {
+        const tablaPermisosCuerpo = document.getElementById('cuerpoTablaPermisos');
+        if (!tablaPermisosCuerpo) return;
+        try {
+            const response = await fetch('/api/vacaciones_permisos/listar/');
+            const data = await response.json();
+            if (data.success) {
+                tablaPermisosCuerpo.innerHTML = '';
+                if (!data.registros || data.registros.length === 0) {
+                    tablaPermisosCuerpo.innerHTML = '<tr><td colspan="8" class="text-center">No hay registros de permisos disponibles</td></tr>';
+                    return;
+                }
+                data.registros.forEach(registro => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td>${registro.id || ''}</td>
+                        <td>${registro.empleado || ''}</td>
+                        <td>${registro.fecha_inicio || ''}</td>
+                        <td>${registro.fecha_fin || ''}</td>
+                        <td>${registro.tipo || ''}</td>
+                        <td>${registro.aprobado_por || ''}</td>
+                        <td>${registro.documento_url ? `<a href="${registro.documento_url}" target="_blank">Ver documento</a>` : ''}</td>
+                        <td>
+                            <!-- Actions can be added here if needed -->
+                        </td>
+                    `;
+                    tablaPermisosCuerpo.appendChild(fila);
+                });
+            } else {
+                alert('Error al cargar registros de permisos: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error al cargar registros de permisos:', error);
+            alert('Error al cargar registros de permisos');
+        }
+    }
+
+    // Event listeners for vacation filter buttons
+    const btnBuscarVacaciones = document.getElementById('btn-aplicar-filtros-vacaciones');
+    const btnLimpiarVacaciones = document.getElementById('btn-limpiar-filtros-vacaciones');
+
+    // Event listeners for permisos filter buttons
+    const btnBuscarPermisos = document.getElementById('btn-aplicar-filtros-permiso');
+    const btnLimpiarPermisos = document.getElementById('btn-limpiar-filtros-permiso');
+
+    if (btnBuscarVacaciones) {
+        btnBuscarVacaciones.addEventListener('click', function (e) {
+            e.preventDefault();
+            cargarRegistrosVacaciones();
+        });
+    }
+    if (btnLimpiarVacaciones) {
+        btnLimpiarVacaciones.addEventListener('click', function (e) {
+            e.preventDefault();
+            // Clear filter inputs
+            const filtroEmpleado = document.getElementById('filtro-empleado-vacaciones');
+            const filtroFechaInicio = document.getElementById('filtro-fecha-inicio-vacaciones');
+            const filtroFechaFin = document.getElementById('filtro-fecha-fin-vacaciones');
+            if (filtroEmpleado) filtroEmpleado.value = '';
+            if (filtroFechaInicio) filtroFechaInicio.value = '';
+            if (filtroFechaFin) filtroFechaFin.value = '';
+            cargarRegistrosVacaciones();
+        });
+    }
+
+    if (btnBuscarPermisos) {
+        btnBuscarPermisos.addEventListener('click', function (e) {
+            e.preventDefault();
+            cargarRegistrosPermisosAsistencia();
+        });
+    }
+    if (btnLimpiarPermisos) {
+        btnLimpiarPermisos.addEventListener('click', function (e) {
+            e.preventDefault();
+            // Clear filter inputs
+            const filtroEmpleado = document.getElementById('filtro-empleado-permiso');
+            const filtroTipo = document.getElementById('filtro-tipo-permiso');
+            const filtroFechaInicio = document.getElementById('filtro-fecha-inicio-permiso');
+            const filtroFechaFin = document.getElementById('filtro-fecha-fin-permiso');
+            if (filtroEmpleado) filtroEmpleado.value = '';
+            if (filtroTipo) filtroTipo.value = '';
+            if (filtroFechaInicio) filtroFechaInicio.value = '';
+            if (filtroFechaFin) filtroFechaFin.value = '';
+            cargarRegistrosPermisosAsistencia();
+        });
+    }
+
     // Initial load
     cargarRegistros();
+    cargarRegistrosVacaciones();
+    cargarRegistrosPermisosAsistencia();
 }
 
 // Expose the initialization function

@@ -361,40 +361,7 @@ def vacaciones_permisos(request):
 
 from .models import registro_vacaciones, permiso_asistencias, empleado
 
-@csrf_exempt
-@require_http_methods(["GET"])
-def listar_vacaciones_permisos(request):
-    try:
-        vacaciones = registro_vacaciones.objects.select_related('empleado', 'aprobado_por').all()
-        permisos = permiso_asistencias.objects.select_related('empleado').all()
 
-        lista_registros = []
-
-        for vac in vacaciones:
-            lista_registros.append({
-                'id': f'vac_{vac.id}',
-                'tipo': 'Vacaciones',
-                'empleado': f"{vac.empleado.primer_nombre} {vac.empleado.primer_apellido}",
-                'fecha_inicio': vac.fecha_inicio.strftime('%Y-%m-%d'),
-                'fecha_fin': vac.fecha_fin.strftime('%Y-%m-%d'),
-                'aprobado_por': f"{vac.aprobado_por.primer_nombre} {vac.aprobado_por.primer_apellido}" if vac.aprobado_por else '',
-                'documento_url': vac.documento.url if vac.documento else '',
-            })
-
-        for perm in permisos:
-            lista_registros.append({
-                'id': f'perm_{perm.id}',
-                'tipo': f"Permiso ({perm.get_tipo_display()})",
-                'empleado': f"{perm.empleado.primer_nombre} {perm.empleado.primer_apellido}",
-                'fecha_inicio': perm.fecha.strftime('%Y-%m-%d'),
-                'fecha_fin': perm.fecha.strftime('%Y-%m-%d'),
-                'aprobado_por': '',
-                'documento_url': '',
-            })
-
-        return JsonResponse({'success': True, 'registros': lista_registros})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -2642,3 +2609,61 @@ def api_registro_vacaciones(request):
         return JsonResponse({"success": False, "message": "JSON inválido."}, status=400)
     except Exception as e:
         return JsonResponse({"success": False, "message": str(e)}, status=500)
+    
+
+
+from django.views.decorators.http import require_GET
+from django.http import JsonResponse
+from login.models import registro_vacaciones
+@csrf_exempt
+@require_GET
+def listar_registros_vacaciones(request):
+    """
+    API para listar todos los registros de vacaciones sin filtros.
+    """
+    try:
+        registros = registro_vacaciones.objects.all()
+
+        lista_registros = []
+        for reg in registros:
+            lista_registros.append({
+                'id': reg.id,
+                'control_id': reg.control.id if reg.control else None,
+                'fecha_inicio': reg.fecha_inicio.strftime('%Y-%m-%d'),
+                'fecha_fin': reg.fecha_fin.strftime('%Y-%m-%d'),
+                'dias_planificados': reg.dias_planificados,
+                'dias_efectivos': reg.dias_efectivos,
+                'dias_habilitados': reg.dias_habilitados,
+                'estado': reg.estado,
+                'fecha_inhabilitacion': reg.fecha_inhabilitacion.strftime('%Y-%m-%d') if reg.fecha_inhabilitacion else None,
+                'fecha_reanudacion': reg.fecha_reanudacion.strftime('%Y-%m-%d') if reg.fecha_reanudacion else None,
+                'motivo_inhabilitacion': reg.motivo_inhabilitacion,
+            })
+
+        return JsonResponse({'success': True, 'registros_vacaciones': lista_registros})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    
+@csrf_exempt
+@require_http_methods(["GET"])
+def listar_permisos_asistencia(request):
+    try:
+        permisos = permiso_asistencias.objects.select_related('empleado').all()
+
+        lista_registros = []
+
+        for perm in permisos:
+            lista_registros.append({
+                'id': f'perm_{perm.id}',
+                'tipo': f"Permiso ({perm.get_tipo_display()})" if hasattr(perm, 'get_tipo_display') else 'Permiso',
+                'empleado': f"{perm.empleado.primer_nombre} {perm.empleado.primer_apellido}" if perm.empleado else '',
+                'fecha_inicio': perm.fecha_inicio.strftime('%Y-%m-%d') if hasattr(perm, 'fecha_inicio') and perm.fecha_inicio else '',
+                'fecha_fin': perm.fecha_fin.strftime('%Y-%m-%d') if hasattr(perm, 'fecha_fin') and perm.fecha_fin else '',
+                'aprobado_por': '',
+                'documento_url': '',
+            })
+
+        return JsonResponse({'success': True, 'registros': lista_registros})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
