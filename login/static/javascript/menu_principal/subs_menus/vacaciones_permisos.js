@@ -389,17 +389,30 @@ function initializeVacacionesPermisos() {
         return result;
     }
 
-    function addBusinessDays(date, days) {
-        let result = new Date(date);
-        let addedDays = 0;
-        while (addedDays < days) {
-            result.setDate(result.getDate() + 1);
-            const day = result.getDay();
-            if (day !== 0 && day !== 6) { // Skip Sunday (0) and Saturday (6)
-                addedDays++;
+    function addBusinessDays(startDate, days) {
+        if (days <= 0) return new Date(startDate);
+        
+        let count = 0;
+        let currentDate = new Date(startDate);
+        
+        // Asegurarnos de no modificar la fecha original
+        const resultDate = new Date(startDate);
+        
+        while (count < days) {
+            // Verificar si es día hábil (lunes a viernes)
+            if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+                count++;
+            }
+            
+            // Si aún no hemos alcanzado los días necesarios, avanzamos
+            if (count < days) {
+                currentDate.setDate(currentDate.getDate() + 1);
             }
         }
-        return result;
+        
+        // Asignar la fecha calculada al resultado
+        resultDate.setTime(currentDate.getTime());
+        return resultDate;
     }
 
     // Format date to yyyy-mm-dd
@@ -449,12 +462,19 @@ function initializeVacacionesPermisos() {
         btnDiasHabilesVacaciones.addEventListener('click', () => {
             const startDate = new Date(fechaInicioVacaciones.value);
             const diasDisponibles = parseInt(diasDisponiblesVacaciones.textContent, 10);
+            
             if (isNaN(startDate.getTime()) || isNaN(diasDisponibles) || diasDisponibles < 1) {
                 alert('Por favor ingrese una fecha de inicio válida y asegúrese de que haya días disponibles.');
                 return;
             }
-            const endDate = addBusinessDays(startDate, diasDisponibles - 1);
+            
+            const endDate = addBusinessDays(startDate, diasDisponibles);
             fechaFinVacaciones.value = formatDate(endDate);
+            
+            // Debug: Verificar el cálculo
+            console.log('Días calculados:', 
+                countBusinessDays(startDate, endDate), 
+                'de', diasDisponibles, 'solicitados');
         });
     }
 

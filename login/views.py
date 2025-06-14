@@ -19,34 +19,6 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.timezone import now
 from django.db.models.functions import ExtractMonth
 
-@csrf_exempt
-@require_http_methods(["GET"])
-def vacaciones_por_cedula(request):
-    cedula = request.GET.get('cedula')
-    if not cedula:
-        return JsonResponse({'success': False, 'message': 'Cédula no proporcionada.'}, status=400)
-    try:
-        empleado_obj = empleado.objects.get(cedula=cedula)
-        
-        # Group pending days by year from control_vacaciones, include id
-        pendientes_por_anio = control_vacaciones.objects.filter(empleado=empleado_obj).values('id', 'año', 'dias_pendientes').order_by('año')
-        
-        # Format for select: list of {id, anio, dias_pendientes}
-        pendientes_list = [{'id': p['id'], 'anio': p['año'], 'dias_pendientes': p['dias_pendientes']} for p in pendientes_por_anio]
-
-        return JsonResponse({
-            'success': True,
-            'empleado': {
-                'cedula': empleado_obj.cedula,
-                'nombre_completo': empleado_obj.get_nombre_completo(),
-            },
-            'vacaciones_pendientes_por_anio': pendientes_list
-        })
-    except empleado.DoesNotExist:
-        return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
-
 # Create your views here.
 def login(request):
     enable_fields = {'campo1': True, 'campo2': False}
@@ -479,7 +451,34 @@ def crear_vacacion_permiso(request):
         return JsonResponse({'success': False, 'message': 'JSON inválido.'}, status=400)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
-    
+@csrf_exempt
+@require_http_methods(["GET"])
+def vacaciones_por_cedula(request):
+    cedula = request.GET.get('cedula')
+    if not cedula:
+        return JsonResponse({'success': False, 'message': 'Cédula no proporcionada.'}, status=400)
+    try:
+        empleado_obj = empleado.objects.get(cedula=cedula)
+        
+        # Group pending days by year from control_vacaciones, include id
+        pendientes_por_anio = control_vacaciones.objects.filter(empleado=empleado_obj).values('id', 'año', 'dias_pendientes').order_by('año')
+        
+        # Format for select: list of {id, anio, dias_pendientes}
+        pendientes_list = [{'id': p['id'], 'anio': p['año'], 'dias_pendientes': p['dias_pendientes']} for p in pendientes_por_anio]
+
+        return JsonResponse({
+            'success': True,
+            'empleado': {
+                'cedula': empleado_obj.cedula,
+                'nombre_completo': empleado_obj.get_nombre_completo(),
+            },
+            'vacaciones_pendientes_por_anio': pendientes_list
+        })
+    except empleado.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        
 @require_http_methods(["GET"])
 def empleado_por_cedula(request):
     cedula = request.GET.get('cedula')

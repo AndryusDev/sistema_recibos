@@ -540,6 +540,15 @@ class control_vacaciones(models.Model):
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+def contar_dias_habiles(fecha_inicio, fecha_fin):
+    from datetime import timedelta
+    dias_habiles = 0
+    fecha_actual = fecha_inicio
+    while fecha_actual <= fecha_fin:
+        if fecha_actual.weekday() < 5:  # 0-4 son lunes a viernes
+            dias_habiles += 1
+        fecha_actual += timedelta(days=1)
+    return dias_habiles
 
 class registro_vacaciones(models.Model):
     """
@@ -602,21 +611,35 @@ class registro_vacaciones(models.Model):
             raise ValidationError("La fecha de fin debe ser posterior al inicio")
 
     def save(self, *args, **kwargs):
+        from datetime import timedelta
+        def contar_dias_habiles(fecha_inicio, fecha_fin):
+            dias_habiles = 0
+            fecha_actual = fecha_inicio
+            while fecha_actual <= fecha_fin:
+                if fecha_actual.weekday() < 5:  # 0-4 son lunes a viernes
+                    dias_habiles += 1
+                fecha_actual += timedelta(days=1)
+            return dias_habiles
+
         # Cálculo automático al crear
         if not self.pk:
-            self.dias_planificados = (self.fecha_fin - self.fecha_inicio).days + 1
-            self.dias_habilitados = self.dias_planificados
+            dias_habiles = contar_dias_habiles(self.fecha_inicio, self.fecha_fin)
+            self.dias_planificados = dias_habiles
+            self.dias_habilitados = dias_habiles
         
         super().save(*args, **kwargs)
     
+    
     def descontar_dia_habil(self):
-        """
-        Descuenta un día hábil de dias_habilitados y aumenta dias_efectivos si está en curso.
-        """
-        if self.estado == 'EN_C' and self.dias_habilitados > 0:
-            self.dias_habilitados -= 1
-            self.dias_efectivos += 1
-            self.save()
+        """Descuenta un día hábil de dias_habilitados y aumenta dias_efectivos si está en curso."""
+        from datetime import date
+        hoy = date.today()
+        if self.estado == 'EN_C' and self.dias_habilitados > 0 and hoy.weekday() < 5:
+            # Verificar que hoy esté dentro del rango de vacaciones
+            if self.fecha_inicio <= hoy <= self.fecha_fin:
+                self.dias_habilitados -= 1
+                self.dias_efectivos += 1
+                self.save()
     
     def iniciar(self):
         """Comienza el período vacacional"""
@@ -630,7 +653,9 @@ class registro_vacaciones(models.Model):
         if self.estado != 'EN_C':
             raise ValidationError("Solo vacaciones en curso pueden inhabilitares")
         
-        dias_usados = (fecha_inhabilitacion - self.fecha_inicio).days + 1
+        # Usar el mismo método de cálculo de días hábiles
+        dias_usados = contar_dias_habiles(self.fecha_inicio, fecha_inhabilitacion)
+        
         if dias_usados <= 0:
             raise ValidationError("Fecha de inhabilitación inválida")
         
@@ -661,10 +686,11 @@ class registro_vacaciones(models.Model):
         if self.estado not in ['EN_C', 'PAUS']:
             raise ValidationError("Solo vacaciones activas o pausadas pueden completarse")
         
+        from datetime import date
         if self.estado == 'PAUS':
-            self.dias_efectivos = (self.fecha_inhabilitacion - self.fecha_inicio).days + 1
+            self.dias_efectivos = contar_dias_habiles(self.fecha_inicio, self.fecha_inhabilitacion)
         else:
-            self.dias_efectivos = (date.today() - self.fecha_inicio).days + 1
+            self.dias_efectivos = contar_dias_habiles(self.fecha_inicio, date.today())
         
         self.estado = 'COMP'
         self.save()
