@@ -211,6 +211,34 @@ function initializeTemplateFunctions(templateName) {
             // Iniciar el proceso con un tiempo de espera inicial
             setTimeout(checkAndInitialize, 100);
         }
+        if (templateName === "asistencias.html") {
+            let intentos = 0;
+            const maxIntentos = 6;
+            
+            const checkAndInitialize = () => {
+                intentos++;
+                
+                if (typeof window.initializeAsistencias === 'function') {
+                    console.log(`Ejecutando initializeAsistencias (intento ${intentos})`);
+                    try {
+                        window.initializeAsistencias();
+                        return; // Exit if successful
+                    } catch (e) {
+                        console.error("Error ejecutando initializeAsistencias:", e);
+                    }
+                }
+                
+                if (intentos >= maxIntentos) {
+                    console.error(`No se pudo cargar initializeAsistencias después de ${maxIntentos} intentos`);
+                    return;
+                }
+                
+                console.warn(`initializeAsistencias no disponible (intento ${intentos}), reintentando...`);
+                setTimeout(checkAndInitialize, 500 * intentos); // Increase delay each attempt
+            };
+            
+            setTimeout(checkAndInitialize, 200);
+        }
         if (templateName === "crear_roles.html") {
             if (window.inicializarModuloRoles) {
                 console.log("Ejecutando inicializarModuloRoles");
@@ -232,6 +260,7 @@ function initializeTemplateFunctions(templateName) {
                 console.warn("initializeVacacionesPermisos no está disponible");
             }
         }
+        
     } catch (error) {
         console.error(`Error inicializando funciones para ${templateName}:`, error);
     }

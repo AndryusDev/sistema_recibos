@@ -302,21 +302,21 @@
                         <input type="file" id="vpl-documento" class="busqueda-input">
                     </div>
                 </div>
-+
-+
-+
-+                <div class="recibo-modal__acciones">
-+                    <button class="recibo-modal__boton btn-cancelar" onclick="registrarVPLModal__cerrar()">
-+                        <i class="fas fa-times"></i> Cancelar
-+                    </button>
-+                    <button class="recibo-modal__boton btn-guardar" onclick="submitVPLForm()">
-+                        <i class="fas fa-save"></i> Guardar
-+                    </button>
-+                </div>
-+            </div>
-+        </div>
-+    </div>
-+
+
+
+
+                <div class="recibo-modal__acciones">
+                    <button class="recibo-modal__boton btn-cancelar" onclick="registrarVPLModal__cerrar()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button class="recibo-modal__boton btn-guardar" onclick="submitVPLForm()">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         document.getElementById('vpl-tipo').addEventListener('change', function() {
@@ -336,44 +336,6 @@
         const CSRF_TOKEN = "{{ csrf_token }}";
         const API_ASISTENCIAS_URL = '/api/asistencias/';  // O la ruta correcta a tu endpoint
     </script>
-    <script>
-        function registrarAsistenciaModal__abrir() {
-            document.getElementById("registrarAsistenciaModal").style.display = "flex";
-        }
-
-        function registrarAsistenciaModal__cerrar() {
-            document.getElementById("registrarAsistenciaModal").style.display = "none";
-        }
-
-        function registrarJustificacionModal__abrir() {
-            document.getElementById("registrarJustificacionModal").style.display = "flex";
-        }
-
-        function registrarJustificacionModal__cerrar() {
-            document.getElementById("registrarJustificacionModal").style.display = "none";
-        }
-
-        function registrarVPLModal__abrir() {
-            document.getElementById("registrarVPLModal").style.display = "flex";
-        }
-
-        function registrarVPLModal__cerrar() {
-            document.getElementById("registrarVPLModal").style.display = "none";
-        }
-    </script>
     <script src="{% static 'javascript/menu_principal/subs_menus/asistencias.js' %}"></script>
-    <script>
-        document.querySelector('#registrarAsistenciaModal .btn-guardar').addEventListener('click', function() {
-            submitAsistenciaForm();
-        });
-
-        document.querySelector('#registrarJustificacionModal .btn-guardar').addEventListener('click', function() {
-            submitJustificacionForm();
-        });
-
-        document.querySelector('#registrarVPLModal .btn-guardar').addEventListener('click', function() {
-            submitVPLForm();
-        });
-    </script>
 </body>
 </html>

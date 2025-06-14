@@ -352,6 +352,7 @@ def roles_usuarios(request):
 def crear_roles(request):
     return render(request, 'menu_principal/subs_menus/crear_roles.html')
 
+@csrf_exempt
 def asistencias_personal(request):
     return render(request, 'menu_principal/subs_menus/asistencias.html')
 
