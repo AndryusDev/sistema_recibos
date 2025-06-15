@@ -1,3 +1,4 @@
+from calendar import monthrange
 from django.views.decorators.http import require_http_methods
 import json
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
@@ -7,7 +8,7 @@ from django.db.models import Q, Sum
 import pandas as pd
 from django.http import JsonResponse
 from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion, control_vacaciones, registro_vacaciones
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from django.conf import settings
 from decimal import Decimal
@@ -214,13 +215,17 @@ def constancia_trabajo(request):
 def arc(request):
     return render(request, 'menu_principal/subs_menus/arc.html')
 
+from .models import concepto_pago
+
 def importar_nomina(request):
     tipos_nomina = tipo_nomina.objects.values_list('tipo_nomina', flat=True).distinct()
     mesess = meses.objects.values_list('nombre_mes', flat=True).distinct()
     secuencia_mes = secuencia.objects.values_list('nombre_secuencia', flat=True).distinct()
     nominas = nomina.objects.select_related('tipo_nomina', 'secuencia').all().order_by('-fecha_carga')
+    conceptos = concepto_pago.objects.all().order_by('codigo')
     return render(request, 'menu_principal/subs_menus/importar_nomina.html', {   
-            'tipos_nomina': tipos_nomina, 'mesess': mesess, 'secuencia_mes': secuencia_mes, 'nominas': nominas
+            'tipos_nomina': tipos_nomina, 'mesess': mesess, 'secuencia_mes': secuencia_mes, 'nominas': nominas,
+            'conceptos': conceptos
     })
     
 
@@ -361,8 +366,7 @@ def vacaciones_permisos(request):
 
 from .models import registro_vacaciones, permiso_asistencias, empleado
 
-
-
+#Funcion crear permisos_asistencias
 @csrf_exempt
 @require_http_methods(["POST"])
 def crear_vacacion_permiso(request):
@@ -372,6 +376,7 @@ def crear_vacacion_permiso(request):
         empleado_cedula = data.get('empleado_cedula')
         fecha_inicio = data.get('fecha_inicio')
         fecha_fin = data.get('fecha_fin')
+        motivo = data.get('motivo', 'Permiso de asistencia')
         documento = None  # File upload handling not implemented here
 
         if not all([tipo, empleado_cedula, fecha_inicio, fecha_fin]):
@@ -382,13 +387,6 @@ def crear_vacacion_permiso(request):
         except ObjectDoesNotExist:
             return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
 
-        """aprobado_por_obj = None
-        if aprobado_por_cedula:
-            try:
-                aprobado_por_obj = empleado.objects.get(cedula=aprobado_por_cedula)
-            except ObjectDoesNotExist:
-                aprobado_por_obj = None"""
-
         if tipo.lower() == 'vacaciones':
             dias = (datetime.strptime(fecha_fin, '%Y-%m-%d') - datetime.strptime(fecha_inicio, '%Y-%m-%d')).days + 1
             vac = registro_vacaciones.objects.create(
@@ -396,20 +394,51 @@ def crear_vacacion_permiso(request):
                 fecha_inicio=fecha_inicio,
                 fecha_fin=fecha_fin,
                 dias=dias,
-                #aprobado_por=aprobado_por_obj,
                 documento=documento
             )
             return JsonResponse({'success': True, 'message': 'Vacación registrada correctamente.'})
 
         elif tipo.lower() == 'permiso':
-            perm = permiso_asistencias.objects.create(
+            fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+            fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+            delta = (fecha_fin_dt - fecha_inicio_dt).days
+
+            # Crear un solo registro en permiso_asistencias para todo el rango
+            permiso, created = permiso_asistencias.objects.get_or_create(
                 empleado=empleado_obj,
-                fecha_inicio=fecha_inicio,
-                fecha_fin=fecha_fin,
-                descriptcion=data.get('motivo', 'Permiso de asistencia'),
-                #aprobado_por=aprobado_por_obj
+                fecha_inicio=fecha_inicio_dt,
+                fecha_fin=fecha_fin_dt,
+                defaults={
+                    'descriptcion': motivo,
+                }
             )
-            return JsonResponse({'success': True, 'message': 'Permiso registrado correctamente.'})
+
+            # Crear o actualizar registros en asistencias para cada día
+            for i in range(delta + 1):
+                dia_permiso = fecha_inicio_dt + timedelta(days=i)
+
+                asistencia, created = asistencias.objects.get_or_create(
+                    empleado=empleado_obj,
+                    fecha=dia_permiso,
+                    defaults={
+                        'estado': 'P',  # Estado P para Permiso
+                        'observaciones': f"Permiso: {motivo}",
+                        'hora_entrada': None,
+                        'hora_salida': None
+                    }
+                )
+
+                if not created:
+                    asistencia.estado = 'P'
+                    asistencia.observaciones = f"Permiso: {motivo}"
+                    asistencia.hora_entrada = None
+                    asistencia.hora_salida = None
+                    asistencia.save()
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Permiso registrado correctamente para {delta + 1} días.'
+            })
 
         else:
             return JsonResponse({'success': False, 'message': 'Tipo no válido.'}, status=400)
@@ -418,6 +447,7 @@ def crear_vacacion_permiso(request):
         return JsonResponse({'success': False, 'message': 'JSON inválido.'}, status=400)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    
 @csrf_exempt
 @require_http_methods(["GET"])
 def vacaciones_por_cedula(request):
@@ -2497,21 +2527,6 @@ def eliminar_roles(request, rol_id):
             'detail': str(e)
         }, status=500)
 
-from django.http import JsonResponse
-from django.views.decorators.http import require_GET
-from django.contrib.auth import get_user_model
-@require_GET
-def get_current_user_info(request):
-    # Forzar un usuario de prueba (SOLO PARA DEBUG!)
-    User = get_user_model()
-    usuario = User.objects.get(username='admin')  # Cambia por un usuario real
-    empleado = usuario.empleado
-    
-    return JsonResponse({
-        'success': True,
-        'email': usuario.email,
-        'nombre': empleado.primer_nombre
-    })
 
 # New API for registro_vacaciones lifecycle management
 from django.views.decorators.csrf import csrf_exempt
@@ -2522,6 +2537,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from .models import registro_vacaciones, control_vacaciones
 
+#crear registros vacaciones
 @csrf_exempt
 @require_http_methods(["POST", "PATCH"])
 @transaction.atomic
@@ -2558,6 +2574,30 @@ def api_registro_vacaciones(request):
                 estado=estado
             )
             registro.save()
+
+            # Crear asistencias para cada día de vacaciones con estado 'V'
+            empleado_obj = control.empleado
+            delta_days = (fecha_fin_dt - fecha_inicio_dt).days
+            for i in range(delta_days + 1):
+                dia_vacacion = fecha_inicio_dt + timedelta(days=i)
+                asistencia_obj, created = asistencias.objects.get_or_create(
+                    empleado=empleado_obj,
+                    fecha=dia_vacacion,
+                    defaults={
+                        'estado': 'V',
+                        'observaciones': 'Vacaciones',
+                        'hora_entrada': None,
+                        'hora_salida': None
+                    }
+                )
+                if not created:
+                    # Actualizar estado y observaciones si ya existe
+                    asistencia_obj.estado = 'V'
+                    asistencia_obj.observaciones = 'Vacaciones'
+                    asistencia_obj.hora_entrada = None
+                    asistencia_obj.hora_salida = None
+                    asistencia_obj.save()
+
             return JsonResponse({"success": True, "message": "Vacaciones registradas correctamente.", "id": registro.id})
 
         elif request.method == "PATCH":
@@ -2613,8 +2653,9 @@ def api_registro_vacaciones(request):
 
 
 from django.views.decorators.http import require_GET
-from django.http import JsonResponse
 from login.models import registro_vacaciones
+
+#Funcion listar vacaciones
 @csrf_exempt
 @require_GET
 def listar_registros_vacaciones(request):
@@ -2645,6 +2686,7 @@ def listar_registros_vacaciones(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
     
+#Funcion listar permisos_asistencias
 @csrf_exempt
 @require_http_methods(["GET"])
 def listar_permisos_asistencia(request):
@@ -2667,3 +2709,146 @@ def listar_permisos_asistencia(request):
         return JsonResponse({'success': True, 'registros': lista_registros})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+logger = logging.getLogger(__name__)
+
+@csrf_exempt
+@transaction.atomic
+def generar_nomina_automatica(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            logger.info(f"Datos recibidos: {data}")
+
+            # Validar parámetros obligatorios
+            required_fields = ['tipo_nomina', 'mes', 'anio', 'secuencia', 'fecha_cierre', 'conceptos', 'periodo']
+            if not all(field in data for field in required_fields):
+                return JsonResponse({'error': 'Faltan parámetros requeridos'}, status=400)
+
+            # Normalizar secuencia (compatibilidad con frontend)
+            secuencia_normalizada = {
+                'primera': 'PRIMERA QUINCENA',
+                'segunda': 'SEGUNDA QUINCENA',
+                'especial': 'ESPECIAL'
+            }.get(data['secuencia'].lower(), data['secuencia'])
+
+            # Obtener objetos relacionados
+            try:
+                tipo_nomina_obj = tipo_nomina.objects.get(tipo_nomina=data['tipo_nomina'])
+                mes_obj = meses.objects.get(nombre_mes=data['mes'])
+                secuencia_obj = secuencia.objects.get(nombre_secuencia=secuencia_normalizada)
+                
+                conceptos_seleccionados = concepto_pago.objects.filter(
+                    codigo__in=data['conceptos'],
+                    status='ACTIVO'
+                )
+                if conceptos_seleccionados.count() != len(data['conceptos']):
+                    codigos_invalidos = set(data['conceptos']) - set(conceptos_seleccionados.values_list('codigo', flat=True))
+                    return JsonResponse({
+                        'error': f'Conceptos no encontrados o inactivos: {", ".join(codigos_invalidos)}'
+                    }, status=400)
+                    
+            except tipo_nomina.DoesNotExist:
+                return JsonResponse({'error': 'Tipo de nómina no encontrado'}, status=400)
+            except meses.DoesNotExist:
+                return JsonResponse({'error': 'Mes no encontrado'}, status=400)
+            except secuencia.DoesNotExist:
+                return JsonResponse({
+                    'error': f'Secuencia no encontrada. Valores válidos: {list(secuencia_normalizada.values())}'
+                }, status=400)
+            
+            # Crear registro de nómina
+            periodo_str = f"{mes_obj.nombre_mes} {data['anio']}"
+            nomina_obj = nomina.objects.create(
+                tipo_nomina=tipo_nomina_obj,
+                periodo=periodo_str,
+                secuencia=secuencia_obj,
+                fecha_cierre=datetime.strptime(data['fecha_cierre'], '%Y-%m-%d').date()
+            )
+            
+            # Obtener periodo para cálculo
+            periodo = int(data['periodo'])
+            anio = int(data['anio'])
+            mes_num = mes_obj.id_mes if hasattr(mes_obj, 'id_mes') else datetime.strptime(data['mes'], '%B').month
+            
+            # Calcular rango de fechas del periodo
+            if periodo == 1:
+                start_date = datetime(anio, mes_num, 1).date()
+                end_date = datetime(anio, mes_num, 15).date()
+                dias_laborables = 15
+            else:
+                start_date = datetime(anio, mes_num, 16).date()
+                last_day = monthrange(anio, mes_num)[1]  # Último día del mes
+                end_date = datetime(anio, mes_num, last_day).date()
+                dias_laborables = (end_date - start_date).days + 1
+
+            logger.info(f"Periodo: {periodo}, Días laborables: {dias_laborables}, Rango: {start_date} a {end_date}")
+
+            # Procesar empleados
+            empleados = empleado.objects.filter(status=True)
+            stats = {
+                'empleados_procesados': 0,
+                'conceptos_generados': 0,
+                'errores': 0
+            }
+            
+            for emp in empleados:
+                try:
+                    salario_base = emp.nivel_salarial.monto
+                    
+                    # Calcular días de asistencia
+                    asistencia_dias = asistencias.objects.filter(
+                        empleado=emp,
+                        fecha__range=(start_date, end_date),
+                        estado__in=['A', 'P']
+                    ).count()
+                    logger.info(f"Empleado {emp.cedula}: Asistencias={asistencia_dias}/{dias_laborables}")
+
+                    # Calcular salario diario (base 30 días/mes)
+                    salario_diario = salario_base / 30
+                    
+                    for concepto in conceptos_seleccionados:
+                        monto = 0
+                        
+                        if concepto.codigo == '1001':  # Salario base
+                            monto = salario_diario * asistencia_dias
+                        
+                        elif concepto.codigo == '1101':  # PRM por hijo
+                            monto = (emp.hijos * 100) * (asistencia_dias / dias_laborables)
+                        
+                        # Registrar concepto
+                        if monto != 0:
+                            detalle_nomina.objects.create(
+                                nomina=nomina_obj,
+                                cedula=emp,
+                                codigo=concepto,
+                                monto=round(monto, 2)
+                            )
+                            stats['conceptos_generados'] += 1
+                    
+                    # Crear recibo de pago
+                    recibo_pago.objects.create(
+                        nomina=nomina_obj,
+                        cedula=emp,
+                        fecha_generacion=now()
+                    )
+                    stats['empleados_procesados'] += 1
+                    
+                except Exception as e:
+                    stats['errores'] += 1
+                    logger.error(f"Error en empleado {emp.cedula}: {str(e)}", exc_info=True)
+            
+            return JsonResponse({
+                'success': True,
+                'nomina_id': nomina_obj.id_nomina,
+                'stats': stats
+            })
+            
+        except Exception as e:
+            logger.error(f"Error general: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'error': f'Error interno: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'error': 'Método no permitido'}, status=405)

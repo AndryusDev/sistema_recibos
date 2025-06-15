@@ -110,11 +110,31 @@ function inicializarModalImportacion() {
                 }
             });
         } else if (pasoActual === 3) {
-            if (!inputArchivo?.files?.length) {
-                dropzone?.style.setProperty('border-color', 'var(--color-error)', 'important');
+            // Validar que al menos un concepto esté seleccionado
+            const conceptosSeleccionados = modal.querySelectorAll('#paso-conceptos input[type="checkbox"]:checked');
+            if (conceptosSeleccionados.length === 0) {
+                const pasoConceptos = modal.querySelector('#paso-conceptos');
+                if (pasoConceptos) pasoConceptos.style.border = '2px solid var(--color-error)';
                 valido = false;
             } else {
-                dropzone?.style.setProperty('border-color', 'var(--color-secundario)', 'important');
+                const pasoConceptos = modal.querySelector('#paso-conceptos');
+                if (pasoConceptos) pasoConceptos.style.border = 'none';
+                
+                // Almacenar los códigos de conceptos seleccionados en un campo oculto
+                const codigosConceptos = Array.from(conceptosSeleccionados).map(checkbox => {
+                    return checkbox.getAttribute('data-codigo');
+                });
+                
+                // Crear o actualizar campo oculto para los conceptos
+                let conceptosInput = modal.querySelector('#conceptos-seleccionados');
+                if (!conceptosInput) {
+                    conceptosInput = document.createElement('input');
+                    conceptosInput.type = 'hidden';
+                    conceptosInput.id = 'conceptos-seleccionados';
+                    conceptosInput.name = 'conceptos_seleccionados';
+                    modal.querySelector('.modal-body').appendChild(conceptosInput);
+                }
+                conceptosInput.value = JSON.stringify(codigosConceptos);
             }
         }
         
@@ -182,82 +202,119 @@ function inicializarModalImportacion() {
     }
     
     if (btnImportar) {
-    btnImportar.addEventListener('click', async function() {
-        if (!validarPasoActual()) {
-            mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
-            return;
-        }
+        btnImportar.addEventListener('click', async function() {
+            if (!validarPasoActual()) {
+                mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+                return;
+            }
 
-        btnImportar.disabled = true;
-        btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+            btnImportar.disabled = true;
+            btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
-        const formData = new FormData();
-        
-        // Obtener valores de los campos
-        const tipoNomina = modal.querySelector('#modal-tipo-nomina')?.value;
-        const mes = modal.querySelector('#modal-mes')?.value;
-        const anio = modal.querySelector('#modal-anio')?.value;
-        const secuencia = modal.querySelector('#modal-secuencia')?.value;
-        const fechaCierre = modal.querySelector('#modal-fecha-cierre')?.value;
-        const archivo = inputArchivo?.files[0];
-
-        // Verificar que todos los campos tengan valor
-        if (!tipoNomina || !mes || !anio || !secuencia || !fechaCierre || !archivo) {
-            mostrarNotificacion('Todos los campos son requeridos', 'error');
-            btnImportar.disabled = false;
-            btnImportar.innerHTML = '<i class="fas fa-check"></i> Confirmar Importación';
-            return;
-        }
-
-        // Agregar campos al FormData con los nombres exactos que espera el backend
-        formData.append('tipo_nomina', tipoNomina);
-        formData.append('mes', mes);
-        formData.append('anio', anio);
-        formData.append('secuencia', secuencia);
-        formData.append('fecha_cierre', fechaCierre);
-        formData.append('archivo', archivo);
-
-        // Depuración: Mostrar los valores que se enviarán
-        console.log('Datos a enviar:', {
-            tipo_nomina: tipoNomina,
-            mes: mes,
-            anio: anio,
-            secuencia: secuencia,
-            fecha_cierre: fechaCierre,
-            archivo: archivo.name
-        });
-
-        try {
-            const resultado = await enviarDatosImportacion(formData);
-            console.log("Resultado completo:", resultado);
-
-            // Versión simplificada sin verificación de errores
-            const mensajeDetallado = crearMensajeDetallado({
-                message: resultado.message || 'Nómina importada exitosamente',
-                stats: resultado.stats || {
-                    empleados_procesados: 0,
-                    recibos_generados: 0,
-                    conceptos_procesados: 0
-                }
-            });
+            // Obtener valores del formulario
+            const tipoNomina = modal.querySelector('#modal-tipo-nomina').value;
+            const mes = modal.querySelector('#modal-mes').value;
+            const anio = modal.querySelector('#modal-anio').value;
+            const secuencia = modal.querySelector('#modal-secuencia').value;
+            const periodo = modal.querySelector('#modal-periodo').value;
+            const fechaCierre = modal.querySelector('#modal-fecha-cierre').value;
             
-            await mostrarNotificacionDetallada(mensajeDetallado);
-            await actualizarTablaNominas();
-            setTimeout(cerrarModal, 1500);
+            // Obtener conceptos seleccionados
+            const conceptosSeleccionados = Array.from(
+                modal.querySelectorAll('#paso-conceptos input[type="checkbox"]:checked')
+            ).map(checkbox => checkbox.getAttribute('data-codigo'));
 
-        } catch (error) {
-            console.error("Error en el proceso de importación:", error);
-            mostrarNotificacion(`Error al importar nómina: ${error.message}`, 'error');
-        } finally {
-            btnImportar.disabled = false;
-            btnImportar.innerHTML = '<i class="fas fa-check"></i> Confirmar Importación';
+            // Validar que haya al menos un concepto seleccionado
+            if (conceptosSeleccionados.length === 0) {
+                mostrarNotificacion('Debe seleccionar al menos un concepto de pago', 'error');
+                btnImportar.disabled = false;
+                btnImportar.innerHTML = '<i class="fas fa-check"></i> Confirmar Importación';
+                return;
+            }
+
+            // Preparar datos para enviar
+            const secuenciaSelect = modal.querySelector('#modal-secuencia');
+    if (secuenciaSelect) {
+        // Primero obtenemos el campo periodo una sola vez
+        const periodoField = modal.querySelector('#modal-periodo');
+        
+        // Función para actualizar el periodo
+        const actualizarPeriodo = () => {
+            // Asignar directamente el valor seleccionado al campo oculto
+            periodoField.value = secuenciaSelect.value;
+            console.log('Periodo actualizado a:', periodoField.value); // Para debugging
+        };
+
+        // Asignar el evento
+        secuenciaSelect.addEventListener('change', actualizarPeriodo);
+        
+        // Actualizar inmediatamente si ya hay un valor seleccionado
+        if (secuenciaSelect.value) {
+            actualizarPeriodo();
         }
-    });
-}
+    } // Default to 1 if not found
+            const data = {
+                tipo_nomina: tipoNomina,
+                mes: mes,
+                anio: anio,
+                secuencia: secuencia,
+                fecha_cierre: fechaCierre,
+                conceptos: conceptosSeleccionados,
+                periodo: periodo
+            };
+
+            console.log("Datos enviados para generar nómina automática:", data);
+
+            try {
+                const response = await fetch('/api/generar_nomina_automatica/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': CSRF_TOKEN
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const resultado = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(resultado.error || 'Error al generar nómina');
+                }
+
+                const mensajeDetallado = crearMensajeDetallado({
+                    message: resultado.message || 'Nómina generada exitosamente',
+                    stats: resultado.stats || {
+                        empleados_procesados: 0,
+                        conceptos_generados: 0,
+                        errores: 0
+                    },
+                    conceptos: conceptosSeleccionados
+                });
+
+                await mostrarNotificacionDetallada(mensajeDetallado);
+                await actualizarTablaNominas();
+                setTimeout(cerrarModal, 1500);
+
+            } catch (error) {
+                console.error("Error al generar nómina:", error);
+                mostrarNotificacion(`Error al generar nómina: ${error.message}`, 'error');
+            } finally {
+                btnImportar.disabled = false;
+                btnImportar.innerHTML = '<i class="fas fa-check"></i> Confirmar Importación';
+            }
+        });
+    }
 }
 
 // Función auxiliar para crear el mensaje HTML
 function crearMensajeDetallado(resultado) {
+    const conceptosLista = resultado.conceptos && resultado.conceptos.length > 0 
+        ? resultado.conceptos.map(codigo => {
+            const checkbox = document.querySelector(`input[data-codigo="${codigo}"]`);
+            return checkbox ? checkbox.nextElementSibling.textContent.trim() : codigo;
+        }).join(', ')
+        : 'Ningún concepto seleccionado';
+
     return `
         <div class="notificacion-detallada">
             <div class="notificacion-titulo">${resultado.message || 'Proceso completado'}</div>
@@ -267,7 +324,7 @@ function crearMensajeDetallado(resultado) {
                     <ul class="notificacion-lista">
                         <li><strong>Empleados procesados:</strong> ${resultado.stats.empleados_procesados || 0}</li>
                         <li><strong>Recibos generados:</strong> ${resultado.stats.recibos_generados || 0}</li>
-                        <li><strong>Conceptos procesados:</strong> ${resultado.stats.conceptos_procesados || 0}</li>
+                        <li><strong>Conceptos aplicados:</strong> ${conceptosLista}</li>
                         <li class="texto-exito">Proceso completado</li>
                     </ul>
                 </div>

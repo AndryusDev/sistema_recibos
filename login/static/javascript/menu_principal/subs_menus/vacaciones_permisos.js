@@ -111,29 +111,6 @@ function initializeVacacionesPermisos() {
             }
     }
 
-    async function getCurrentUserInfo() {
-        try {
-            const response = await fetch('/api/current-user-info/', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    credentials: "include",
-                },
-                credentials: 'include'  // Incluir cookies para autenticación
-            });
-
-            if (!response.ok) {
-                throw new Error('Error al obtener información del usuario');
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error('Error:', error);
-            return { success: false, error: error.message };
-        }
-    }
-
     // Función para abrir el modal de permisos
     function openRegistrarPermisoModal() {
         // Mostrar el modal directamente sin buscar usuario
@@ -494,22 +471,19 @@ function initializeVacacionesPermisos() {
     if (formRegistrarPermiso) {
         formRegistrarPermiso.addEventListener('submit', async (event) => {
             event.preventDefault();
+            const form = event.target;
 
             const cedulaInputLocal = document.getElementById('cedulaPermiso');
             const nombreInputLocal = document.getElementById('nombrePermiso');
             const descripcionInput = document.getElementById('descripcionPermiso');
             const fechaInicioInputLocal = document.getElementById('fechaInicioPermiso');
             const fechaFinalInputLocal = document.getElementById('fechaFinalPermiso');
-            const aprobadoPorInput = document.getElementById('aprobadoPorPermiso');
-            const hechoPorInputLocal = document.getElementById('hechoPorPermiso');
 
             const cedula = cedulaInputLocal ? cedulaInputLocal.value.trim() : '';
             const nombre = nombreInputLocal ? nombreInputLocal.value.trim() : '';
             const descripcion = descripcionInput ? descripcionInput.value.trim() : '';
             const fechaInicio = fechaInicioInputLocal ? fechaInicioInputLocal.value : '';
             const fechaFinal = fechaFinalInputLocal ? fechaFinalInputLocal.value : '';
-            const aprobadoPor = aprobadoPorInput ? aprobadoPorInput.value.trim() : '';
-            const hechoPor = hechoPorInputLocal ? hechoPorInputLocal.value.trim() : '';
 
             if (!cedula || !nombre || !descripcion || !fechaInicio || !fechaFinal) {
                 Swal.fire({
@@ -525,39 +499,62 @@ function initializeVacacionesPermisos() {
                 empleado_cedula: cedula,
                 fecha_inicio: fechaInicio,
                 fecha_fin: fechaFinal,
-                aprobado_por_cedula: aprobadoPor,
                 motivo: descripcion,
-                hecho_por: hechoPor
+                hecho_por: hechoPorInput ? hechoPorInput.value : ''
             };
 
             try {
-                const response = await fetch('/api/vacaciones_permisos/crear/', {
-                    method: 'POST',
+            // Determinar si es creación (POST) o actualización (PATCH)
+            const registroIdInput = form.querySelector('input[name="registro_id"]');
+            const registroId = registroIdInput ? registroIdInput.value : null;
+            const method = registroId ? 'PATCH' : 'POST';
+            let url = '/api/vacaciones_permisos/crear/';
+            
+            if (method === 'PATCH') {
+                url = `/api/vacaciones_permisos/actualizar/${registroId}/`;
+                payload.id = registroId; // Asegurar que el ID esté en el payload
+            }
+
+                const response = await fetch(url, {
+                    method: method,
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': getCookie('csrftoken')
                     },
                     body: JSON.stringify(payload)
                 });
+
                 const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Error en la solicitud');
+                }
+
                 if (data.success) {
-                    alert(data.message);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Éxito',
+                        text: data.message,
+                        timer: 2000
+                    });
+                    
                     formRegistrarPermiso.reset();
                     modalRegistrarPermiso.style.display = 'none';
                     cargarRegistros();
+                    
+                    // Limpiar el ID si era una actualización
+                    if (method === 'PATCH') {
+                        formRegistrarPermiso.querySelector('[name="registro_id"]').value = '';
+                    }
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error al registrar permiso',
-                        text: data.message,
-                    });
+                    throw new Error(data.message || 'Error desconocido');
                 }
             } catch (error) {
-                console.error('Error al registrar permiso:', error);
+                console.error('Error al procesar la solicitud:', error);
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error al registrar permiso',
-                    text: 'Error al registrar permiso',
+                    title: 'Error',
+                    text: error.message,
                 });
             }
         });
@@ -667,7 +664,7 @@ function initializeVacacionesPermisos() {
     }
 
     // Function to load vacation records from the API and populate the vacation table
-    async function cargarRegistrosVacaciones() {
+async function cargarRegistrosVacaciones() {
         const tablaVacacionesCuerpo = document.getElementById('cuerpoTablaVacaciones');
         if (!tablaVacacionesCuerpo) return;
         try {
@@ -690,10 +687,9 @@ function initializeVacacionesPermisos() {
                         <td>${registro.dias_planificados || ''}</td>
                         <td>${registro.dias_efectivos || ''}</td>
                         <td>${registro.dias_habilitados || ''}</td>
-                        <td>${registro.aprobado_por || ''}</td>
                         <td>${registro.documento_url ? `<a href="${registro.documento_url}" target="_blank">Ver documento</a>` : ''}</td>
                         <td>
-                            <!-- Actions can be added here if needed -->
+                            ${registro.estado === 'EN_C' ? '<button class="btn-inhabilitar">Inhabilitar</button>' : ''}
                         </td>
                     `;
                     tablaVacacionesCuerpo.appendChild(fila);
@@ -728,7 +724,6 @@ function initializeVacacionesPermisos() {
                         <td>${registro.fecha_inicio || ''}</td>
                         <td>${registro.fecha_fin || ''}</td>
                         <td>${registro.tipo || ''}</td>
-                        <td>${registro.aprobado_por || ''}</td>
                         <td>${registro.documento_url ? `<a href="${registro.documento_url}" target="_blank">Ver documento</a>` : ''}</td>
                         <td>
                             <!-- Actions can be added here if needed -->

@@ -29,7 +29,7 @@ urlpatterns = [
     path('importar_nomina/', views.importar_nomina, name= 'importar_nomina'),
     path('api/nominas/', views.listar_nominas, name='listar_nominas'),
     path('api/nominas/<int:pk>/', views.eliminar_nomina, name='eliminar_nomina'),
-    path('api/nominas/importar/', views.importar_nominas, name= 'importar_nominas'),
+    #path('api/nominas/importar/', views.importar_nominas, name= 'importar_nominas'),
 
     path('ver_prenomina/', views.ver_prenomina, name= 'ver_prenomina'),
     path('listar_prenominas/', views.listar_prenominas, name= 'listar_prenominas'),
@@ -93,7 +93,7 @@ urlpatterns = [
     path('api/vacaciones_permisos/crear/', views.crear_vacacion_permiso, name='crear_vacacion_permiso'),
     path('api/empleado_por_cedula/', views.empleado_por_cedula, name='empleado_por_cedula'),
     path('api/vacaciones_listar/' ,views.listar_registros_vacaciones, name = 'listar_registros_vacaciones'),
+    path('api/generar_nomina_automatica/', views.generar_nomina_automatica, name = 'generar_nomina_automatica'),
 
-    path('api/current-user-info/', views.get_current_user_info, name='current_user_info'),
     #path('api/control_vacaciones/', views.api_control_vacaciones, name='api_control_vacaciones'),
 ]

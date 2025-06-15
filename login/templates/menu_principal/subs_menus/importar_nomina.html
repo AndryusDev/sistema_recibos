@@ -9,6 +9,34 @@
     <link rel="stylesheet" href="{% static 'css/recibo_pago.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <style>
+        /* Added styles for concepto-checkbox */
+        .concepto-checkbox {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            background-color: #f0f4f8;
+            padding: 8px 12px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease;
+        }
+        .concepto-checkbox:hover {
+            background-color: #d9e6f2;
+        }
+        .concepto-checkbox input[type="checkbox"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .concepto-checkbox label {
+            font-weight: 500;
+            color: #003366;
+            cursor: pointer;
+            user-select: none;
+        }
+    </style>
 </head>
 <body>
     <div class="titulo-pagina">
@@ -171,34 +199,30 @@
                                 max="2030-12-31"
                             >
                         </div>
+                        <input type="hidden" id="modal-periodo" name="periodo" value="1">
                         
                         <div class="info-ayuda">
                             <i class="fas fa-info-circle"></i> Especifique el período, secuencia y fecha de cierre de la nómina
                         </div>
                     </div>
                     
-                    <!-- Paso 3: Carga de archivo -->
-                    <div class="paso-importacion" data-paso="3">
-                        <div class="dropzone-modal" id="dropzone-area">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Arrastra tu archivo Excel o CSV aquí</p>
-                            <p class="nombre-archivo" id="nombre-archivo"></p>
-                            <input type="file" id="archivo-nomina-modal" accept=".xlsx,.xls,.csv" required>
-                            <button class="busqueda-boton" id="btn-seleccionar-archivo">
-                                <i class="fas fa-folder-open"></i> Seleccionar archivo
-                            </button>
-                            
-                            <div class="info-archivo">
-                                <span>Formatos soportados: .xlsx, .xls, .csv (Máx. 10MB)</span>
-                                <a href="#" class="descargar-plantilla" id="descargar-plantilla">
-                                    <i class="fas fa-file-download"></i> Descargar plantilla
-                                </a>
-                            </div>
+                    <!-- Paso 3: Selección de conceptos -->
+                    <div class="paso-importacion" data-paso="3" id="paso-conceptos">
+                        {% for concepto in conceptos %}
+                        <div class="concepto-checkbox">
+                            <input
+                                type="checkbox"
+                                id="concepto-{{ concepto.codigo }}"
+                                data-codigo="{{ concepto.codigo }}"
+                                {% if concepto.tipo_aplicacion == 'QUINCENA' %}checked{% endif %}
+                            >
+                            <label for="concepto-{{ concepto.codigo }}">
+                                {{ concepto.descripcion }} ({{ concepto.codigo }})
+                            </label>
                         </div>
-                        
-                        <div class="previsualizacion-datos" id="previsualizacion-datos">
-                            <!-- Vista previa de los datos -->
-                        </div>
+                        {% empty %}
+                        <p>No hay conceptos disponibles para seleccionar.</p>
+                        {% endfor %}
                     </div>
                     
                     <!-- Paso 4: Confirmación -->

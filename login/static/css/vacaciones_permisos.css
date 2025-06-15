@@ -10,3 +10,18 @@
     text-align: center; /* Center text in table headers and cells */
     vertical-align: middle;
 }
+
+.btn-inhabilitar {
+    background-color: #dc3545; /* Bootstrap danger red */
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-inhabilitar:hover {
+    background-color: #c82333;
+}
