@@ -8,7 +8,7 @@ from django.db.models import Q, Sum
 import pandas as pd
 from django.http import JsonResponse
 from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion, control_vacaciones, registro_vacaciones
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import os
 from django.conf import settings
 from decimal import Decimal
@@ -2717,6 +2717,21 @@ logger = logging.getLogger(__name__)
 def generar_nomina_automatica(request):
     if request.method == 'POST':
         try:
+            from decimal import Decimal, getcontext
+            import json
+            from datetime import datetime, date
+            from calendar import monthrange
+            from django.utils.timezone import now
+            from django.http import JsonResponse
+            from django.views.decorators.csrf import csrf_exempt
+            from django.db import transaction
+            import logging
+            
+            # Configurar precisión decimal
+            getcontext().prec = 10
+            
+            logger = logging.getLogger(__name__)
+            
             data = json.loads(request.body)
             logger.info(f"Datos recibidos: {data}")
 
@@ -2784,6 +2799,25 @@ def generar_nomina_automatica(request):
 
             logger.info(f"Periodo: {periodo}, Días laborables: {dias_laborables}, Rango: {start_date} a {end_date}")
 
+            # Función para calcular prima de antigüedad
+            def calcular_prima_antiguedad(anios_servicio, salario_asistencias):
+                """Calcula la prima de antigüedad basada en el salario por asistencias"""
+                TABLA_PRIMA_ANTIGUEDAD = {
+                    1: 1, 2: 2, 3: 3, 4: 4, 5: 5,
+                    6: 6.20, 7: 7.40, 8: 8.60, 9: 9.80,
+                    10: 11.00, 11: 12.40, 12: 13.80,
+                    13: 15.20, 14: 16.60, 15: 18,
+                    16: 19.60, 17: 21.20, 18: 22.80,
+                    19: 24.40, 20: 26, 21: 27.80,
+                    22: 29.60
+                }
+                
+                if anios_servicio <= 0:
+                    return Decimal('0')
+                
+                porcentaje = Decimal(str(TABLA_PRIMA_ANTIGUEDAD.get(anios_servicio, 30)))  # 30% para 23+ años
+                return (Decimal(salario_asistencias) * porcentaje) / Decimal('100')
+
             # Procesar empleados
             empleados = empleado.objects.filter(status=True)
             stats = {
@@ -2794,7 +2828,18 @@ def generar_nomina_automatica(request):
             
             for emp in empleados:
                 try:
-                    salario_base = emp.nivel_salarial.monto
+                    # Verificar datos básicos del empleado
+                    if not hasattr(emp, 'nivel_salarial') or not emp.nivel_salarial:
+                        logger.error(f"Empleado {emp.cedula} no tiene nivel salarial asignado")
+                        stats['errores'] += 1
+                        continue
+                        
+                    if not hasattr(emp, 'fecha_ingreso') or not emp.fecha_ingreso:
+                        logger.error(f"Empleado {emp.cedula} no tiene fecha de ingreso")
+                        stats['errores'] += 1
+                        continue
+                    
+                    salario_base = Decimal(str(emp.nivel_salarial.monto))
                     
                     # Calcular días de asistencia
                     asistencia_dias = asistencias.objects.filter(
@@ -2802,27 +2847,46 @@ def generar_nomina_automatica(request):
                         fecha__range=(start_date, end_date),
                         estado__in=['A', 'P']
                     ).count()
-                    logger.info(f"Empleado {emp.cedula}: Asistencias={asistencia_dias}/{dias_laborables}")
-
-                    # Calcular salario diario (base 30 días/mes)
-                    salario_diario = salario_base / 30
+                    
+                    # Calcular salario por asistencias (concepto 1001)
+                    salario_diario = salario_base / Decimal('30')
+                    salario_asistencias = salario_diario * Decimal(asistencia_dias)
+                    
+                    # Calcular años de servicio
+                    hoy = date.today()
+                    anios_servicio = hoy.year - emp.fecha_ingreso.year
+                    if (hoy.month, hoy.day) < (emp.fecha_ingreso.month, emp.fecha_ingreso.day):
+                        anios_servicio -= 1
+                    
+                    # Diccionario para almacenar montos calculados
+                    montos_conceptos = {}
                     
                     for concepto in conceptos_seleccionados:
-                        monto = 0
+                        monto = Decimal('0')
                         
-                        if concepto.codigo == '1001':  # Salario base
-                            monto = salario_diario * asistencia_dias
+                        if concepto.codigo == '1001':  # Salario base por asistencias
+                            monto = salario_asistencias
+                            montos_conceptos['1001'] = monto
                         
                         elif concepto.codigo == '1101':  # PRM por hijo
-                            monto = (emp.hijos * 100) * (asistencia_dias / dias_laborables)
+                            monto = (Decimal(emp.hijos) * Decimal('100')) * (Decimal(asistencia_dias) / Decimal(dias_laborables))
+                        
+                        elif concepto.codigo == '1103':  # Prima de antigüedad
+                            if '1001' not in montos_conceptos:
+                                logger.error(f"No se encontró cálculo de salario por asistencias para empleado {emp.cedula}")
+                                continue
+                                
+                            salario_asist = montos_conceptos['1001']
+                            monto = calcular_prima_antiguedad(anios_servicio, salario_asist)
+    
                         
                         # Registrar concepto
-                        if monto != 0:
+                        if monto != Decimal('0'):
                             detalle_nomina.objects.create(
                                 nomina=nomina_obj,
                                 cedula=emp,
                                 codigo=concepto,
-                                monto=round(monto, 2)
+                                monto=round(float(monto), 2)  # Convertir a float para el modelo
                             )
                             stats['conceptos_generados'] += 1
                     
@@ -2838,10 +2902,18 @@ def generar_nomina_automatica(request):
                     stats['errores'] += 1
                     logger.error(f"Error en empleado {emp.cedula}: {str(e)}", exc_info=True)
             
+            # Verificar que se incluyeron ambos conceptos clave
+            conceptos_incluidos = detalle_nomina.objects.filter(
+                nomina=nomina_obj
+            ).values_list('codigo__codigo', flat=True).distinct()
+            
+            logger.info(f"Conceptos incluidos en la nómina: {list(conceptos_incluidos)}")
+            
             return JsonResponse({
                 'success': True,
                 'nomina_id': nomina_obj.id_nomina,
-                'stats': stats
+                'stats': stats,
+                'conceptos_incluidos': list(conceptos_incluidos)
             })
             
         except Exception as e:

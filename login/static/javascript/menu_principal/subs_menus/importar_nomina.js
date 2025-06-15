@@ -234,25 +234,36 @@ function inicializarModalImportacion() {
 
             // Preparar datos para enviar
             const secuenciaSelect = modal.querySelector('#modal-secuencia');
-    if (secuenciaSelect) {
-        // Primero obtenemos el campo periodo una sola vez
-        const periodoField = modal.querySelector('#modal-periodo');
-        
-        // Función para actualizar el periodo
-        const actualizarPeriodo = () => {
-            // Asignar directamente el valor seleccionado al campo oculto
-            periodoField.value = secuenciaSelect.value;
-            console.log('Periodo actualizado a:', periodoField.value); // Para debugging
-        };
+                if (secuenciaSelect) {
+                    // Primero obtenemos el campo periodo una sola vez
+                    const periodoField = modal.querySelector('#modal-periodo');
+                    
+                    // Función para actualizar el periodo
+                    const actualizarPeriodo = () => {
+                        const valorSecuencia = secuenciaSelect.value.toUpperCase(); // Convertir a mayúsculas para comparación
+                        
+                        // Validación más robusta
+                        if (valorSecuencia.includes('PRIMERA')) {
+                            periodoField.value = '1';
+                        } else if (valorSecuencia.includes('SEGUNDA')) {
+                            periodoField.value = '2';
+                        } else {
+                            // Valor por defecto o manejo de error
+                            periodoField.value = '1'; 
+                            console.warn('Valor de secuencia no reconocido:', secuenciaSelect.value);
+                        }
+                        
+                        console.log('Periodo actualizado a:', periodoField.value); // Para debugging
+                    };
 
-        // Asignar el evento
-        secuenciaSelect.addEventListener('change', actualizarPeriodo);
-        
-        // Actualizar inmediatamente si ya hay un valor seleccionado
-        if (secuenciaSelect.value) {
-            actualizarPeriodo();
-        }
-    } // Default to 1 if not found
+                    // Asignar el evento
+                    secuenciaSelect.addEventListener('change', actualizarPeriodo);
+                    
+                    // Actualizar inmediatamente si ya hay un valor seleccionado
+                    if (secuenciaSelect.value) {
+                        actualizarPeriodo();
+                    }
+                } // Default to 1 if not found
             const data = {
                 tipo_nomina: tipoNomina,
                 mes: mes,
