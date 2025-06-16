@@ -348,6 +348,45 @@ class empleado(models.Model):
     def nombre_completo(self):
         return self.get_nombre_completo()
     
+class hijo(models.Model):
+    GENERO_HIJO = [
+        ('M', 'Masculino'),
+        ('F', 'Femenino'),
+    ]
+    
+    ESTUDIA = [
+        ('S', 'Sí'),
+        ('N', 'No'),
+    ]
+    
+    empleado = models.ForeignKey(empleado, on_delete=models.CASCADE, related_name='hijos_empleado')
+    
+    # Identificación
+    nombre_completo = models.CharField(max_length=100)
+    cedula = models.CharField(max_length=20, blank=True, null=True, unique=True)
+    fecha_nacimiento = models.DateField()
+    lugar_nacimiento = models.CharField(max_length=100, blank=True, null=True)
+    genero = models.CharField(max_length=1, choices=GENERO_HIJO)
+    
+    # Información académica
+    estudia = models.CharField(max_length=1, choices=ESTUDIA, default='S')
+    nivel_educativo = models.CharField(max_length=50, blank=True, null=True)
+    
+    # Información adicional
+    discapacidad = models.BooleanField(default=False)
+    # Auditoría
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.nombre_completo} - Hijo de {self.empleado.primer_nombre} {self.empleado.primer_apellido}"
+    
+    class Meta:
+        verbose_name = 'Hijo'
+        db_table = 'hijos'
+        verbose_name_plural = 'Hijos'
+        unique_together = ('empleado', 'nombre_completo', 'fecha_nacimiento')
+    
 
 class asistencias(models.Model):
     ESTADOS_ASISTENCIA = [

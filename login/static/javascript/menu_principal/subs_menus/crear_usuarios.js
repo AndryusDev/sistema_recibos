@@ -173,7 +173,10 @@ function actualizarResumen() {
             return rif ? `RIF: ${rif}` : 'No especificado';
         },
         'resumen-fecha-nacimiento': () => formatDate(modal.querySelector('#modal-fecha-nacimiento').value),
-        'resumen-cargo': () => modal.querySelector('#cargo').options[modal.querySelector('#cargo').selectedIndex].text,
+        'resumen-cargo': () => {
+            const select = modal.querySelector('#nivel-cargo');
+            return select ? select.options[select.selectedIndex].text : 'No especificado';
+        },
         'resumen-tipo-trabajador': () => {
             const tipo = modal.querySelector('#tipo-trabajador');
             return tipo ? tipo.options[tipo.selectedIndex].text : 'No especificado';
@@ -250,7 +253,6 @@ function mostrarNotificacion(mensaje, tipo = 'success') {
 }
 
 // Función principal para guardar usuario
-// Función principal para guardar usuario (versión corregida)
 async function guardarUsuario() {
     const btnGuardar = document.getElementById('btn-guardar');
     const modal = document.getElementById("usuarioModal");
@@ -265,6 +267,36 @@ async function guardarUsuario() {
         btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
         try {
+            // Recopilar datos de hijos
+            const childrenContainer = document.getElementById('children-container');
+            const childrenEntries = childrenContainer.querySelectorAll('.child-entry');
+            const childrenData = [];
+
+            childrenEntries.forEach(entry => {
+                const nombre = entry.querySelector('.child-nombre')?.value || '';
+                const apellido = entry.querySelector('.child-apellido')?.value || '';
+                const fechaNacimiento = entry.querySelector('.child-fecha-nacimiento')?.value || '';
+                const genero = entry.querySelector('.child-genero')?.value || '';
+                const cedula = entry.querySelector('.child-cedula')?.value || '';
+                const lugarNacimiento = entry.querySelector('.child-lugar-nacimiento')?.value || '';
+                const estudia = entry.querySelector('.child-estudia')?.value || '';
+                const nivelEducativo = entry.querySelector('.child-nivel-educativo')?.value || '';
+                const discapacidad = entry.querySelector('.child-discapacidad')?.checked || false;
+
+                if (nombre && apellido && fechaNacimiento && genero) {
+                    childrenData.push({
+                        nombre_completo: `${nombre} ${apellido}`.trim(),
+                        fecha_nacimiento: fechaNacimiento,
+                        genero,
+                        cedula,
+                        lugar_nacimiento: lugarNacimiento,
+                        estudia,
+                        nivel_educativo: nivelEducativo,
+                        discapacidad
+                    });
+                }
+            });
+
             const formData = {
                 tipo_identificacion: modal.querySelector('#modal-tipo-identificacion').value,
                 cedula: parseInt(modal.querySelector('#modal-cedula').value),
@@ -281,15 +313,17 @@ async function guardarUsuario() {
                 fecha_ingreso: modal.querySelector('#fecha-ingreso').value,
                 tipo_trabajador: parseInt(modal.querySelector('#tipo-trabajador').value),
                 cargo_id: parseInt(modal.querySelector('#nivel-cargo').value), // Cambiado a cargo_id
+                nivel_salarial: parseInt(modal.querySelector('#nivel-salarial').value) || null,
                 telefono_principal: modal.querySelector('#telefono-principal').value || '',
                 telefono_secundario: modal.querySelector('#telefono-secundario').value || '',
                 email: modal.querySelector('#email').value || '',
                 direccion: modal.querySelector('#direccion').value || '',
                 hijos: parseInt(modal.querySelector('#hijos').value) || 0,
-                conyuge: modal.querySelector('#conyuge').checked,
+                conyuge: modal.querySelector('#conyuge').value === 'true',
                 banco: modal.querySelector('#banco').value || '',
                 tipo_cuenta: modal.querySelector('#tipo-cuenta').value || '',
-                numero_cuenta: modal.querySelector('#numero-cuenta').value || ''
+                numero_cuenta: modal.querySelector('#numero-cuenta').value || '',
+                hijos_data: childrenData
             };
 
             // Validación adicional
@@ -297,6 +331,8 @@ async function guardarUsuario() {
                 throw new Error('Seleccione valores válidos para tipo trabajador y cargo');
             }
 
+            // Print children data before sending to server for debugging
+            console.log('Children data to send:', childrenData);
             console.log('Datos a enviar:', formData);
 
             // Enviar datos al servidor
@@ -373,7 +409,83 @@ document.addEventListener('DOMContentLoaded', function() {
             
         });
     }
+    // Call the function to add children event listeners
+    agregarEventosHijos();
 });
+
+// Función para añadir y eliminar hijos dinámicamente
+function agregarEventosHijos() {
+    const addChildBtn = document.getElementById('add-child-btn');
+    const childrenContainer = document.getElementById('children-container');
+
+    if (addChildBtn && childrenContainer) {
+        addChildBtn.addEventListener('click', () => {
+            const childIndex = childrenContainer.children.length;
+
+            const childEntry = document.createElement('div');
+            childEntry.classList.add('child-entry');
+            childEntry.style.border = '1px solid #ddd';
+            childEntry.style.padding = '10px';
+            childEntry.style.marginBottom = '10px';
+            childEntry.style.position = 'relative';
+
+            childEntry.innerHTML = `
+                <button type="button" class="remove-child-btn" style="position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; border-radius: 3px; padding: 2px 6px; cursor: pointer;" title="Eliminar hijo">&times;</button>
+                <div class="form-group">
+                    <label>Nombre:</label>
+                    <input type="text" class="form-input child-nombre" name="child_nombre_${childIndex}" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido:</label>
+                    <input type="text" class="form-input child-apellido" name="child_apellido_${childIndex}" required>
+                </div>
+                <div class="form-group">
+                    <label>Cédula:</label>
+                    <input type="text" class="form-input child-cedula" name="child_cedula_${childIndex}">
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Nacimiento:</label>
+                    <input type="date" class="form-input child-fecha-nacimiento" name="child_fecha_nacimiento_${childIndex}" required>
+                </div>
+                <div class="form-group">
+                    <label>Lugar de Nacimiento:</label>
+                    <input type="text" class="form-input child-lugar-nacimiento" name="child_lugar_nacimiento_${childIndex}">
+                </div>
+                <div class="form-group">
+                    <label>Género:</label>
+                    <select class="form-input child-genero" name="child_genero_${childIndex}" required>
+                        <option value="">Seleccione...</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>¿Estudia?:</label>
+                    <select class="form-input child-estudia" name="child_estudia_${childIndex}">
+                        <option value="S" selected>Sí</option>
+                        <option value="N">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nivel Educativo:</label>
+                    <input type="text" class="form-input child-nivel-educativo" name="child_nivel_educativo_${childIndex}">
+                </div>
+                <div class="form-group">
+                    <label>Discapacidad:</label>
+                    <input type="checkbox" class="form-input child-discapacidad" name="child_discapacidad_${childIndex}">
+                </div>
+            `;
+
+            childrenContainer.appendChild(childEntry);
+
+            // Add event listener to remove button
+            const removeBtn = childEntry.querySelector('.remove-child-btn');
+            removeBtn.addEventListener('click', () => {
+                childrenContainer.removeChild(childEntry);
+            });
+        });
+    }
+}
 
 // Función para aplicar filtros (similar a tu aplicarFiltrosEmpleados)
 async function aplicarFiltrosEmpleados() {
@@ -577,6 +689,7 @@ function inicializarEventosEmpleados() {
             if (e.key === 'Enter') aplicarFiltrosEmpleados();
         });
     });
+    agregarEventosHijos()
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -624,6 +737,7 @@ document.getElementById('tipo-trabajador').addEventListener('change', function()
         });
 });
 
+
 // Exportar funciones globales
 window.usuarioModal__abrir = usuarioModal__abrir;
 window.usuarioModal__cerrar = usuarioModal__cerrar;
@@ -634,3 +748,39 @@ window.navegarPaso = navegarPaso;
 window.aplicarFiltrosEmpleados = aplicarFiltrosEmpleados;
 window.limpiarFiltrosEmpleados = limpiarFiltrosEmpleados;
 window.exportarEmpleados = exportarEmpleados;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoTrabajador = document.getElementById('tipo-trabajador');
+    const familiaCargo = document.getElementById('familia-cargo');
+    const cargo = document.getElementById('cargo');
+    
+    if (tipoTrabajador && familiaCargo && cargo) {
+        tipoTrabajador.addEventListener('change', function() {
+            // Limpiar estado de invalidación
+            familiaCargo.classList.remove('invalido');
+            cargo.classList.remove('invalido');
+            
+            // Limpiar mensajes de error
+            const errorMsg = familiaCargo.nextElementSibling;
+            if (errorMsg && errorMsg.classList.contains('error-mensaje')) {
+                errorMsg.remove();
+            }
+            
+            // Resto de tu lógica para cargar opciones...
+        });
+        
+        familiaCargo.addEventListener('change', function() {
+            // Limpiar estado de invalidación
+            cargo.classList.remove('invalido');
+            
+            // Limpiar mensaje de error
+            const errorMsg = cargo.nextElementSibling;
+            if (errorMsg && errorMsg.classList.contains('error-mensaje')) {
+                errorMsg.remove();
+            }
+            
+        });
+    }
+    // Call the function to add children event listeners
+    agregarEventosHijos();
+});

@@ -289,7 +289,15 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        
+                        <div class="form-group">
+                            <label for="nivel-salarial"><i class="fas fa-money-bill-wave"></i> Nivel Salarial:</label>
+                            <select id="nivel-salarial" name="nivel_salarial" class="form-input" required>
+                                <option value="">Seleccione...</option>
+                                {% for nivel in niveles_salarial %}
+                                    <option value="{{ nivel.id }}">{{ nivel.grado }} - {{ nivel.nivel }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                         <div class="form-group">
                             <label for="nivel-cargo"><i class="fas fa-user-tag"></i> Nivel:</label>
                             <select id="nivel-cargo" name="nivel_cargo" class="form-input" required>
@@ -329,7 +337,7 @@
                             <textarea id="direccion" name="direccion" class="form-input" rows="3"></textarea>
                         </div>
                     </div>
-                                    <!-- Información Adicional -->
+                    <!-- Información Adicional -->
                     <div class="seccion-titulo">
                         <h4><i class="fas fa-info-circle"></i> Información Adicional</h4>
                     </div>
@@ -348,6 +356,17 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- Sección para detalles de hijos -->
+                    <div class="seccion-titulo" style="margin-top: 20px;">
+                        <h4><i class="fas fa-child"></i> Detalles de Hijos</h4>
+                    </div>
+                    <div id="children-container" style="border: 1px solid #ccc; padding: 10px; background: #f9f9f9; max-height: 300px; overflow-y: auto;">
+                        <!-- Entradas dinámicas de hijos se agregarán aquí -->
+                    </div>
+                    <button type="button" id="add-child-btn" class="btn btn-secondary" style="margin-top: 10px;">
+                        <i class="fas fa-plus"></i> Añadir Hijo
+                    </button>
                 </div>
                 
                     

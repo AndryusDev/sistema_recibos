@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Sum
 import pandas as pd
 from django.http import JsonResponse
-from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion, control_vacaciones, registro_vacaciones
+from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion, control_vacaciones, registro_vacaciones, hijo, nivel_salarial
 from datetime import date, datetime, timedelta
 import os
 from django.conf import settings
@@ -254,7 +254,8 @@ def crear_usuarios(request):
         'cargo',
         'cargo__familia',
         'cargo__nivel',
-        'tipo_trabajador'
+        'tipo_trabajador',
+        'nivel_salarial'  # Añadido para optimizar consultas
     ).prefetch_related(
         'cuentas_bancarias',
         'cuentas_bancarias__banco'
@@ -263,16 +264,10 @@ def crear_usuarios(request):
     # Obtener datos para el formulario
     tipos_trabajador_list = tipo_trabajador.objects.all()
     bancos_list = banco.objects.all()
-    
-    # Obtener todas las familias de cargo
     familias_cargo = familia_cargo.objects.all()
-    
-    # Obtener todos los niveles de cargo con su información
     niveles_cargo = nivel_cargo.objects.all().order_by('orden_jerarquico')
-    
-    # Obtener todos los cargos con su información completa
-    #cargos_completos = cargo.objects.select_related('familia', 'nivel').all()
     cargos = cargo.objects.select_related('familia', 'nivel').all()
+    niveles_salarial = nivel_salarial.objects.all().order_by('grado')  # Asegúrate de que 'grado' exista
     
     return render(request, 'menu_principal/subs_menus/crear_usuarios.html', {
         'usuarios': usuarios,
@@ -280,8 +275,9 @@ def crear_usuarios(request):
         'bancos': bancos_list,
         'familias_cargo': familias_cargo,
         'niveles_cargo': niveles_cargo,
-        'cargos_completos':cargos,
-        'empleado': empleado
+        'cargos_completos': cargos,
+        'empleado': empleado,
+        'niveles_salarial': niveles_salarial  # Nuevo campo en el contexto
     })
 
 def gestion_respaldo(request):
@@ -1825,97 +1821,132 @@ def empleado_view(request):
     
     return render(request, 'empleados/crear_empleado.html', context)
 
+logger = logging.getLogger(__name__)
 @csrf_exempt
 @transaction.atomic
 def api_empleadoss(request):
     """
-    API para crear nuevos empleados usando cargos existentes
+    API para crear nuevos empleados con sus hijos y cuentas bancarias
     """
     if request.method == 'POST':
         try:
-            # Parsear y validar JSON
+            # 1. Parsear y validar JSON de entrada
             try:
                 data = json.loads(request.body)
-            except json.JSONDecodeError:
+                logger.info(f"Datos recibidos: {data}")
+            except json.JSONDecodeError as e:
+                logger.error("Error decodificando JSON: %s", str(e))
                 return JsonResponse({
                     'success': False,
-                    'error': 'Formato JSON inválido'
+                    'error': 'Formato JSON inválido',
+                    'detail': str(e)
                 }, status=400)
 
-            # Validar campos requeridos
+            # 2. Validar campos requeridos del empleado
             required_fields = [
                 'tipo_identificacion', 'cedula', 'primer_nombre',
                 'primer_apellido', 'fecha_ingreso', 'tipo_trabajador',
                 'cargo_id'
             ]
             
-            missing_fields = [field for field in required_fields if field not in data]
-            if missing_fields:
+            if missing_fields := [field for field in required_fields if field not in data]:
+                error_msg = f'Campos requeridos faltantes: {", ".join(missing_fields)}'
+                logger.error(error_msg)
                 return JsonResponse({
                     'success': False,
-                    'error': f'Campos requeridos faltantes: {", ".join(missing_fields)}'
+                    'error': error_msg
                 }, status=400)
 
-            # Convertir tipos de datos
+            # 3. Convertir y validar tipos de datos
             try:
+                # Conversiones básicas
                 data['cedula'] = int(data['cedula'])
                 data['tipo_trabajador'] = int(data['tipo_trabajador'])
                 data['cargo_id'] = int(data['cargo_id'])
                 data['hijos'] = int(data.get('hijos', 0))
                 
-                # Formatear fechas
-                fecha_nacimiento = datetime.strptime(data.get('fecha_nacimiento'), '%Y-%m-%d').date() if data.get('fecha_nacimiento') else None
+                # Nivel salarial (opcional)
+                if 'nivel_salarial' in data and data['nivel_salarial']:
+                    data['nivel_salarial'] = int(data['nivel_salarial'])
+                
+                # Procesamiento de fechas
+                fecha_nacimiento = (datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d').date() 
+                                if data.get('fecha_nacimiento') else None)
                 fecha_ingreso = datetime.strptime(data['fecha_ingreso'], '%Y-%m-%d').date()
+                
+                # Validar hijos_data si existe
+                hijos_data = data.get('hijos_data', [])
+                if not isinstance(hijos_data, list):
+                    raise ValueError("hijos_data debe ser una lista")
+                    
             except ValueError as e:
+                logger.error("Error en conversión de datos: %s", str(e))
                 return JsonResponse({
                     'success': False,
                     'error': 'Error en tipos de datos',
                     'detail': str(e)
                 }, status=400)
 
-            # Verificar existencia de relaciones
+            # 4. Verificar existencia de relaciones
             if not tipo_trabajador.objects.filter(codigo_trabajador=data['tipo_trabajador']).exists():
+                error_msg = f"Tipo de trabajador {data['tipo_trabajador']} no existe"
+                logger.error(error_msg)
                 return JsonResponse({
                     'success': False,
-                    'error': 'El tipo de trabajador especificado no existe'
+                    'error': error_msg
                 }, status=400)
 
-            # Obtener el cargo existente
+            # 5. Validar nivel salarial si fue proporcionado
+            if data.get('nivel_salarial') and not nivel_salarial.objects.filter(id=data['nivel_salarial']).exists():
+                error_msg = f"Nivel salarial {data['nivel_salarial']} no existe"
+                logger.error(error_msg)
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                }, status=400)
+
+            # 6. Obtener y validar el cargo
             try:
-                cargo_obj = cargo.objects.get(id=data['cargo_id'])
+                cargo_obj = cargo.objects.select_related('familia__tipo_trabajador').get(id=data['cargo_id'])
                 
-                # Verificar que el cargo corresponda al tipo de trabajador
                 if cargo_obj.familia.tipo_trabajador.codigo_trabajador != data['tipo_trabajador']:
+                    error_msg = "El cargo no corresponde al tipo de trabajador seleccionado"
+                    logger.error(error_msg)
                     return JsonResponse({
                         'success': False,
-                        'error': 'El cargo no corresponde al tipo de trabajador seleccionado'
+                        'error': error_msg
                     }, status=400)
                 
-                # Activar el cargo si estaba inactivo
                 if not cargo_obj.activo:
                     cargo_obj.activo = True
                     cargo_obj.save()
                     
             except cargo.DoesNotExist:
+                error_msg = f"Cargo con ID {data['cargo_id']} no existe"
+                logger.error(error_msg)
                 return JsonResponse({
                     'success': False,
-                    'error': 'El cargo especificado no existe'
+                    'error': error_msg
                 }, status=400)
 
-            # Verificar unicidad de cédula y email
+            # 7. Verificar unicidad de datos
             if empleado.objects.filter(cedula=data['cedula']).exists():
+                error_msg = f"Ya existe un empleado con cédula {data['cedula']}"
+                logger.error(error_msg)
                 return JsonResponse({
                     'success': False,
-                    'error': 'Ya existe un empleado con esta cédula'
+                    'error': error_msg
                 }, status=400)
 
             if data.get('email') and empleado.objects.filter(email=data['email']).exists():
+                error_msg = f"El email {data['email']} ya está registrado"
+                logger.error(error_msg)
                 return JsonResponse({
                     'success': False,
-                    'error': 'El email ya está registrado'
+                    'error': error_msg
                 }, status=400)
 
-            # Crear empleado
+            # 8. Preparar datos para crear el empleado
             empleado_data = {
                 'tipo_identificacion': data['tipo_identificacion'],
                 'cedula': data['cedula'],
@@ -1932,6 +1963,7 @@ def api_empleadoss(request):
                 'fecha_ingreso': fecha_ingreso,
                 'tipo_trabajador_id': data['tipo_trabajador'],
                 'cargo': cargo_obj,
+                'nivel_salarial_id': data.get('nivel_salarial'),
                 'telefono_principal': data.get('telefono_principal'),
                 'telefono_secundario': data.get('telefono_secundario'),
                 'email': data.get('email'),
@@ -1941,17 +1973,70 @@ def api_empleadoss(request):
                 'status': True
             }
 
-            nuevo_empleado = empleado.objects.create(**empleado_data)
+            # 9. Crear el empleado
+            try:
+                nuevo_empleado = empleado.objects.create(**empleado_data)
+                logger.info(f"Empleado creado: {nuevo_empleado.cedula}")
+            except Exception as e:
+                logger.error("Error creando empleado: %s", str(e))
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Error al crear empleado',
+                    'detail': str(e)
+                }, status=400)
 
-            # Crear cuenta bancaria si se proporcionan los datos
-            if all(k in data for k in ['banco', 'tipo_cuenta', 'numero_cuenta']):
-                if not banco.objects.filter(codigo=data['banco']).exists():
+            # 10. Procesar hijos del empleado
+            hijos_creados = 0
+            for hijo_data in hijos_data:
+                try:
+                    # Validar campos requeridos para hijo
+                    required_hijo_fields = ['nombre_completo', 'fecha_nacimiento', 'genero']
+                    if missing_hijo := [f for f in required_hijo_fields if f not in hijo_data]:
+                        raise ValueError(f'Campos faltantes en hijo: {", ".join(missing_hijo)}')
+                    
+                    # Limpiar y formatear datos
+                    hijo_data['fecha_nacimiento'] = datetime.strptime(
+                        hijo_data['fecha_nacimiento'], '%Y-%m-%d'
+                    ).date()
+                    
+                    if 'cedula' in hijo_data and hijo_data['cedula'] == '':
+                        hijo_data['cedula'] = None
+                    
+                    # Crear registro del hijo
+                    hijo.objects.create(
+                        empleado=nuevo_empleado,
+                        nombre_completo=hijo_data['nombre_completo'],
+                        cedula=hijo_data.get('cedula'),
+                        fecha_nacimiento=hijo_data['fecha_nacimiento'],
+                        lugar_nacimiento=hijo_data.get('lugar_nacimiento'),
+                        genero=hijo_data['genero'],
+                        estudia=hijo_data.get('estudia', 'S'),
+                        nivel_educativo=hijo_data.get('nivel_educativo'),
+                        discapacidad=hijo_data.get('discapacidad', False)
+                    )
+                    hijos_creados += 1
+                    logger.info(f"Hijo creado para empleado {nuevo_empleado.cedula}")
+                    
+                except Exception as e:
+                    logger.error("Error creando hijo: %s - Datos: %s", str(e), hijo_data)
+                    transaction.set_rollback(True)
                     return JsonResponse({
                         'success': False,
-                        'error': f"Banco con código {data['banco']} no existe"
+                        'error': f'Error creando hijo: {str(e)}',
+                        'hijo_data': hijo_data
                     }, status=400)
 
+            # 11. Crear cuenta bancaria si se proporcionan datos
+            if all(k in data for k in ['banco', 'tipo_cuenta', 'numero_cuenta']):
                 try:
+                    if not banco.objects.filter(codigo=data['banco']).exists():
+                        error_msg = f"Banco con código {data['banco']} no existe"
+                        logger.error(error_msg)
+                        return JsonResponse({
+                            'success': False,
+                            'error': error_msg
+                        }, status=400)
+
                     cuenta_bancaria.objects.create(
                         empleado=nuevo_empleado,
                         banco_id=data['banco'],
@@ -1959,20 +2044,34 @@ def api_empleadoss(request):
                         numero_cuenta=data['numero_cuenta'],
                         activa=True
                     )
+                    logger.info(f"Cuenta bancaria creada para empleado {nuevo_empleado.cedula}")
                 except IntegrityError:
+                    error_msg = f"El número de cuenta {data['numero_cuenta']} ya existe"
+                    logger.error(error_msg)
                     return JsonResponse({
                         'success': False,
-                        'error': 'El número de cuenta ya existe'
+                        'error': error_msg
+                    }, status=400)
+                except Exception as e:
+                    logger.error("Error creando cuenta bancaria: %s", str(e))
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Error al crear cuenta bancaria',
+                        'detail': str(e)
                     }, status=400)
 
+            # 12. Retornar respuesta exitosa
             return JsonResponse({
                 'success': True,
                 'message': 'Empleado creado correctamente',
                 'empleado_id': nuevo_empleado.cedula,
-                'nombre_completo': f"{nuevo_empleado.primer_nombre} {nuevo_empleado.primer_apellido}"
+                'nombre_completo': f"{nuevo_empleado.primer_nombre} {nuevo_empleado.primer_apellido}",
+                'hijos_creados': hijos_creados,
+                'total_hijos': len(hijos_data)
             })
 
         except ValidationError as e:
+            logger.error("Error de validación: %s", str(e))
             return JsonResponse({
                 'success': False,
                 'error': 'Error de validación',
@@ -1980,6 +2079,7 @@ def api_empleadoss(request):
             }, status=400)
             
         except Exception as e:
+            logger.error("Error interno del servidor: %s", str(e), exc_info=True)
             return JsonResponse({
                 'success': False,
                 'error': 'Error interno del servidor',
