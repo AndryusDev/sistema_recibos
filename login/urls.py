@@ -1,11 +1,16 @@
-from django.urls import path
+from django.urls import include, path
 from . import views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.contrib import admin
 #from .views import CustomLoginView
-
 from django.contrib.auth.decorators import login_required
 from .views import listado_recibos
+
+from rest_framework.routers import DefaultRouter
+from .views import ARCViewSet
+
+router = DefaultRouter()
+router.register(r'arc', ARCViewSet, basename='arc')
 
 urlpatterns = [
     path('login/', views.login, name='login'),  # Nuevo login JWT
@@ -96,4 +101,6 @@ urlpatterns = [
     path('api/generar_nomina_automatica/', views.generar_nomina_automatica, name = 'generar_nomina_automatica'),
 
     #path('api/control_vacaciones/', views.api_control_vacaciones, name='api_control_vacaciones'),
+
+    path('api/', include(router.urls)),
 ]

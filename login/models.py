@@ -1062,5 +1062,39 @@ class detalle_prenomina(models.Model):
 
     def __str__(self):
         return f"{self.codigo.nombre} - Total: {self.total_monto} (Prenómina {self.prenomina.id_prenomina})"
+    
+# models.py
+class ARC(models.Model):
+    id_arc = models.AutoField(primary_key=True)
+    empleado = models.ForeignKey(empleado, on_delete=models.CASCADE)
+    anio = models.IntegerField()
+    total_monto_declarar = models.DecimalField(max_digits=14, decimal_places=2)
+    total_vacaciones = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    total_aguinaldos = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    total_evaluacion = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    total_salarios = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    fecha_generacion = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'arc'
+        verbose_name = 'ARC'
+        verbose_name_plural = 'ARCs'
+        unique_together = ('empleado', 'anio')  # Un ARC por empleado por año
+
+class DetalleARC(models.Model):
+    arc = models.ForeignKey(ARC, on_delete=models.CASCADE, related_name='detalles')
+    mes = models.IntegerField()  # 1-12
+    monto_bruto = models.DecimalField(max_digits=14, decimal_places=2)
+    porcentaje_retencion = models.DecimalField(max_digits=5, decimal_places=2)
+    islr_retenido = models.DecimalField(max_digits=14, decimal_places=2)
+    monto_neto = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    monto_declarar = models.DecimalField(max_digits=14, decimal_places=2)
+    especificacion = models.CharField(max_length=20, default='Exento')
+    
+    class Meta:
+        db_table = 'detalle_arc'
+        verbose_name = 'Detalle ARC'
+        verbose_name_plural = 'Detalles ARC'
+        unique_together = ('arc', 'mes')
 
 

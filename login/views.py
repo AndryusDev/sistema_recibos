@@ -9,7 +9,7 @@ from django.db.models import Q, Sum
 import pandas as pd
 from django.http import JsonResponse
 import requests
-from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion, control_vacaciones, registro_vacaciones, hijo, nivel_salarial
+from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion, control_vacaciones, registro_vacaciones, hijo, nivel_salarial,ARC, DetalleARC
 from datetime import date, datetime, timedelta
 import os
 from django.conf import settings
@@ -215,7 +215,8 @@ def constancia_trabajo(request):
     return render(request, 'menu_principal/subs_menus/constancia_trabajo.html')
 
 def arc(request):
-    return render(request, 'menu_principal/subs_menus/arc.html')
+    empleado_id = request.session.get('empleado_id')
+    return render(request, 'menu_principal/subs_menus/arc.html', {'empleado_id': empleado_id})
 
 from .models import concepto_pago
 
@@ -3132,6 +3133,184 @@ def generar_nomina_automatica(request):
             return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
     
     return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+
+
+
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from .serializers import ARCSerializer
+
+class ARCViewSet(viewsets.ModelViewSet):
+    queryset = ARC.objects.all()
+    serializer_class = ARCSerializer
+    permission_classes = [AllowAny]
+
+    @action(detail=False, methods=['get'])
+    def generar_arc(self, request):
+        """Genera o actualiza el ARC para un empleado en un año específico"""
+        cedula = request.query_params.get('cedula')
+        anio = request.query_params.get('anio', datetime.now().year)
+
+        try:
+            empleado_obj = empleado.objects.get(cedula=cedula)
+            anio = int(anio)
+        except (empleado.DoesNotExist, ValueError):
+            return Response(
+                {"error": "Empleado no encontrado o año inválido"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verificar si ya existe un ARC para este empleado y año
+        arc, created = ARC.objects.get_or_create(
+            empleado=empleado_obj,
+            anio=anio,
+            defaults={
+                'total_monto_declarar': 0,
+                'total_vacaciones': 0,
+                'total_aguinaldos': 0,
+                'total_evaluacion': 0,
+                'total_salarios': 0
+            }
+        )
+
+        # Obtener todas las nóminas del año
+        nominas_anio = nomina.objects.filter(
+            periodo__startswith=str(anio)
+        ).values_list('id_nomina', flat=True)
+
+        # Obtener detalles de nómina para el empleado en ese año
+        detalles_nomina = detalle_nomina.objects.filter(
+            nomina__in=nominas_anio,
+            cedula=empleado_obj
+        ).select_related('codigo', 'nomina')
+
+        # Procesar por meses
+        meses_data = {}
+        for mes in range(1, 13):
+            # Filtrar por mes (asumiendo que el periodo incluye el mes)
+            detalles_mes = detalles_nomina.filter(
+                nomina__periodo__contains=f"-{mes:02d}-"  # Ajusta según tu formato de periodo
+            )
+
+            # Calcular montos
+            monto_bruto = detalles_mes.filter(
+                codigo__tipo_concepto='ASIGNACION'
+            ).aggregate(total=Sum('monto'))['total'] or 0
+
+            islr_retenido = detalles_mes.filter(
+                codigo__codigo='ISLR'  # Ajusta según tu código de concepto ISLR
+            ).aggregate(total=Sum('monto'))['total'] or 0
+
+            # Calcular porcentaje de retención (simplificado)
+            porcentaje_retencion = 0
+            if monto_bruto > 0:
+                porcentaje_retencion = (islr_retenido / monto_bruto) * 100
+
+            monto_declarar = monto_bruto - islr_retenido
+
+            meses_data[mes] = {
+                'monto_bruto': monto_bruto,
+                'islr_retenido': islr_retenido,
+                'porcentaje_retencion': porcentaje_retencion,
+                'monto_declarar': monto_declarar,
+                'especificacion': 'Exento' if islr_retenido == 0 else 'Bse Imp'
+            }
+
+        # Calcular totales
+        total_monto_declarar = sum(d['monto_declarar'] for d in meses_data.values())
+
+        # Calcular conceptos especiales (vacaciones, aguinaldos, etc.)
+        total_vacaciones = detalles_nomina.filter(
+            codigo__codigo__in=['VAC', 'VACACIONES']  # Ajusta según tus códigos
+        ).aggregate(total=Sum('monto'))['total'] or 0
+
+        total_aguinaldos = detalles_nomina.filter(
+            codigo__codigo__in=['AGU', 'AGUINALDO']
+        ).aggregate(total=Sum('monto'))['total'] or 0
+
+        total_evaluacion = detalles_nomina.filter(
+            codigo__codigo__in=['EVA', 'EVALUACION']
+        ).aggregate(total=Sum('monto'))['total'] or 0
+
+        total_salarios = detalles_nomina.filter(
+            codigo__tipo_concepto='ASIGNACION',
+            codigo__codigo__in=['SAL', 'SALARIO', 'SUELDO']
+        ).aggregate(total=Sum('monto'))['total'] or 0
+
+        # Actualizar el ARC y sus detalles
+        arc.total_monto_declarar = total_monto_declarar
+        arc.total_vacaciones = total_vacaciones
+        arc.total_aguinaldos = total_aguinaldos
+        arc.total_evaluacion = total_evaluacion
+        arc.total_salarios = total_salarios
+        arc.save()
+
+        # Actualizar detalles por mes
+        for mes, data in meses_data.items():
+            DetalleARC.objects.update_or_create(
+                arc=arc,
+                mes=mes,
+                defaults={
+                    'monto_bruto': data['monto_bruto'],
+                    'porcentaje_retencion': data['porcentaje_retencion'],
+                    'islr_retenido': data['islr_retenido'],
+                    'monto_declarar': data['monto_declarar'],
+                    'especificacion': data['especificacion']
+                }
+            )
+
+        serializer = self.get_serializer(arc)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def datos_arc(self, request, pk=None):
+        """Obtiene los datos formateados para el frontend (similar a tu estructura HTML)"""
+        arc = self.get_object()
+
+        # Datos del agente de retención (podrías mover esto a configuración)
+        agente = {
+            'nombre': "POLICÍA BOLIVARIANA DEL ESTADO ANZOÁTEGUI",
+            'direccion': "Av. Jorge Rodríguez, Crucero de Lechería..."
+        }
+
+        # Preparar respuesta
+        data = {
+            'agente': agente,
+            'usuario': {
+                'nombre_completo': arc.empleado.get_nombre_completo(),
+                'cedula': arc.empleado.cedula
+            },
+            'anio': arc.anio,
+            'meses': [],
+            'total_monto_declarar': arc.total_monto_declarar,
+            'resumen': {
+                'vacaciones': arc.total_vacaciones,
+                'aguinaldos': arc.total_aguinaldos,
+                'evaluacion': arc.total_evaluacion,
+                'salarios': arc.total_salarios
+            },
+            'nota': "Individuo no trabajador"  # Puedes personalizar esto
+        }
+
+        # Agregar detalles por mes
+        for detalle in arc.detalles.all().order_by('mes'):
+            data['meses'].append({
+                'nombre_mes': detalle.nombre_mes,
+                'especificacion_superior': detalle.especificacion,
+                'especificacion_inferior': 'Bse Imp',
+                'monto_bruto': detalle.monto_bruto,
+                'porcentaje_retencion': detalle.porcentaje_retencion,
+                'islr_retenido': detalle.islr_retenido,
+                'monto_neto_superior': "",
+                'monto_neto_inferior': "",
+                'monto_declarar': detalle.monto_declarar
+            })
+
+        return Response(data)
+
 
 
 
