@@ -1385,6 +1385,7 @@ def generar_prenomina_para_nomina(nomina_instance):
         detalles = detalle_nomina.objects.filter(nomina=nomina_instance)
         if not detalles.exists():
             logger.warning(f"No hay detalles para la nómina {nomina_instance.id_nomina}")
+            return None
 
         resumen = detalles.values('codigo').annotate(total=Sum('monto'))
         for item in resumen:
@@ -2957,7 +2958,9 @@ def generar_nomina_automatica(request):
             stats = {
                 'empleados_procesados': 0,
                 'conceptos_generados': 0,
-                'errores': 0
+                'recibos_generados': 0,
+                'errores': 0,
+                'prenomina_generada': False
             }
             
             # Obtener conceptos de deducción obligatorios
@@ -2967,6 +2970,7 @@ def generar_nomina_automatica(request):
             )
             
             for emp in empleados:
+                detalles_empleado = []  # Lista para almacenar detalles de nómina del empleado
                 try:
                     # Validar datos del empleado
                     if not hasattr(emp, 'nivel_salarial') or not emp.nivel_salarial:
@@ -3041,12 +3045,13 @@ def generar_nomina_automatica(request):
                         
                         # Registrar concepto si monto > 0
                         if monto > Decimal('0'):
-                            detalle_nomina.objects.create(
+                            detalle = detalle_nomina.objects.create(
                                 nomina=nomina_obj,
                                 cedula=emp,
                                 codigo=concepto,
                                 monto=float(round(monto, 2))
                             )
+                            detalles_empleado.append(detalle)
                             stats['conceptos_generados'] += 1
                     
                     # Procesar deducciones obligatorias (siempre se aplican)
@@ -3067,31 +3072,57 @@ def generar_nomina_automatica(request):
                         
                         # Registrar deducción
                         if monto_deduccion > Decimal('0'):
-                            detalle_nomina.objects.create(
+                            detalle = detalle_nomina.objects.create(
                                 nomina=nomina_obj,
                                 cedula=emp,
                                 codigo=deduccion,
                                 monto=float(round(monto_deduccion, 2)) * -1  # Las deducciones son negativas
                             )
+                            detalles_empleado.append(detalle)
                             stats['conceptos_generados'] += 1
                     
-                    # Crear recibo de pago
-                    recibo_pago.objects.create(
-                        nomina=nomina_obj,
-                        cedula=emp,
-                        fecha_generacion=now()
-                    )
+                    # Crear recibo de pago solo si hay detalles
+                    if detalles_empleado:
+                        recibo = recibo_pago.objects.create(
+                            nomina=nomina_obj,
+                            cedula=emp,
+                            fecha_generacion=now()
+                        )
+                        
+                        # Asociar detalles al recibo
+                        for detalle in detalles_empleado:
+                            detalle_recibo.objects.create(
+                                recibo=recibo,
+                                detalle_nomina=detalle
+                            )
+                        
+                        stats['recibos_generados'] += 1
+                    
                     stats['empleados_procesados'] += 1
                     
                 except Exception as e:
                     stats['errores'] += 1
                     logger.error(f"Error procesando empleado {emp.cedula}: {str(e)}", exc_info=True)
             
+            # Generar la prenómina después de procesar todos los empleados
+            try:
+                prenomina_generada = generar_prenomina_para_nomina(nomina_obj)
+                if prenomina_generada:
+                    stats['prenomina_generada'] = True
+                    logger.info(f"Prenómina generada exitosamente para nómina {nomina_obj.id_nomina}")
+                else:
+                    stats['prenomina_generada'] = False
+                    logger.warning(f"No se pudo generar prenómina para nómina {nomina_obj.id_nomina}")
+            except Exception as e:
+                stats['prenomina_generada'] = False
+                logger.error(f"Error al generar prenómina: {str(e)}", exc_info=True)
+            
             return JsonResponse({
                 'success': True,
                 'nomina_id': nomina_obj.id_nomina,
                 'stats': stats,
-                'tasa_bcv_utilizada': float(tasa_bcv)
+                'tasa_bcv_utilizada': float(tasa_bcv),
+                'prenomina_generada': stats['prenomina_generada']
             })
             
         except json.JSONDecodeError:
