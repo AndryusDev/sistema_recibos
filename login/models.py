@@ -236,6 +236,17 @@ class empleado(models.Model):
         ('F', 'Femenino'),
         ('O', 'Otro'),
     ]
+    GRADO_INSTRUCCION = [
+        ('NINGUNO', 'Ninguno'),
+        ('PRIMARIA', 'Primaria'),
+        ('BACHILLER', 'Secundaria'),
+        ('TECNICO', 'Técnico Medio'),
+        ('TSU', 'Técnico Superior Universitario (TSU)'),
+        ('PROFESIONAL', 'Profesional'),
+        ('ESPECIALISTA', 'Especialista'),
+        ('MAESTRIA', 'Maestría'),
+        ('DOCTORADO', 'Doctorado'),
+    ]
 
     # Identificación
     tipo_identificacion = models.CharField(max_length=1, choices=TIPO_IDENTIFICACION)
@@ -276,7 +287,13 @@ class empleado(models.Model):
     
     # Información adicional
     rif = models.CharField(max_length=20, blank=True, null=True, unique=True)
-    grado_instruccion = models.CharField(max_length=50, blank=True, null=True)
+    grado_instruccion = models.CharField(
+        max_length=20,
+        choices=GRADO_INSTRUCCION,
+        blank=True,
+        null=True,
+        verbose_name='Nivel de Instrucción'
+    )
     
     # Auditoría
     actualizado_en = models.DateTimeField(default=timezone.now)

@@ -309,7 +309,7 @@ async function guardarUsuario() {
                 lugar_nacimiento: modal.querySelector('#modal-lugar-nacimiento').value || '',
                 genero: modal.querySelector('#modal-genero').value || '',
                 estado_civil: modal.querySelector('#modal-estado-civil').value || '',
-                grado_instruccion: modal.querySelector('#modal-grado-instruccion').value || '',
+                grado_instruccion: modal.querySelector('#modal-nivel-instruccion').value || '',
                 fecha_ingreso: modal.querySelector('#fecha-ingreso').value,
                 tipo_trabajador: parseInt(modal.querySelector('#tipo-trabajador').value),
                 cargo_id: parseInt(modal.querySelector('#nivel-cargo').value), // Cambiado a cargo_id

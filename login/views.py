@@ -1,4 +1,5 @@
 from calendar import monthrange
+from bs4 import BeautifulSoup
 from django.views.decorators.http import require_http_methods
 import json
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
@@ -7,11 +8,12 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Sum
 import pandas as pd
 from django.http import JsonResponse
+import requests
 from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion, control_vacaciones, registro_vacaciones, hijo, nivel_salarial
 from datetime import date, datetime, timedelta
 import os
 from django.conf import settings
-from decimal import Decimal
+from decimal import Decimal, getcontext
 import logging
 from django.db import transaction
 from login.models import usuario, recibo_pago
@@ -2810,37 +2812,75 @@ def listar_permisos_asistencia(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
+
 logger = logging.getLogger(__name__)
+getcontext().prec = 10
+
+def obtener_tasa_bcv():
+    try:
+        url = "https://www.bcv.org.ve/"
+        headers = {
+            'User-Agent': 'Mozilla/5.0'
+        }
+        response = requests.get(url, headers=headers, timeout=15, verify=False)  # ← verify=False
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        tasa_element = soup.find(id='dolar')
+        
+        if not tasa_element:
+            logger.error("Elemento 'dolar' no encontrado")
+            return None
+            
+        tasa_str = tasa_element.find('strong').text.strip()
+        tasa_str = tasa_str.replace('.', '').replace(',', '.')
+        
+        return Decimal(tasa_str)
+    except Exception as e:
+        logger.error(f"Error BCV: {str(e)}")
+        return None
+
+def calcular_cesta_ticket(asistencia_dias, dias_laborables, tasa_bcv=None):
+    MONTO_MENSUAL_USD = Decimal('120')
+    PORCENTAJE_MINIMO = Decimal('0.75')
+    
+    if dias_laborables <= 0:
+        return Decimal('0')
+        
+    # Usar siempre el monto mensual completo
+    monto_usd = MONTO_MENSUAL_USD
+    
+    # Solo aplicar descuento por faltas
+    asistencia_requerida = Decimal(dias_laborables) * PORCENTAJE_MINIMO
+    if Decimal(asistencia_dias) < asistencia_requerida:
+        porcentaje_asistencia = Decimal(asistencia_dias) / Decimal(dias_laborables)
+        monto_usd *= porcentaje_asistencia
+    
+    if tasa_bcv and tasa_bcv > Decimal('0'):
+        return monto_usd * tasa_bcv
+    
+    return monto_usd
 
 @csrf_exempt
 @transaction.atomic
 def generar_nomina_automatica(request):
     if request.method == 'POST':
         try:
-            from decimal import Decimal, getcontext
-            import json
-            from datetime import datetime, date
-            from calendar import monthrange
-            from django.utils.timezone import now
-            from django.http import JsonResponse
-            from django.views.decorators.csrf import csrf_exempt
-            from django.db import transaction
-            import logging
-            
-            # Configurar precisión decimal
-            getcontext().prec = 10
-            
-            logger = logging.getLogger(__name__)
+            # Obtener tasa BCV al inicio del proceso
+            tasa_bcv = obtener_tasa_bcv()
+            if tasa_bcv is None:
+                logger.warning("No se pudo obtener tasa BCV, usando valor por defecto")
+                tasa_bcv = Decimal('36.00')  # Valor por defecto
             
             data = json.loads(request.body)
             logger.info(f"Datos recibidos: {data}")
 
-            # Validar parámetros obligatorios
+            # Validar campos obligatorios
             required_fields = ['tipo_nomina', 'mes', 'anio', 'secuencia', 'fecha_cierre', 'conceptos', 'periodo']
             if not all(field in data for field in required_fields):
                 return JsonResponse({'error': 'Faltan parámetros requeridos'}, status=400)
 
-            # Normalizar secuencia (compatibilidad con frontend)
+            # Normalizar secuencia
             secuencia_normalizada = {
                 'primera': 'PRIMERA QUINCENA',
                 'segunda': 'SEGUNDA QUINCENA',
@@ -2869,7 +2909,7 @@ def generar_nomina_automatica(request):
                 return JsonResponse({'error': 'Mes no encontrado'}, status=400)
             except secuencia.DoesNotExist:
                 return JsonResponse({
-                    'error': f'Secuencia no encontrada. Valores válidos: {list(secuencia_normalizada.values())}'
+                    'error': f'Secuencia no válida. Valores aceptados: {list(secuencia_normalizada.values())}'
                 }, status=400)
             
             # Crear registro de nómina
@@ -2878,31 +2918,29 @@ def generar_nomina_automatica(request):
                 tipo_nomina=tipo_nomina_obj,
                 periodo=periodo_str,
                 secuencia=secuencia_obj,
-                fecha_cierre=datetime.strptime(data['fecha_cierre'], '%Y-%m-%d').date()
+                fecha_cierre=datetime.strptime(data['fecha_cierre'], '%Y-%m-%d').date(),
             )
             
-            # Obtener periodo para cálculo
+            # Calcular rango de fechas del periodo
             periodo = int(data['periodo'])
             anio = int(data['anio'])
             mes_num = mes_obj.id_mes if hasattr(mes_obj, 'id_mes') else datetime.strptime(data['mes'], '%B').month
             
-            # Calcular rango de fechas del periodo
             if periodo == 1:
                 start_date = datetime(anio, mes_num, 1).date()
                 end_date = datetime(anio, mes_num, 15).date()
                 dias_laborables = 15
             else:
                 start_date = datetime(anio, mes_num, 16).date()
-                last_day = monthrange(anio, mes_num)[1]  # Último día del mes
+                last_day = monthrange(anio, mes_num)[1]
                 end_date = datetime(anio, mes_num, last_day).date()
                 dias_laborables = (end_date - start_date).days + 1
 
-            logger.info(f"Periodo: {periodo}, Días laborables: {dias_laborables}, Rango: {start_date} a {end_date}")
+            logger.info(f"Periodo: {periodo}, Días: {dias_laborables}, Rango: {start_date} a {end_date}")
 
             # Función para calcular prima de antigüedad
             def calcular_prima_antiguedad(anios_servicio, salario_asistencias):
-                """Calcula la prima de antigüedad basada en el salario por asistencias"""
-                TABLA_PRIMA_ANTIGUEDAD = {
+                TABLA_PRIMA = {
                     1: 1, 2: 2, 3: 3, 4: 4, 5: 5,
                     6: 6.20, 7: 7.40, 8: 8.60, 9: 9.80,
                     10: 11.00, 11: 12.40, 12: 13.80,
@@ -2911,12 +2949,8 @@ def generar_nomina_automatica(request):
                     19: 24.40, 20: 26, 21: 27.80,
                     22: 29.60
                 }
-                
-                if anios_servicio <= 0:
-                    return Decimal('0')
-                
-                porcentaje = Decimal(str(TABLA_PRIMA_ANTIGUEDAD.get(anios_servicio, 30)))  # 30% para 23+ años
-                return (Decimal(salario_asistencias) * porcentaje) / Decimal('100')
+                porcentaje = Decimal(str(TABLA_PRIMA.get(anios_servicio, 30)))
+                return (salario_asistencias * porcentaje) / Decimal('100')
 
             # Procesar empleados
             empleados = empleado.objects.filter(status=True)
@@ -2926,29 +2960,35 @@ def generar_nomina_automatica(request):
                 'errores': 0
             }
             
+            # Obtener conceptos de deducción obligatorios
+            deducciones_obligatorias = concepto_pago.objects.filter(
+                codigo__in=['20001', '20002', '20003', '20004'],
+                status='ACTIVO'
+            )
+            
             for emp in empleados:
                 try:
-                    # Verificar datos básicos del empleado
+                    # Validar datos del empleado
                     if not hasattr(emp, 'nivel_salarial') or not emp.nivel_salarial:
-                        logger.error(f"Empleado {emp.cedula} no tiene nivel salarial asignado")
+                        logger.error(f"Empleado {emp.cedula} sin nivel salarial")
                         stats['errores'] += 1
                         continue
                         
                     if not hasattr(emp, 'fecha_ingreso') or not emp.fecha_ingreso:
-                        logger.error(f"Empleado {emp.cedula} no tiene fecha de ingreso")
+                        logger.error(f"Empleado {emp.cedula} sin fecha de ingreso")
                         stats['errores'] += 1
                         continue
                     
                     salario_base = Decimal(str(emp.nivel_salarial.monto))
                     
-                    # Calcular días de asistencia
+                    # Calcular asistencia
                     asistencia_dias = asistencias.objects.filter(
                         empleado=emp,
                         fecha__range=(start_date, end_date),
                         estado__in=['A', 'P']
                     ).count()
                     
-                    # Calcular salario por asistencias (concepto 1001)
+                    # Calcular salario por asistencias (base para deducciones)
                     salario_diario = salario_base / Decimal('30')
                     salario_asistencias = salario_diario * Decimal(asistencia_dias)
                     
@@ -2958,35 +2998,80 @@ def generar_nomina_automatica(request):
                     if (hoy.month, hoy.day) < (emp.fecha_ingreso.month, emp.fecha_ingreso.day):
                         anios_servicio -= 1
                     
-                    # Diccionario para almacenar montos calculados
+                    # Diccionario para montos calculados
                     montos_conceptos = {}
                     
+                    # Procesar conceptos de ingreso
                     for concepto in conceptos_seleccionados:
                         monto = Decimal('0')
                         
-                        if concepto.codigo == '1001':  # Salario base por asistencias
+                        if concepto.codigo == '1001':  # Salario por asistencias
                             monto = salario_asistencias
                             montos_conceptos['1001'] = monto
                         
                         elif concepto.codigo == '1101':  # PRM por hijo
-                            monto = (Decimal(emp.hijos) * Decimal('100')) * (Decimal(asistencia_dias) / Decimal(dias_laborables))
+                            hijos_activos = hijo.objects.filter(empleado=emp, estudia='S').count()
+                            monto = Decimal(hijos_activos) * Decimal('6')
                         
-                        elif concepto.codigo == '1103':  # Prima de antigüedad
-                            if '1001' not in montos_conceptos:
-                                logger.error(f"No se encontró cálculo de salario por asistencias para empleado {emp.cedula}")
-                                continue
-                                
-                            salario_asist = montos_conceptos['1001']
-                            monto = calcular_prima_antiguedad(anios_servicio, salario_asist)
-    
+                        elif concepto.codigo == '1102':  # PRM por hijo discapacitado
+                            hijos_disc = hijo.objects.filter(empleado=emp, discapacidad=True).count()
+                            if hijos_disc > 0:
+                                monto = (salario_asistencias * Decimal('0.15')) * Decimal(hijos_disc)
                         
-                        # Registrar concepto
-                        if monto != Decimal('0'):
+                        elif concepto.codigo == '1103':  # Prima antigüedad
+                            if '1001' in montos_conceptos:
+                                monto = calcular_prima_antiguedad(anios_servicio, montos_conceptos['1001'])
+                        
+                        elif concepto.codigo == '1104':  # Prima profesionalización
+                            if '1001' in montos_conceptos and hasattr(emp, 'grado_instruccion'):
+                                niveles = {
+                                    'TSU': Decimal('0.20'),
+                                    'PROFESIONAL': Decimal('0.25'),
+                                    'ESPECIALISTA': Decimal('0.30'),
+                                    'MAESTRIA': Decimal('0.35'),
+                                    'DOCTORADO': Decimal('0.40')
+                                }
+                                porcentaje = niveles.get(emp.grado_instruccion, Decimal('0'))
+                                monto = montos_conceptos['1001'] * porcentaje
+                                if periodo in [1, 2]:  # Ajuste quincenal
+                                    monto /= Decimal('2')
+                        
+                        elif concepto.codigo == '8003':  # Cesta Ticket
+                            monto = calcular_cesta_ticket(asistencia_dias, dias_laborables, tasa_bcv)
+                        
+                        # Registrar concepto si monto > 0
+                        if monto > Decimal('0'):
                             detalle_nomina.objects.create(
                                 nomina=nomina_obj,
                                 cedula=emp,
                                 codigo=concepto,
-                                monto=round(float(monto), 2)  # Convertir a float para el modelo
+                                monto=float(round(monto, 2))
+                            )
+                            stats['conceptos_generados'] += 1
+                    
+                    # Procesar deducciones obligatorias (siempre se aplican)
+                    for deduccion in deducciones_obligatorias:
+                        monto_deduccion = Decimal('0')
+                        
+                        if deduccion.codigo == '20001':  # IVSS (4% del salario)
+                            monto_deduccion = salario_asistencias * Decimal('0.04')
+                        
+                        elif deduccion.codigo == '20002':  # Fondo Contributivo RPE (0.5% del salario)
+                            monto_deduccion = salario_asistencias * Decimal('0.005')
+                        
+                        elif deduccion.codigo == '20003':  # FAOV (1% del salario)
+                            monto_deduccion = salario_asistencias * Decimal('0.01')
+                        
+                        elif deduccion.codigo == '20004':  # FPJ (0.5% del salario)
+                            monto_deduccion = salario_asistencias * Decimal('0.005')
+                        
+                        # Registrar deducción
+                        if monto_deduccion > Decimal('0'):
+                            detalle_nomina.objects.create(
+                                nomina=nomina_obj,
+                                cedula=emp,
+                                codigo=deduccion,
+                                monto=float(round(monto_deduccion, 2)) * -1  # Las deducciones son negativas
                             )
                             stats['conceptos_generados'] += 1
                     
@@ -3000,27 +3085,22 @@ def generar_nomina_automatica(request):
                     
                 except Exception as e:
                     stats['errores'] += 1
-                    logger.error(f"Error en empleado {emp.cedula}: {str(e)}", exc_info=True)
-            
-            # Verificar que se incluyeron ambos conceptos clave
-            conceptos_incluidos = detalle_nomina.objects.filter(
-                nomina=nomina_obj
-            ).values_list('codigo__codigo', flat=True).distinct()
-            
-            logger.info(f"Conceptos incluidos en la nómina: {list(conceptos_incluidos)}")
+                    logger.error(f"Error procesando empleado {emp.cedula}: {str(e)}", exc_info=True)
             
             return JsonResponse({
                 'success': True,
                 'nomina_id': nomina_obj.id_nomina,
                 'stats': stats,
-                'conceptos_incluidos': list(conceptos_incluidos)
+                'tasa_bcv_utilizada': float(tasa_bcv)
             })
             
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'JSON inválido'}, status=400)
         except Exception as e:
             logger.error(f"Error general: {str(e)}", exc_info=True)
-            return JsonResponse({
-                'success': False,
-                'error': f'Error interno: {str(e)}'
-            }, status=500)
+            return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
     
     return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+
+
