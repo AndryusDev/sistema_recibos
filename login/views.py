@@ -42,41 +42,120 @@ def create_backup(request):
 
 @csrf_exempt
 def restore_backup(request):
+    import subprocess
+    import os
+    import logging
+    import re
+
     backup_file = request.POST.get('backup_file')
-    from django.core.management import call_command
-    call_command('restore_db', backup_file)
-    return JsonResponse({'message': 'Backup restored successfully'})
+    password = request.POST.get('password', 'Ag.30480815,DEV*')  # Allow password from frontend, fallback to hardcoded
+    backup_dir = str(settings.BASE_DIR)
+
+    # Validate backup_file to prevent directory traversal
+    if not backup_file or not re.match(r'^[\w\-. ]+\.dump$', backup_file):
+        logging.error(f"Invalid backup file name: {backup_file}")
+        return JsonResponse({'message': 'Invalid backup file name'}, status=400)
+
+    abs_backup_file = str(os.path.abspath(os.path.join(backup_dir, backup_file)))
+
+    # Ensure abs_backup_file is within backup_dir
+    if not abs_backup_file.startswith(backup_dir):
+        logging.error(f"Backup file path outside allowed directory: {abs_backup_file}")
+        return JsonResponse({'message': 'Invalid backup file path'}, status=400)
+
+    logging.info(f"Requested backup file: {backup_file}")
+    logging.info(f"Absolute backup file path: {abs_backup_file}")
+
+    if not os.path.exists(abs_backup_file):
+        logging.error(f"Backup file does not exist: {abs_backup_file}")
+        return JsonResponse({'message': 'Backup file does not exist'}, status=400)
+
+    env = os.environ.copy()
+    env['PGPASSWORD'] = password
+
+    # Use configurable database connection parameters
+    db_host = getattr(settings, 'DB_HOST', 'localhost')
+    db_port = getattr(settings, 'DB_PORT', '5432')
+    db_user = getattr(settings, 'DB_USER', 'postgres')
+    db_name = getattr(settings, 'DB_NAME', 'sistema_recibos')
+
+    try:
+        if backup_file.endswith('.dump'):
+            cmd = [
+                'pg_restore',
+                '-h', db_host,
+                '-p', db_port,
+                '-U', db_user,
+                '-d', db_name,
+                abs_backup_file
+            ]
+            logging.info(f"Running command: {' '.join(cmd)}")
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True, env=env)
+            logging.info(f"pg_restore output: {result.stdout}")
+            return JsonResponse({'message': 'Backup restored successfully using pg_restore'})
+        else:
+            cmd = [
+                'psql',
+                '-h', db_host,
+                '-p', db_port,
+                '-U', db_user,
+                '-d', db_name,
+                '-f', abs_backup_file
+            ]
+            logging.info(f"Running command: {' '.join(cmd)}")
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True, env=env)
+            logging.info(f"psql output: {result.stdout}")
+            return JsonResponse({'message': 'Backup restored successfully using psql'})
+    except subprocess.CalledProcessError as e:
+        error_msg = e.stderr if e.stderr else str(e)
+        logging.error(f"Subprocess error: {error_msg}")
+        return JsonResponse({'message': f'Error restoring backup: {error_msg}'}, status=500)
+    except Exception as e:
+        logging.error(f"Unexpected error: {str(e)}")
+        return JsonResponse({'message': f'Unexpected error: {str(e)}'}, status=500)
 
 @csrf_exempt
 def delete_backup(request):
-    backup_file = request.POST.get('backup_file')
-    # Validate the backup file path
-    backup_dir = settings.BASE_DIR  # Use the base directory as the backup directory
-    abs_backup_file = os.path.abspath(os.path.join(backup_dir, backup_file))
-    if not abs_backup_file.startswith(backup_dir):
-        return JsonResponse({'message': 'Invalid backup file path'}, status=400)
-
-    # Check if the file is a backup file
-    if not backup_file.startswith('backup_') or not backup_file.endswith('.dump'):
-        return JsonResponse({'message': 'Invalid backup file name'}, status=400)
-
-    # Create a dummy backup file if it doesn't exist
-    if not os.path.exists(abs_backup_file):
-        try:
-            with open(abs_backup_file, 'w') as f:
-                f.write('This is a dummy backup file.')
-            logging.info(f'Created dummy backup file: {abs_backup_file}')
-        except Exception as e:
-            logging.error(f'Error creating dummy backup file: {e}')
-            return JsonResponse({'message': f'Error creating backup file: {e}'}, status=500)
-
     try:
-        os.remove(abs_backup_file)
-        logging.info(f'Backup file deleted successfully: {abs_backup_file}')
-        return JsonResponse({'message': 'Backup deleted successfully'})
-    except OSError as e:
-        logging.error(f'Error deleting backup file: {e}')
-        return JsonResponse({'message': f'Error deleting backup: {e}'}, status=500)
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+            backup_file = data.get('backup_file')
+        else:
+            backup_file = request.POST.get('backup_file')
+
+        if not backup_file:
+            return JsonResponse({'message': 'No backup file specified'}, status=400)
+
+        # Validate the backup file path
+        backup_dir = str(settings.BASE_DIR)  # Use the base directory as the backup directory
+        abs_backup_file = str(os.path.abspath(os.path.join(backup_dir, backup_file)))
+        if not abs_backup_file.startswith(backup_dir):
+            return JsonResponse({'message': 'Invalid backup file path'}, status=400)
+
+        # Check if the file is a backup file
+        if not backup_file.startswith('backup_') or not backup_file.endswith('.dump'):
+            return JsonResponse({'message': 'Invalid backup file name'}, status=400)
+
+        # Create a dummy backup file if it doesn't exist
+        if not os.path.exists(abs_backup_file):
+            try:
+                with open(abs_backup_file, 'w') as f:
+                    f.write('This is a dummy backup file.')
+                logging.info(f'Created dummy backup file: {abs_backup_file}')
+            except Exception as e:
+                logging.error(f'Error creating dummy backup file: {e}')
+                return JsonResponse({'message': f'Error creating backup file: {e}'}, status=500)
+
+        try:
+            os.remove(abs_backup_file)
+            logging.info(f'Backup file deleted successfully: {abs_backup_file}')
+            return JsonResponse({'message': 'Backup deleted successfully'})
+        except OSError as e:
+            logging.error(f'Error deleting backup file: {e}')
+            return JsonResponse({'message': f'Error deleting backup: {e}'}, status=500)
+    except Exception as e:
+        logging.error(f'Unexpected error in delete_backup: {e}', exc_info=True)
+        return JsonResponse({'message': f'Unexpected error: {e}'}, status=500)
 
 def crear_cuenta(request):
     # Obtener preguntas de seguridad activas
@@ -2125,6 +2204,7 @@ def api_cargos_por_tipo(request):
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 import json
+
 @require_http_methods(["DELETE"])
 @csrf_exempt
 def eliminar_empleado(request, pk):

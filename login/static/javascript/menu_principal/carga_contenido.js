@@ -55,6 +55,13 @@ function loadRegularTemplate(templateName) {
             return new Promise(resolve => setTimeout(resolve, 50));
         })
         .then(() => loadTemplateScripts(templateName))
+        .then(() => {
+            // Llamar explícitamente a initGestionRespaldo para asegurar inicialización
+            if (templateName === "gestion_respaldo.html" && typeof window.initGestionRespaldo === 'function') {
+                console.log("Llamando a initGestionRespaldo desde carga_contenido.js");
+                window.initGestionRespaldo();
+            }
+        })
         .catch(error => {
             console.error(error);
             container.innerHTML = `
@@ -259,6 +266,11 @@ function initializeTemplateFunctions(templateName) {
             } else {
                 console.warn("initializeVacacionesPermisos no está disponible");
             }
+        }
+
+        if (templateName === "gestion_respaldo.html" && typeof window.initGestionRespaldo === 'function') {
+            console.log("Llamando a initGestionRespaldo desde carga_contenido.js");
+            window.initGestionRespaldo();
         }
         
     } catch (error) {

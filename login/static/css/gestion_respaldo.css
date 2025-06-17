@@ -252,7 +252,7 @@ button {
 /* Modal */
 .respaldo-modal {
     position: fixed;
-        top: 0;
+    top: 0;
     left: 0;
     right: 0;
     bottom: 0;
@@ -261,13 +261,10 @@ button {
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.3s ease;
 }
 
 .respaldo-modal.active {
     display: flex;
-    opacity: 1;
 }
 
 .respaldo-modal__contenido {
@@ -375,16 +372,9 @@ body {
 }
 }
 
-/* Animaciones */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
 
-@keyframes slideIn {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
+
+
 
 /* Mejoras de accesibilidad */
 [type="checkbox"] {

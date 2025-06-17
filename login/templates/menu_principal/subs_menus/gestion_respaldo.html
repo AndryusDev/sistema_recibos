@@ -84,7 +84,7 @@
     </div>
 
     <!-- Modal de confirmación -->
-    <div class="respaldo-modal" id="respaldoModal" style="display: none;">
+    <div class="respaldo-modal" id="respaldoModal">
         <div class="respaldo-modal__contenido" id="contenidoRespaldo">
             <h3 id="modalTitulo">Confirmar acción</h3>
             <p id="modalMensaje">¿Está seguro que desea realizar esta acción?</p>
@@ -95,25 +95,6 @@
             <button class="respaldo-modal__boton cancelar" onclick="cerrarModal()">Cancelar</button>
         </div>
     </div>
-    
-    <script>
-    // Elimina todo el código JavaScript del HTML excepto esto:
-    document.addEventListener('DOMContentLoaded', function() {
-        const csrftoken = getCookie('csrftoken');
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrfmiddlewaretoken';
-        csrfInput.value = csrftoken;
-        document.getElementById('contenidoRespaldo').appendChild(csrfInput);
-        
-        document.getElementById('selectAll').addEventListener('change', function(e) {
-            const checkboxes = document.querySelectorAll('.tabla-respaldos__tbody input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = e.target.checked;
-            });
-        });
-    });
-</script>
     <script src="{% static 'javascript/menu_principal/subs_menus/gestion_respaldo.js' %}"></script>
 </body>
 </html>

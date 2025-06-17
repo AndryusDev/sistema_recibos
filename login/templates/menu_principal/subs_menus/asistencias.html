@@ -45,26 +45,28 @@
 
         <!-- Tabla de Asistencias -->
         <div class="tabla-recibo-linea">
-            <table class="tabla-recibos" id="tablaAsistencias">
-                <thead class="tabla-recibos__thead">
-                    <tr class="tabla-recibos__fila">
-                        <th class="tabla-recibos__columna">Empleado</th>
-                        <th class="tabla-recibos__columna">Estado</th>
-                        <th class="tabla-recibos__columna">Fecha</th>
-                        <th class="tabla-recibos__columna">Hora Entrada</th>
-                        <th class="tabla-recibos__columna">Hora Salida</th>
-                        <th class="tabla-recibos__columna">Observaciones</th>
-                        <th class="tabla-recibos__columna">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="tabla-recibos__tbody" id="cuerpoTablaAsistencias">
-                    <tr>
-                        <td colspan="6" class="text-center">
-                            <i class="fas fa-spinner fa-spin"></i> Cargando asistencias...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="tabla-asistencias-wrapper">
+                <table class="tabla-recibos" id="tablaAsistencias">
+                    <thead class="tabla-recibos__thead">
+                        <tr class="tabla-recibos__fila">
+                            <th class="tabla-recibos__columna">Empleado</th>
+                            <th class="tabla-recibos__columna">Estado</th>
+                            <th class="tabla-recibos__columna">Fecha</th>
+                            <th class="tabla-recibos__columna">Hora Entrada</th>
+                            <th class="tabla-recibos__columna">Hora Salida</th>
+                            <th class="tabla-recibos__columna">Observaciones</th>
+                            <th class="tabla-recibos__columna">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="tabla-recibos__tbody" id="cuerpoTablaAsistencias">
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando asistencias...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             <div id="sin-resultados-asistencias" class="text-center" style="display: none;">
                 <p>No se encontraron asistencias con los filtros aplicados</p>
             </div>

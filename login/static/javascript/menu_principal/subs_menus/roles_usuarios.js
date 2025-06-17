@@ -1,6 +1,6 @@
 // ===== CONSTANTES GLOBALES =====
 const API_USUARIOS_URL = '/api/usuarios/';
-const API_ROLES_URL = '/api/roles/';
+const API_ROLES_URL = '/api/roles_listar/';
 
 
 // ===== FUNCIONES PRINCIPALES =====
@@ -193,14 +193,14 @@ async function cargarRoles(rolSeleccionadoId = null) {
             
             data.roles.forEach(rol => {
                 const option = document.createElement('option');
-                option.value = rol.id;
-                option.textContent = rol.nombre;
-                option.selected = rol.id == rolSeleccionadoId;
+                option.value = rol.codigo_rol;
+                option.textContent = rol.nombre_rol;
+                option.selected = rol.codigo_rol == rolSeleccionadoId;
                 selectRol.appendChild(option);
             });
         } else {
-             console.error('Error: No se encontró el elemento select#edit-user-role');
-             mostrarError('No se pudieron cargar los roles');
+            console.error('Error: No se encontró el elemento select#edit-user-role');
+            mostrarError('No se pudieron cargar los roles');
         }
     } catch (error) {
         console.error('Error al cargar roles:', error);

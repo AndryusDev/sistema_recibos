@@ -58,27 +58,29 @@
         <!-- Tabla de Permisos -->
         <div class="tabla-recibo-linea">
             <h3>Permisos Registrados</h3>
-            <table class="tabla-recibos" id="tablaPermisos">
-                <thead class="tabla-recibos__thead">
-                    <tr class="tabla-recibos__fila">
-                        <th class="tabla-recibos__columna">ID</th>
-                        <th class="tabla-recibos__columna">Empleado</th>
-                        <th class="tabla-recibos__columna">Fecha Inicio</th>
-                        <th class="tabla-recibos__columna">Fecha Fin</th>
-                        <th class="tabla-recibos__columna">Tipo Permiso</th>
-                        <!--<th class="tabla-recibos__columna">Aprobado Por</th>-->
-                        <th class="tabla-recibos__columna">Documento</th>
-                        <th class="tabla-recibos__columna">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="tabla-recibos__tbody" id="cuerpoTablaPermisos">
-                    <tr>
-                        <td colspan="8" class="text-center">
-                            <i class="fas fa-spinner fa-spin"></i> Cargando permisos...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="tabla-permisos-wrapper">
+                <table class="tabla-recibos" id="tablaPermisos">
+                    <thead class="tabla-recibos__thead">
+                        <tr class="tabla-recibos__fila">
+                            <th class="tabla-recibos__columna">ID</th>
+                            <th class="tabla-recibos__columna">Empleado</th>
+                            <th class="tabla-recibos__columna">Fecha Inicio</th>
+                            <th class="tabla-recibos__columna">Fecha Fin</th>
+                            <th class="tabla-recibos__columna">Tipo Permiso</th>
+                            <!--<th class="tabla-recibos__columna">Aprobado Por</th>-->
+                            <th class="tabla-recibos__columna">Documento</th>
+                            <th class="tabla-recibos__columna">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="tabla-recibos__tbody" id="cuerpoTablaPermisos">
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando permisos...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             <div id="sin-resultados-permisos" class="text-center" style="display: none;">
                 <p>No se encontraron permisos con los filtros aplicados</p>
             </div>

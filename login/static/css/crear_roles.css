@@ -652,3 +652,16 @@ textarea.form-control {
     border-left: 3px solid var(--danger-color);
     color: var(--danger-color);
 }
+
+/* Adjust column widths in roles table */
+.tabla-datos__thead th:nth-child(1),
+.tabla-datos__tbody td:nth-child(1) {
+    width: 25%;
+    max-width: 25%;
+}
+
+.tabla-datos__thead th:nth-child(2),
+.tabla-datos__tbody td:nth-child(2) {
+    width: 50%;
+    max-width: 50%;
+}

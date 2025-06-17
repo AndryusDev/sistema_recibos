@@ -3,6 +3,12 @@
     border-collapse: collapse;
 }
 
+.tabla-permisos-wrapper {
+    max-height: 400px;
+    overflow-y: auto;
+    display: block;
+}
+
 .tabla-recibos__thead th,
 .tabla-recibos__tbody td {
     border: 1px solid #ddd;
