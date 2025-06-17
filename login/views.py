@@ -2975,6 +2975,7 @@ def generar_nomina_automatica(request):
                 mes_obj = meses.objects.get(nombre_mes=data['mes'])
                 secuencia_obj = secuencia.objects.get(nombre_secuencia=secuencia_normalizada)
                 
+                # Obtener TODOS los conceptos seleccionados (incluyendo deducciones si las hay)
                 conceptos_seleccionados = concepto_pago.objects.filter(
                     codigo__in=data['conceptos'],
                     status='ACTIVO'
@@ -3044,12 +3045,6 @@ def generar_nomina_automatica(request):
                 'prenomina_generada': False
             }
             
-            # Obtener conceptos de deducción obligatorios
-            deducciones_obligatorias = concepto_pago.objects.filter(
-                codigo__in=['20001', '20002', '20003', '20004'],
-                status='ACTIVO'
-            )
-            
             for emp in empleados:
                 detalles_empleado = []  # Lista para almacenar detalles de nómina del empleado
                 try:
@@ -3086,10 +3081,11 @@ def generar_nomina_automatica(request):
                     # Diccionario para montos calculados
                     montos_conceptos = {}
                     
-                    # Procesar conceptos de ingreso
+                    # Procesar SOLO los conceptos seleccionados (incluyendo deducciones si fueron seleccionadas)
                     for concepto in conceptos_seleccionados:
                         monto = Decimal('0')
                         
+                        # Conceptos de ingreso
                         if concepto.codigo == '1001':  # Salario por asistencias
                             monto = salario_asistencias
                             montos_conceptos['1001'] = monto
@@ -3124,41 +3120,26 @@ def generar_nomina_automatica(request):
                         elif concepto.codigo == '8003':  # Cesta Ticket
                             monto = calcular_cesta_ticket(asistencia_dias, dias_laborables, tasa_bcv)
                         
-                        # Registrar concepto si monto > 0
-                        if monto > Decimal('0'):
+                        # Procesar DEDUCCIONES SOLO SI FUERON SELECCIONADAS
+                        elif concepto.codigo == '20001':  # IVSS (4% del salario)
+                            monto = salario_asistencias * Decimal('0.04') * -1  # Negativo para deducción
+                        
+                        elif concepto.codigo == '20002':  # Fondo Contributivo RPE (0.5% del salario)
+                            monto = salario_asistencias * Decimal('0.005') * -1
+                        
+                        elif concepto.codigo == '20003':  # FAOV (1% del salario)
+                            monto = salario_asistencias * Decimal('0.01') * -1
+                        
+                        elif concepto.codigo == '20004':  # FPJ (0.5% del salario)
+                            monto = salario_asistencias * Decimal('0.005') * -1
+                        
+                        # Registrar concepto si monto != 0
+                        if monto != Decimal('0'):
                             detalle = detalle_nomina.objects.create(
                                 nomina=nomina_obj,
                                 cedula=emp,
                                 codigo=concepto,
-                                monto=float(round(monto, 2))
-                            )
-                            detalles_empleado.append(detalle)
-                            stats['conceptos_generados'] += 1
-                    
-                    # Procesar deducciones obligatorias (siempre se aplican)
-                    for deduccion in deducciones_obligatorias:
-                        monto_deduccion = Decimal('0')
-                        
-                        if deduccion.codigo == '20001':  # IVSS (4% del salario)
-                            monto_deduccion = salario_asistencias * Decimal('0.04')
-                        
-                        elif deduccion.codigo == '20002':  # Fondo Contributivo RPE (0.5% del salario)
-                            monto_deduccion = salario_asistencias * Decimal('0.005')
-                        
-                        elif deduccion.codigo == '20003':  # FAOV (1% del salario)
-                            monto_deduccion = salario_asistencias * Decimal('0.01')
-                        
-                        elif deduccion.codigo == '20004':  # FPJ (0.5% del salario)
-                            monto_deduccion = salario_asistencias * Decimal('0.005')
-                        
-                        # Registrar deducción
-                        if monto_deduccion > Decimal('0'):
-                            detalle = detalle_nomina.objects.create(
-                                nomina=nomina_obj,
-                                cedula=emp,
-                                codigo=deduccion,
-                                monto=float(round(monto_deduccion, 2)) * -1  # Las deducciones son negativas
-                            )
+                                monto=float(round(monto, 2)))
                             detalles_empleado.append(detalle)
                             stats['conceptos_generados'] += 1
                     
@@ -3170,7 +3151,6 @@ def generar_nomina_automatica(request):
                             fecha_generacion=now()
                         )
                         
-                        # Asociar detalles al recibo
                         for detalle in detalles_empleado:
                             detalle_recibo.objects.create(
                                 recibo=recibo,
