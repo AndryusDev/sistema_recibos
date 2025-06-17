@@ -30,7 +30,10 @@ function inicializarModalImportacion() {
     const descargarPlantilla = modal.querySelector('#descargar-plantilla');
     
     let pasoActual = 1;
-    const totalPasos = 4;
+    const totalPasos = 5; // Updated total steps to 5
+    
+    // Store individual assignments data
+    let asignacionesIndividuales = {};
     
     // Función para cerrar el modal
     function cerrarModal() {
@@ -43,8 +46,12 @@ function inicializarModalImportacion() {
     
     // Navegación entre pasos
     if (btnSiguiente) {
-        btnSiguiente.addEventListener('click', function() {
+        btnSiguiente.addEventListener('click', async function() {
             if (validarPasoActual()) {
+                if (pasoActual === 3) {
+                    // Load employee list for step 4
+                    await cargarListaEmpleados();
+                }
                 pasoActual++;
                 actualizarPasos();
             }
@@ -79,7 +86,7 @@ function inicializarModalImportacion() {
         }
     }
     
-    function validarPasoActual() {
+    async function validarPasoActual() {
         let valido = true;
         
         if (pasoActual === 1) {
@@ -140,6 +147,159 @@ function inicializarModalImportacion() {
         
         return valido;
     }
+    
+    async function cargarListaEmpleados() {
+        const listaContainer = modal.querySelector('#lista-empleados');
+        const filtroInput = modal.querySelector('#empleados-filtro');
+        listaContainer.innerHTML = '<p>Cargando empleados...</p>';
+        
+        try {
+            const response = await fetch('/api/empleados/', {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            if (!response.ok) throw new Error('Error al cargar empleados');
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error || 'Error en la respuesta');
+            
+            const empleados = data.empleados || [];
+            asignacionesIndividuales = {}; // Reset assignments
+            
+            // Render employee list
+            renderizarListaEmpleados(empleados);
+            
+            // Setup filter event
+            filtroInput.addEventListener('input', () => {
+                const filtro = filtroInput.value.toLowerCase();
+                const empleadosFiltrados = empleados.filter(emp => 
+                    emp.nombre.toLowerCase().includes(filtro) || 
+                    emp.email.toLowerCase().includes(filtro)
+                );
+                renderizarListaEmpleados(empleadosFiltrados);
+            });
+            
+        } catch (error) {
+            listaContainer.innerHTML = `<p class="error">Error al cargar empleados: ${error.message}</p>`;
+        }
+    }
+    
+    function renderizarListaEmpleados(empleados) {
+        const listaContainer = modal.querySelector('#lista-empleados');
+        if (empleados.length === 0) {
+            listaContainer.innerHTML = '<p>No se encontraron empleados.</p>';
+            return;
+        }
+        listaContainer.innerHTML = '';
+        empleados.forEach(empleado => {
+            const div = document.createElement('div');
+            div.className = 'empleado-item';
+            div.textContent = `${empleado.nombre} (${empleado.email})`;
+            const btnConfig = document.createElement('button');
+            btnConfig.className = 'btn-configurar';
+            btnConfig.textContent = 'Configurar';
+            btnConfig.addEventListener('click', () => abrirConfiguracionEmpleado(empleado));
+            div.appendChild(btnConfig);
+            listaContainer.appendChild(div);
+        });
+    }
+    
+function abrirConfiguracionEmpleado(empleado) {
+    const modal = document.getElementById("importarnominaModal");
+    if (!modal) return;
+
+    const miniPanel = modal.querySelector("#mini-panel-configuracion");
+    const conceptosLista = modal.querySelector("#conceptos-individuales-lista");
+    if (!miniPanel || !conceptosLista) return;
+
+    // Show the mini panel
+    miniPanel.style.display = "block";
+
+    // Store current employee for reference
+    miniPanel.dataset.empleadoId = empleado.id || empleado.codigo || empleado.email || empleado.nombre;
+
+    // Get general selected concepts from Step 3
+    const conceptosSeleccionados = Array.from(
+        modal.querySelectorAll('#paso-conceptos input[type="checkbox"]:checked')
+    ).map(cb => cb.getAttribute('data-codigo'));
+
+    // Get all concepts from Step 3 (checkboxes)
+    const todosConceptos = Array.from(
+        modal.querySelectorAll('#paso-conceptos input[type="checkbox"]')
+    ).map(cb => ({
+        codigo: cb.getAttribute('data-codigo'),
+        descripcion: cb.nextElementSibling ? cb.nextElementSibling.textContent.trim() : '',
+        seleccionadoGeneral: cb.checked
+    }));
+
+    // Clear previous list
+    conceptosLista.innerHTML = '';
+
+    // Load individual selections if any
+    if (!window.asignacionesIndividuales) {
+        window.asignacionesIndividuales = {};
+    }
+    const asignacionEmpleado = window.asignacionesIndividuales[miniPanel.dataset.empleadoId] || {};
+
+    // Render checkboxes for all concepts, marking those selected generally and individual overrides
+    todosConceptos.forEach(concepto => {
+        const div = document.createElement('div');
+        div.className = 'concepto-checkbox';
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = `ind-concepto-${concepto.codigo}`;
+        input.dataset.codigo = concepto.codigo;
+
+        // Determine checked state: individual override if exists, else general selection
+        if (typeof asignacionEmpleado[concepto.codigo] === 'boolean') {
+            input.checked = asignacionEmpleado[concepto.codigo];
+        } else {
+            input.checked = concepto.seleccionadoGeneral;
+        }
+
+        const label = document.createElement('label');
+        label.htmlFor = input.id;
+        label.textContent = `${concepto.descripcion} (${concepto.codigo})`;
+
+        div.appendChild(input);
+        div.appendChild(label);
+        conceptosLista.appendChild(div);
+    });
+
+    // Save and Cancel buttons
+    const btnGuardar = miniPanel.querySelector('button.guardar');
+    const btnCancelar = miniPanel.querySelector('button.cancelar');
+
+    // Remove previous event listeners if any
+    btnGuardar.replaceWith(btnGuardar.cloneNode(true));
+    btnCancelar.replaceWith(btnCancelar.cloneNode(true));
+
+    // Re-select buttons after cloning
+    const newBtnGuardar = miniPanel.querySelector('button.guardar');
+    const newBtnCancelar = miniPanel.querySelector('button.cancelar');
+
+    newBtnGuardar.addEventListener('click', () => {
+        // Save individual selections
+        const checkboxes = conceptosLista.querySelectorAll('input[type="checkbox"]');
+        const nuevasAsignaciones = {};
+        checkboxes.forEach(cb => {
+            nuevasAsignaciones[cb.dataset.codigo] = cb.checked;
+        });
+        window.asignacionesIndividuales[miniPanel.dataset.empleadoId] = nuevasAsignaciones;
+
+        // Hide mini panel
+        miniPanel.style.display = 'none';
+
+        // Optionally notify user
+        mostrarNotificacion(`Configuración guardada para ${empleado.nombre}`, 'success');
+    });
+
+    newBtnCancelar.addEventListener('click', () => {
+        // Hide mini panel without saving
+        miniPanel.style.display = 'none';
+    });
+}
     
     function actualizarResumen() {
         const elementosResumen = {

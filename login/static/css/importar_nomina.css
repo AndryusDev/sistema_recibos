@@ -16,6 +16,122 @@
   --transition: all 0.3s ease;
 }
 
+/* Styles for individual configuration mini panel */
+#mini-panel-configuracion {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    max-height: 400px;
+    overflow-y: auto;
+}
+#mini-panel-configuracion h4 {
+    margin-top: 0;
+    color: #003366;
+    font-weight: 700;
+    font-size: 1.2em;
+    border-bottom: 2px solid #003366;
+    padding-bottom: 8px;
+}
+#mini-panel-configuracion .concepto-checkbox {
+    background-color: #e6f0ff;
+    border-radius: 4px;
+    padding: 6px 10px;
+    box-shadow: none;
+    margin-bottom: 8px;
+}
+#mini-panel-configuracion .concepto-checkbox:hover {
+    background-color: #c9dbf8;
+}
+#mini-panel-configuracion .botones-panel {
+    margin-top: 15px;
+    text-align: right;
+}
+#mini-panel-configuracion .botones-panel button {
+    margin-left: 10px;
+    padding: 6px 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+#mini-panel-configuracion .botones-panel button.guardar {
+    background-color: #006666;
+    color: white;
+}
+#mini-panel-configuracion .botones-panel button.guardar:hover {
+    background-color: #004d4d;
+}
+#mini-panel-configuracion .botones-panel button.cancelar {
+    background-color: #6c757d;
+    color: white;
+}
+#mini-panel-configuracion .botones-panel button.cancelar:hover {
+    background-color: #565e64;
+}
+
+/* Styles for employee list in Step 4 */
+#lista-empleados {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    background-color: #f9fafb;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
+    font-size: 0.95rem;
+    color: #003366;
+}
+.empleado-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background-color: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transition: background-color 0.3s ease;
+    cursor: default;
+}
+.empleado-item:hover {
+    background-color: #e6f0ff;
+}
+.empleado-item .btn-configurar {
+    background-color: #006666;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+}
+.empleado-item .btn-configurar:hover {
+    background-color: #004d4d;
+}
+
+/* Styles for employee filter input */
+#empleados-filtro {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1em;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+}
+#empleados-filtro:focus {
+    border-color: #006666;
+    outline: none;
+    box-shadow: 0 0 5px rgba(0,102,102,0.5);
+}
+
 
 /* Título principal */
 .titulo-pagina {

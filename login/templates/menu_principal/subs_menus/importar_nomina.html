@@ -36,6 +36,62 @@
             cursor: pointer;
             user-select: none;
         }
+        /* Styles for individual configuration mini panel */
+        #mini-panel-configuracion {
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        #mini-panel-configuracion h4 {
+            margin-top: 0;
+            color: #003366;
+            font-weight: 700;
+            font-size: 1.2em;
+            border-bottom: 2px solid #003366;
+            padding-bottom: 8px;
+        }
+        #mini-panel-configuracion .concepto-checkbox {
+            background-color: #e6f0ff;
+            border-radius: 4px;
+            padding: 6px 10px;
+            box-shadow: none;
+            margin-bottom: 8px;
+        }
+        #mini-panel-configuracion .concepto-checkbox:hover {
+            background-color: #c9dbf8;
+        }
+        #mini-panel-configuracion .botones-panel {
+            margin-top: 15px;
+            text-align: right;
+        }
+        #mini-panel-configuracion .botones-panel button {
+            margin-left: 10px;
+            padding: 6px 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #mini-panel-configuracion .botones-panel button.guardar {
+            background-color: #006666;
+            color: white;
+        }
+        #mini-panel-configuracion .botones-panel button.guardar:hover {
+            background-color: #004d4d;
+        }
+        #mini-panel-configuracion .botones-panel button.cancelar {
+            background-color: #6c757d;
+            color: white;
+        }
+        #mini-panel-configuracion .botones-panel button.cancelar:hover {
+            background-color: #565e64;
+        }
     </style>
 </head>
 <body>
@@ -225,8 +281,27 @@
                         {% endfor %}
                     </div>
                     
-                    <!-- Paso 4: Confirmación -->
-                    <div class="paso-importacion" data-paso="4">
+                    <!-- Paso 4: Asignación individual -->
+                    <div class="paso-importacion" data-paso="4" id="paso-individual" >
+                        <input type="text" id="empleados-filtro" placeholder="Buscar empleado..." />
+                        <div id="lista-empleados">
+                            <!-- Lista de empleados cargada dinámicamente -->
+                        </div>
+                        <!-- Mini panel for individual configuration -->
+                        <div id="mini-panel-configuracion">
+                            <h4>Configuración detallada de conceptos de pago</h4>
+                            <div id="conceptos-individuales-lista">
+                                <!-- Conceptos para configuración individual se cargarán aquí -->
+                            </div>
+                            <div class="botones-panel">
+                                <button class="guardar">Guardar</button>
+                                <button class="cancelar">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 5: Confirmación -->
+                    <div class="paso-importacion" data-paso="5">
                         <div class="resumen-importacion">
                             <h4><i class="fas fa-check-circle"></i> Resumen de Importación</h4>
                             
@@ -264,6 +339,7 @@
                         <span class="paso" data-paso="2">2</span>
                         <span class="paso" data-paso="3">3</span>
                         <span class="paso" data-paso="4">4</span>
+                        <span class="paso" data-paso="5">5</span>
                     </div>
                     
                     <div class="botones-navegacion">
