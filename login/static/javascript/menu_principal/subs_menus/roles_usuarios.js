@@ -1,3 +1,5 @@
+let paginaActual = 1;  // Add global variable to track current page
+
 // ===== CONSTANTES GLOBALES =====
 const API_USUARIOS_URL = '/api/usuarios/';
 const API_ROLES_URL = '/api/roles_listar/';
@@ -7,6 +9,7 @@ const API_ROLES_URL = '/api/roles_listar/';
 
 // Función para cargar y mostrar la lista de usuarios
 async function cargarUsuarios(filtro = 'all', pagina = 1, busqueda = '') {
+    paginaActual = pagina;  // Update global current page variable
     const tbody = document.getElementById('cuerpo-tabla-usuarios');
     const loadingIndicator = `
         <tr>
