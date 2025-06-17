@@ -424,6 +424,10 @@ function abrirConfiguracionEmpleado(empleado) {
                         actualizarPeriodo();
                     }
                 } // Default to 1 if not found
+
+            // Include individual concept selections per employee
+            const asignacionesIndividuales = window.asignacionesIndividuales || {};
+
             const data = {
                 tipo_nomina: tipoNomina,
                 mes: mes,
@@ -431,7 +435,8 @@ function abrirConfiguracionEmpleado(empleado) {
                 secuencia: secuencia,
                 fecha_cierre: fechaCierre,
                 conceptos: conceptosSeleccionados,
-                periodo: periodo
+                periodo: periodo,
+                conceptos_individuales: asignacionesIndividuales
             };
 
             console.log("Datos enviados para generar nómina automática:", data);

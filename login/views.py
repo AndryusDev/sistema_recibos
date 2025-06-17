@@ -2958,7 +2958,7 @@ def generar_nomina_automatica(request):
             logger.info(f"Datos recibidos: {data}")
 
             # Validar campos obligatorios
-            required_fields = ['tipo_nomina', 'mes', 'anio', 'secuencia', 'fecha_cierre', 'conceptos', 'periodo']
+            required_fields = ['tipo_nomina', 'mes', 'anio', 'secuencia', 'fecha_cierre', 'conceptos', 'periodo', 'conceptos_individuales']
             if not all(field in data for field in required_fields):
                 return JsonResponse({'error': 'Faltan parámetros requeridos'}, status=400)
 
@@ -2975,13 +2975,13 @@ def generar_nomina_automatica(request):
                 mes_obj = meses.objects.get(nombre_mes=data['mes'])
                 secuencia_obj = secuencia.objects.get(nombre_secuencia=secuencia_normalizada)
                 
-                # Obtener TODOS los conceptos seleccionados (incluyendo deducciones si las hay)
-                conceptos_seleccionados = concepto_pago.objects.filter(
+                # Obtener TODOS los conceptos seleccionados globalmente (incluyendo deducciones si las hay)
+                conceptos_seleccionados_global = concepto_pago.objects.filter(
                     codigo__in=data['conceptos'],
                     status='ACTIVO'
                 )
-                if conceptos_seleccionados.count() != len(data['conceptos']):
-                    codigos_invalidos = set(data['conceptos']) - set(conceptos_seleccionados.values_list('codigo', flat=True))
+                if conceptos_seleccionados_global.count() != len(data['conceptos']):
+                    codigos_invalidos = set(data['conceptos']) - set(conceptos_seleccionados_global.values_list('codigo', flat=True))
                     return JsonResponse({
                         'error': f'Conceptos no encontrados o inactivos: {", ".join(codigos_invalidos)}'
                     }, status=400)
@@ -3045,6 +3045,9 @@ def generar_nomina_automatica(request):
                 'prenomina_generada': False
             }
             
+            # Diccionario para conceptos individuales por empleado: {cedula: [codigo_concepto, ...]}
+            conceptos_individuales = data.get('conceptos_individuales', {})
+
             for emp in empleados:
                 detalles_empleado = []  # Lista para almacenar detalles de nómina del empleado
                 try:
@@ -3080,8 +3083,21 @@ def generar_nomina_automatica(request):
                     
                     # Diccionario para montos calculados
                     montos_conceptos = {}
+
+                    # Obtener conceptos individuales para el empleado si existen, sino usar globales
+                    codigos_conceptos_emp_raw = conceptos_individuales.get(str(emp.cedula), data['conceptos'])
+                    # Transformar el objeto {concept_code: boolean} a lista de códigos seleccionados
+                    if isinstance(codigos_conceptos_emp_raw, dict):
+                        codigos_conceptos_emp = [codigo for codigo, seleccionado in codigos_conceptos_emp_raw.items() if seleccionado]
+                    else:
+                        codigos_conceptos_emp = codigos_conceptos_emp_raw
+
+                    conceptos_seleccionados = concepto_pago.objects.filter(
+                        codigo__in=codigos_conceptos_emp,
+                        status='ACTIVO'
+                    )
                     
-                    # Procesar SOLO los conceptos seleccionados (incluyendo deducciones si fueron seleccionadas)
+                    # Procesar SOLO los conceptos seleccionados para este empleado (incluyendo deducciones si fueron seleccionadas)
                     for concepto in conceptos_seleccionados:
                         monto = Decimal('0')
                         
