@@ -192,13 +192,13 @@ function inicializarModalImportacion() {
             });
         } else if (pasoActual === 3) {
             // Validar que al menos un concepto esté seleccionado
-            const conceptosSeleccionados = modal.querySelectorAll('#paso-conceptos input[type="checkbox"]:checked');
+            const conceptosSeleccionados = modal.querySelectorAll('#conceptos-disponibles input[type="checkbox"]:checked');
             if (conceptosSeleccionados.length === 0) {
-                const pasoConceptos = modal.querySelector('#paso-conceptos');
+                const pasoConceptos = modal.querySelector('#conceptos-disponibles');
                 if (pasoConceptos) pasoConceptos.style.border = '2px solid var(--color-error)';
                 valido = false;
             } else {
-                const pasoConceptos = modal.querySelector('#paso-conceptos');
+                const pasoConceptos = modal.querySelector('#conceptos-disponibles');
                 if (pasoConceptos) pasoConceptos.style.border = 'none';
                 
                 // Almacenar los códigos de conceptos seleccionados en un campo oculto
@@ -314,7 +314,7 @@ function configurarEventosTabla() {
     document.getElementById('btn-aplicar-seleccionados').addEventListener('click', aplicarASeleccionados);
     
     // Botón de agregar concepto general
-    document.getElementById('btn-agregar-concepto-general').addEventListener('click', mostrarDialogoConceptoGeneral);
+    // Removed duplicate global event listener for btn-agregar-concepto-general to fix click issue
 }
 
 function habilitarEdicion(celda) {
@@ -396,52 +396,35 @@ async function aplicarASeleccionados() {
         return;
     }
     
-    const { value: conceptoData } = await Swal.fire({
-        title: 'Aplicar Concepto',
-        html: await obtenerFormularioConceptos(),
+    const { value: concepto } = await Swal.fire({
+        title: 'Aplicar Concepto a Seleccionados',
+        input: 'select',
+        inputOptions: await obtenerOpcionesConceptos(),
+        inputPlaceholder: 'Seleccione un concepto',
         showCancelButton: true,
         confirmButtonText: 'Aplicar',
         cancelButtonText: 'Cancelar',
-        preConfirm: () => {
-            const concepto = document.getElementById('concepto-aplicar').value;
-            const valor = document.getElementById('valor-aplicar').value;
-            if (!concepto || !valor) {
-                Swal.showValidationMessage('Por favor complete todos los campos');
-                return false;
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Por favor seleccione un concepto';
             }
-            return { concepto, valor };
         }
     });
     
-    if (conceptoData) {
-        try {
-            const response = await fetch('/api/nominas/aplicar_concepto_masivo/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': CSRF_TOKEN
-                },
-                body: JSON.stringify({
-                    empleados: empleadosSeleccionados,
-                    concepto: conceptoData.concepto,
-                    valor: parseFloat(conceptoData.valor)
-                })
-            });
-            
-            if (!response.ok) throw new Error('Error al aplicar concepto');
-            const data = await response.json();
-            
-            if (data.success) {
-                mostrarNotificacion('Concepto aplicado correctamente', 'success');
-                await cargarEmpleadosPorTipo(); // Recargar tabla
-            } else {
-                throw new Error(data.error || 'Error al aplicar concepto');
-            }
-            
-        } catch (error) {
-            console.error('Error:', error);
-            mostrarNotificacion(error.message, 'error');
+    if (concepto) {
+        // Instead of POSTing immediately, update local assignments
+        if (!window.asignacionesIndividuales) {
+            window.asignacionesIndividuales = {};
         }
+        empleadosSeleccionados.forEach(empleadoId => {
+            if (!window.asignacionesIndividuales[empleadoId]) {
+                window.asignacionesIndividuales[empleadoId] = {};
+            }
+            window.asignacionesIndividuales[empleadoId][concepto] = true;
+        });
+        mostrarNotificacion('Concepto aplicado localmente a empleados seleccionados', 'success');
+        // Optionally update UI to reflect changes
+        await cargarEmpleadosPorTipo(); // Recargar tabla para mostrar cambios
     }
 }
 
@@ -472,53 +455,51 @@ async function obtenerFormularioConceptos() {
     }
 }
 
+async function obtenerOpcionesConceptos() {
+    try {
+        const response = await fetch('/api/conceptos/');
+        if (!response.ok) throw new Error('Error al cargar conceptos');
+        const data = await response.json();
+        const opciones = {};
+        data.conceptos.forEach(concepto => {
+            opciones[concepto.codigo] = concepto.descripcion;
+        });
+        return opciones;
+    } catch (error) {
+        console.error('Error al obtener opciones de conceptos:', error);
+        return {};
+    }
+}
+
 async function mostrarDialogoConceptoGeneral() {
-    const { value: conceptoData } = await Swal.fire({
+    const { value: concepto } = await Swal.fire({
         title: 'Agregar Concepto General',
-        html: await obtenerFormularioConceptos(),
+        input: 'select',
+        inputOptions: await obtenerOpcionesConceptos(),
+        inputPlaceholder: 'Seleccione un concepto',
         showCancelButton: true,
         confirmButtonText: 'Aplicar a Todos',
         cancelButtonText: 'Cancelar',
-        preConfirm: () => {
-            const concepto = document.getElementById('concepto-aplicar').value;
-            const valor = document.getElementById('valor-aplicar').value;
-            if (!concepto || !valor) {
-                Swal.showValidationMessage('Por favor complete todos los campos');
-                return false;
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Por favor seleccione un concepto';
             }
-            return { concepto, valor };
         }
     });
     
-    if (conceptoData) {
-        try {
-            const response = await fetch('/api/nominas/aplicar_concepto_general/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': CSRF_TOKEN
-                },
-                body: JSON.stringify({
-                    concepto: conceptoData.concepto,
-                    valor: parseFloat(conceptoData.valor),
-                    tipo_nomina: document.getElementById('modal-tipo-nomina').value
-                })
-            });
-            
-            if (!response.ok) throw new Error('Error al aplicar concepto general');
-            const data = await response.json();
-            
-            if (data.success) {
-                mostrarNotificacion('Concepto general aplicado correctamente', 'success');
-                await cargarEmpleadosPorTipo(); // Recargar tabla
-            } else {
-                throw new Error(data.error || 'Error al aplicar concepto general');
+    if (concepto) {
+        // Instead of POSTing immediately, update general concepts checkboxes
+        const conceptosContainer = document.getElementById('conceptos-disponibles');
+        if (conceptosContainer) {
+            const checkbox = conceptosContainer.querySelector(`input[data-codigo="${concepto}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+                // Trigger change event if needed
+                checkbox.dispatchEvent(new Event('change'));
             }
-            
-        } catch (error) {
-            console.error('Error:', error);
-            mostrarNotificacion(error.message, 'error');
         }
+        mostrarNotificacion('Concepto general aplicado localmente a todos', 'success');
+        await cargarEmpleadosPorTipo(); // Recargar tabla para mostrar cambios
     }
 }
     
@@ -719,7 +700,7 @@ function abrirConfiguracionEmpleado(empleado) {
             
             // Obtener conceptos seleccionados
             const conceptosSeleccionados = Array.from(
-                modal.querySelectorAll('#paso-conceptos input[type="checkbox"]:checked')
+                modal.querySelectorAll('#conceptos-disponibles input[type="checkbox"]:checked')
             ).map(checkbox => checkbox.getAttribute('data-codigo'));
 
             // Validar que haya al menos un concepto seleccionado
