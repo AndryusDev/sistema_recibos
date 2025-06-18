@@ -272,6 +272,9 @@ async function cargarDatosPaso3() {
         return valido;
     }
     
+let empleadosCache = [];
+let conceptosCache = [];
+
 async function cargarEmpleadosPorTipo() {
     const tipoNomina = document.getElementById('modal-tipo-nomina').value;
     const tablaBody = document.getElementById('tbody-gestion-nomina');
@@ -292,14 +295,14 @@ async function cargarEmpleadosPorTipo() {
         
         if (!data.success) throw new Error(data.error || 'Error en la respuesta');
         
-        const empleados = data.empleados || [];
-        const conceptosAplicados = data.conceptos || [];
+        empleadosCache = data.empleados || [];
+        conceptosCache = data.conceptos || [];
         
         // Actualizar headers de conceptos
-        actualizarHeadersConceptos(conceptosAplicados);
+        actualizarHeadersConceptos(conceptosCache);
         
-        // Renderizar empleados
-        renderizarEmpleados(empleados, conceptosAplicados);
+        // Renderizar empleados con merge de asignaciones individuales
+        renderizarEmpleados(empleadosCache, conceptosCache);
         
         // Configurar eventos
         configurarEventosTabla();
@@ -323,17 +326,35 @@ function actualizarHeadersConceptos(conceptos) {
     });
 }
 
-function renderizarEmpleados(empleados, conceptos) {
+function renderizarEmpleados(empleados, conceptos, empleadosSeleccionados = []) {
     const tablaBody = document.getElementById('tbody-gestion-nomina');
     tablaBody.innerHTML = '';
-    
+
+    const asignaciones = window.asignacionesIndividuales || {};
+
     empleados.forEach(empleado => {
         const tr = document.createElement('tr');
-        tr.dataset.empleadoId = empleado.id;
-        
+        tr.dataset.cedula = empleado.cedula;
+
+        let conceptosHTML = '';
+        conceptos.forEach(concepto => {
+            const individualAsignado = asignaciones[empleado.cedula] && asignaciones[empleado.cedula][concepto.codigo];
+            const valor = individualAsignado ? '1.00' : (empleado.conceptos?.[concepto.codigo] || '0.00');
+            conceptosHTML += `
+                <td class="celda-editable valor-concepto" 
+                    data-concepto="${concepto.codigo}"
+                    data-cedula="${empleado.cedula}"
+                    ondblclick="habilitarEdicion(this)">
+                    ${valor}
+                </td>
+            `;
+        });
+
+        const isChecked = empleadosSeleccionados.includes(empleado.cedula);
+
         tr.innerHTML = `
             <td>
-                <input type="checkbox" class="empleado-checkbox" data-id="${empleado.id}">
+                <input type="checkbox" class="empleado-checkbox" data-cedula="${empleado.cedula}" ${isChecked ? 'checked' : ''}>
             </td>
             <td>${empleado.nombre}</td>
             <td>${empleado.cedula}</td>
@@ -343,16 +364,9 @@ function renderizarEmpleados(empleados, conceptos) {
                     Configuración Individual
                 </button>
             </td>
-            ${conceptos.map(concepto => `
-                <td class="celda-editable valor-concepto" 
-                    data-concepto="${concepto.codigo}"
-                    data-empleado="${empleado.id}"
-                    ondblclick="habilitarEdicion(this)">
-                    ${empleado.conceptos?.[concepto.codigo] || '0.00'}
-                </td>
-            `).join('')}
+            ${conceptosHTML}
         `;
-        
+
         tablaBody.appendChild(tr);
     });
 }
@@ -522,13 +536,13 @@ async function actualizarValorConcepto(empleadoId, conceptoCodigo, valor) {
 async function aplicarASeleccionados() {
     const empleadosSeleccionados = Array.from(
         document.querySelectorAll('.empleado-checkbox:checked')
-    ).map(cb => cb.dataset.id);
-    
+    ).map(cb => cb.dataset.cedula);
+
     if (empleadosSeleccionados.length === 0) {
         mostrarNotificacion('Por favor seleccione al menos un empleado', 'warning');
         return;
     }
-    
+
     const { value: concepto } = await Swal.fire({
         title: 'Aplicar Concepto a Seleccionados',
         input: 'select',
@@ -543,21 +557,22 @@ async function aplicarASeleccionados() {
             }
         }
     });
-    
+
     if (concepto) {
-        // Instead of POSTing immediately, update local assignments
         if (!window.asignacionesIndividuales) {
             window.asignacionesIndividuales = {};
         }
-        empleadosSeleccionados.forEach(empleadoId => {
-            if (!window.asignacionesIndividuales[empleadoId]) {
-                window.asignacionesIndividuales[empleadoId] = {};
+        empleadosSeleccionados.forEach(cedula => {
+            if (!window.asignacionesIndividuales[cedula]) {
+                window.asignacionesIndividuales[cedula] = {};
             }
-            window.asignacionesIndividuales[empleadoId][concepto] = true;
+            window.asignacionesIndividuales[cedula][concepto] = true;
         });
         mostrarNotificacion('Concepto aplicado localmente a empleados seleccionados', 'success');
-        // Optionally update UI to reflect changes
-        await cargarEmpleadosPorTipo(); // Recargar tabla para mostrar cambios
+
+        // Re-render empleados with cached data and selected employees to reflect changes
+        renderizarEmpleados(empleadosCache, conceptosCache, empleadosSeleccionados);
+        configurarEventosTabla();
     }
 }
 
