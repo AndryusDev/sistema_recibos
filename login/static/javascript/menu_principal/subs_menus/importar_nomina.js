@@ -91,13 +91,17 @@ async function cargarDatosPaso3() {
                 </div>
             `).join('');
             console.log('Conceptos renderizados');
+            // Call actualizarPeriodo after conceptos are rendered
+            if (typeof actualizarPeriodo === 'function') {
+                actualizarPeriodo();
+            }
         }
 
         // Pre-check conceptos for nomina administrativa
         console.log('Tipo de nómina seleccionado:', tipoNomina);
         if (tipoNomina.toLowerCase().includes('administrativ')) {
             console.log('Nomina administrativa detectada, preseleccionando conceptos...');
-            const precheckedConcepts = ['1001', '1004', '1103', '20001', '20002', '20003', '20004'];
+            const precheckedConcepts = ['1001', '1104', '1103', '20001', '20002', '20003', '20004'];
             // Delay pre-checking to ensure DOM update
             setTimeout(() => {
                 precheckedConcepts.forEach(codigo => {
@@ -701,12 +705,12 @@ function abrirConfiguracionEmpleado(empleado) {
         });
     }
     
-    if (btnImportar) {
-        btnImportar.addEventListener('click', async function() {
-            if (!validarPasoActual()) {
-                mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
-                return;
-            }
+                    if (btnImportar) {
+                        btnImportar.addEventListener('click', async function() {
+                            if (!validarPasoActual()) {
+                                mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+                                return;
+                            }
 
             btnImportar.disabled = true;
             btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
@@ -734,36 +738,61 @@ function abrirConfiguracionEmpleado(empleado) {
 
             // Preparar datos para enviar
             const secuenciaSelect = modal.querySelector('#modal-secuencia');
-                if (secuenciaSelect) {
-                    // Primero obtenemos el campo periodo una sola vez
-                    const periodoField = modal.querySelector('#modal-periodo');
-                    
-                    // Función para actualizar el periodo
-                    const actualizarPeriodo = () => {
-                        const valorSecuencia = secuenciaSelect.value.toUpperCase(); // Convertir a mayúsculas para comparación
+                    // Remove this block from here and move to modal initialization
+                    // if (secuenciaSelect) {
+                    //     // Primero obtenemos el campo periodo una sola vez
+                    //     const periodoField = modal.querySelector('#modal-periodo');
                         
-                        // Validación más robusta
-                        if (valorSecuencia.includes('PRIMERA')) {
-                            periodoField.value = '1';
-                        } else if (valorSecuencia.includes('SEGUNDA')) {
-                            periodoField.value = '2';
-                        } else {
-                            // Valor por defecto o manejo de error
-                            periodoField.value = '1'; 
-                            console.warn('Valor de secuencia no reconocido:', secuenciaSelect.value);
-                        }
-                        
-                        console.log('Periodo actualizado a:', periodoField.value); // Para debugging
-                    };
+                    //     // Función para actualizar el periodo
+                    //     const actualizarPeriodo = () => {
+                    //         const valorSecuencia = secuenciaSelect.value.toUpperCase().trim(); // Convertir a mayúsculas y quitar espacios para comparación
+                    //         console.log('actualizarPeriodo called with valorSecuencia:', valorSecuencia);
+                            
+                    //         // Validación más robusta con comparación exacta
+                    //         if (valorSecuencia === 'PRIMERA QUINCENA') {
+                    //             periodoField.value = '1';
+                    //         } else if (valorSecuencia === 'SEGUNDA QUINCENA') {
+                    //             periodoField.value = '2';
+                    //         } else {
+                    //             // Valor por defecto o manejo de error
+                    //             periodoField.value = '1'; 
+                    //             console.warn('Valor de secuencia no reconocido:', secuenciaSelect.value);
+                    //         }
+                            
+                    //         console.log('Periodo actualizado a:', periodoField.value); // Para debugging
 
-                    // Asignar el evento
-                    secuenciaSelect.addEventListener('change', actualizarPeriodo);
-                    
-                    // Actualizar inmediatamente si ya hay un valor seleccionado
-                    if (secuenciaSelect.value) {
-                        actualizarPeriodo();
-                    }
-                } // Default to 1 if not found
+                    //         // Nueva lógica para checkbox cesta ticket (codigo 8003)
+                    //         const conceptosContainer = document.getElementById('conceptos-disponibles');
+                    //         if (conceptosContainer) {
+                    //             const cestaTicketCheckbox = conceptosContainer.querySelector('input[data-codigo="8003"]');
+                    //             console.log('cestaTicketCheckbox found:', cestaTicketCheckbox);
+                    //             if (cestaTicketCheckbox) {
+                    //                 if (valorSecuencia === 'PRIMERA QUINCENA') {
+                    //                     cestaTicketCheckbox.checked = false;
+                    //                     cestaTicketCheckbox.disabled = true;
+                    //                     console.log('Cesta ticket checkbox disabled and unchecked');
+                    //                 } else if (valorSecuencia === 'SEGUNDA QUINCENA') {
+                    //                     cestaTicketCheckbox.checked = true;
+                    //                     cestaTicketCheckbox.disabled = false;
+                    //                     console.log('Cesta ticket checkbox enabled and checked');
+                    //                 } else {
+                    //                     cestaTicketCheckbox.disabled = false;
+                    //                     console.log('Cesta ticket checkbox enabled');
+                    //                 }
+                    //             }
+                    //         } else {
+                    //             console.log('conceptosContainer not found');
+                    //         }
+                    //     };
+        
+                    //     // Asignar el evento
+                    //     secuenciaSelect.addEventListener('change', actualizarPeriodo);
+                        
+                    //     // Actualizar inmediatamente si ya hay un valor seleccionado
+                    //     if (secuenciaSelect.value) {
+                    //         actualizarPeriodo();
+                    //     }
+                    // } // Default to 1 if not found
 
             // Include individual concept selections per employee
             const asignacionesIndividuales = window.asignacionesIndividuales || {};
@@ -1248,6 +1277,53 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ===== FUNCIÓN DE INICIALIZACIÓN MEJORADA =====
+
+// Move actualizarPeriodo outside to global scope
+function actualizarPeriodo() {
+    const modal = document.getElementById("importarnominaModal");
+    if (!modal) return;
+
+    const secuenciaSelect = modal.querySelector('#modal-secuencia');
+    const periodoField = modal.querySelector('#modal-periodo');
+    if (!secuenciaSelect || !periodoField) return;
+
+    const valorSecuencia = secuenciaSelect.value.toUpperCase().trim();
+    console.log('actualizarPeriodo called with valorSecuencia:', valorSecuencia);
+
+    if (valorSecuencia === 'PRIMERA QUINCENA') {
+        periodoField.value = '1';
+    } else if (valorSecuencia === 'SEGUNDA QUINCENA') {
+        periodoField.value = '2';
+    } else {
+        periodoField.value = '1';
+        console.warn('Valor de secuencia no reconocido:', secuenciaSelect.value);
+    }
+
+    console.log('Periodo actualizado a:', periodoField.value);
+
+    const conceptosContainer = document.getElementById('conceptos-disponibles');
+    if (conceptosContainer) {
+        const cestaTicketCheckbox = conceptosContainer.querySelector('input[data-codigo="8003"]');
+        console.log('cestaTicketCheckbox found:', cestaTicketCheckbox);
+        if (cestaTicketCheckbox) {
+            if (valorSecuencia === 'PRIMERA QUINCENA') {
+                cestaTicketCheckbox.checked = false;
+                cestaTicketCheckbox.disabled = true;
+                console.log('Cesta ticket checkbox disabled and unchecked');
+            } else if (valorSecuencia === 'SEGUNDA QUINCENA') {
+                cestaTicketCheckbox.checked = true;
+                cestaTicketCheckbox.disabled = false;
+                console.log('Cesta ticket checkbox enabled and checked');
+            } else {
+                cestaTicketCheckbox.disabled = false;
+                console.log('Cesta ticket checkbox enabled');
+            }
+        }
+    } else {
+        console.log('conceptosContainer not found');
+    }
+}
+
 function initializeImportarNomina() {
     // Verificar primero si estamos en la página correcta
     if (!document.getElementById('cuerpoTablaNominas')) {
@@ -1318,6 +1394,18 @@ function initializeImportarNomina() {
             if (idNomina) eliminarNomina(idNomina);
         }
     });
+
+    // 5. Attach actualizarPeriodo event listener to secuencia select here
+    const modal = document.getElementById("importarnominaModal");
+    if (modal) {
+        const secuenciaSelect = modal.querySelector('#modal-secuencia');
+        if (secuenciaSelect) {
+            secuenciaSelect.addEventListener('change', actualizarPeriodo);
+            if (secuenciaSelect.value) {
+                actualizarPeriodo();
+            }
+        }
+    }
 }
 
 // ===== INICIALIZACIÓN CUANDO EL TEMPLATE SE CARGA =====
