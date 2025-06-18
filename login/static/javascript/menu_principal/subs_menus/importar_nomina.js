@@ -47,15 +47,87 @@ function inicializarModalImportacion() {
     // Navegación entre pasos
     if (btnSiguiente) {
         btnSiguiente.addEventListener('click', async function() {
-            if (validarPasoActual()) {
-                if (pasoActual === 3) {
-                    // Load employee list for step 4
-                    await cargarListaEmpleados();
+            if (await validarPasoActual()) {
+                // Si vamos al paso 3, cargar empleados y conceptos
+                if (pasoActual === 2) {
+                    await cargarDatosPaso3();
                 }
                 pasoActual++;
                 actualizarPasos();
             }
         });
+    }
+
+    async function cargarDatosPaso3() {
+        const tipoNomina = modal.querySelector('#modal-tipo-nomina').value;
+        if (!tipoNomina) return;
+
+        try {
+            // 1. Cargar empleados
+            await cargarEmpleadosPorTipo();
+
+            // 2. Cargar conceptos disponibles
+            const response = await fetch('/api/conceptos/', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRFToken': CSRF_TOKEN
+                }
+            });
+
+            if (!response.ok) throw new Error('Error al cargar conceptos');
+            const data = await response.json();
+
+            // Renderizar conceptos en el panel
+            const conceptosContainer = document.getElementById('conceptos-disponibles');
+            if (conceptosContainer && data.conceptos) {
+                conceptosContainer.innerHTML = data.conceptos.map(concepto => `
+                    <div class="concepto-checkbox">
+                        <input type="checkbox" id="concepto-${concepto.codigo}" 
+                            data-codigo="${concepto.codigo}">
+                        <label for="concepto-${concepto.codigo}">
+                            ${concepto.descripcion}
+                        </label>
+                    </div>
+                `).join('');
+            }
+
+            // 3. Configurar eventos
+            configurarEventosTabla();
+            configurarEventosConceptos();
+
+        } catch (error) {
+            console.error('Error en cargarDatosPaso3:', error);
+            mostrarNotificacion('Error al cargar datos: ' + error.message, 'error');
+        }
+    }
+
+    function configurarEventosConceptos() {
+        // Evento para "Agregar Concepto General"
+        const btnConceptoGeneral = document.getElementById('btn-agregar-concepto-general');
+        if (btnConceptoGeneral) {
+            btnConceptoGeneral.addEventListener('click', mostrarDialogoConceptoGeneral);
+        }
+
+        // Evento para "Aplicar a Seleccionados"
+        const btnAplicarSeleccionados = document.getElementById('btn-aplicar-seleccionados');
+        if (btnAplicarSeleccionados) {
+            btnAplicarSeleccionados.addEventListener('click', aplicarASeleccionados);
+        }
+
+        // Eventos de filtrado
+        const filtroEmpleados = document.getElementById('filtro-empleados');
+        if (filtroEmpleados) {
+            filtroEmpleados.addEventListener('input', function() {
+                const texto = this.value.toLowerCase();
+                const filas = document.querySelectorAll('#tbody-gestion-nomina tr');
+                
+                filas.forEach(fila => {
+                    const nombre = fila.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const cedula = fila.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                    fila.style.display = nombre.includes(texto) || cedula.includes(texto) ? '' : 'none';
+                });
+            });
+        }
     }
     
     if (btnAnterior) {
@@ -96,6 +168,8 @@ function inicializarModalImportacion() {
                 valido = false;
             } else {
                 tipoNomina?.classList.remove('invalido');
+                // Cargar empleados cuando se selecciona el tipo de nómina
+                await cargarEmpleadosPorTipo();
             }
         } else if (pasoActual === 2) {
             const campos = [
@@ -148,41 +222,305 @@ function inicializarModalImportacion() {
         return valido;
     }
     
-    async function cargarListaEmpleados() {
-        const listaContainer = modal.querySelector('#lista-empleados');
-        const filtroInput = modal.querySelector('#empleados-filtro');
-        listaContainer.innerHTML = '<p>Cargando empleados...</p>';
+async function cargarEmpleadosPorTipo() {
+    const tipoNomina = document.getElementById('modal-tipo-nomina').value;
+    const tablaBody = document.getElementById('tbody-gestion-nomina');
+    const selectAll = document.getElementById('select-all-empleados');
+    
+    try {
+        tablaBody.innerHTML = '<tr><td colspan="5" class="text-center">Cargando empleados...</td></tr>';
         
+        const response = await fetch(`/api/empleados/por_tipo/${tipoNomina}/`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRFToken': CSRF_TOKEN
+            }
+        });
+        
+        if (!response.ok) throw new Error('Error al cargar empleados');
+        const data = await response.json();
+        
+        if (!data.success) throw new Error(data.error || 'Error en la respuesta');
+        
+        const empleados = data.empleados || [];
+        const conceptosAplicados = data.conceptos || [];
+        
+        // Actualizar headers de conceptos
+        actualizarHeadersConceptos(conceptosAplicados);
+        
+        // Renderizar empleados
+        renderizarEmpleados(empleados, conceptosAplicados);
+        
+        // Configurar eventos
+        configurarEventosTabla();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        tablaBody.innerHTML = `<tr><td colspan="5" class="text-center error">Error: ${error.message}</td></tr>`;
+    }
+}
+
+function actualizarHeadersConceptos(conceptos) {
+    const headerRow = document.querySelector('#tabla-gestion-nomina thead tr');
+    const conceptosHeader = document.getElementById('conceptos-headers');
+    
+    conceptos.forEach(concepto => {
+        const th = document.createElement('th');
+        th.className = 'col-concepto';
+        th.textContent = concepto.descripcion;
+        th.dataset.codigo = concepto.codigo;
+        conceptosHeader.appendChild(th);
+    });
+}
+
+function renderizarEmpleados(empleados, conceptos) {
+    const tablaBody = document.getElementById('tbody-gestion-nomina');
+    tablaBody.innerHTML = '';
+    
+    empleados.forEach(empleado => {
+        const tr = document.createElement('tr');
+        tr.dataset.empleadoId = empleado.id;
+        
+        tr.innerHTML = `
+            <td>
+                <input type="checkbox" class="empleado-checkbox" data-id="${empleado.id}">
+            </td>
+            <td>${empleado.nombre}</td>
+            <td>${empleado.cedula}</td>
+            <td>${empleado.cargo}</td>
+            ${conceptos.map(concepto => `
+                <td class="celda-editable valor-concepto" 
+                    data-concepto="${concepto.codigo}"
+                    data-empleado="${empleado.id}"
+                    ondblclick="habilitarEdicion(this)">
+                    ${empleado.conceptos?.[concepto.codigo] || '0.00'}
+                </td>
+            `).join('')}
+        `;
+        
+        tablaBody.appendChild(tr);
+    });
+}
+
+function configurarEventosTabla() {
+    // Selección masiva
+    const selectAll = document.getElementById('select-all-empleados');
+    selectAll.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.empleado-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+    
+    // Botón de aplicar a seleccionados
+    document.getElementById('btn-aplicar-seleccionados').addEventListener('click', aplicarASeleccionados);
+    
+    // Botón de agregar concepto general
+    document.getElementById('btn-agregar-concepto-general').addEventListener('click', mostrarDialogoConceptoGeneral);
+}
+
+function habilitarEdicion(celda) {
+    celda.contentEditable = true;
+    celda.classList.add('editando');
+    celda.focus();
+    
+    const valorOriginal = celda.textContent.trim();
+    
+    celda.addEventListener('blur', function() {
+        finalizarEdicion(celda, valorOriginal);
+    });
+    
+    celda.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            celda.blur();
+        }
+    });
+}
+
+function finalizarEdicion(celda, valorOriginal) {
+    const nuevoValor = celda.textContent.trim();
+    const esValido = /^\d+(\.\d{0,2})?$/.test(nuevoValor);
+    
+    if (!esValido) {
+        celda.textContent = valorOriginal;
+        mostrarNotificacion('Por favor ingrese un valor numérico válido', 'error');
+    } else {
+        celda.textContent = parseFloat(nuevoValor).toFixed(2);
+        actualizarValorConcepto(
+            celda.dataset.empleado,
+            celda.dataset.concepto,
+            parseFloat(nuevoValor)
+        );
+    }
+    
+    celda.contentEditable = false;
+    celda.classList.remove('editando');
+}
+
+async function actualizarValorConcepto(empleadoId, conceptoCodigo, valor) {
+    try {
+        const response = await fetch('/api/nominas/actualizar_concepto/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF_TOKEN
+            },
+            body: JSON.stringify({
+                empleado_id: empleadoId,
+                concepto_codigo: conceptoCodigo,
+                valor: valor
+            })
+        });
+        
+        if (!response.ok) throw new Error('Error al actualizar concepto');
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarNotificacion('Valor actualizado correctamente', 'success');
+        } else {
+            throw new Error(data.error || 'Error al actualizar');
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarNotificacion(error.message, 'error');
+    }
+}
+
+async function aplicarASeleccionados() {
+    const empleadosSeleccionados = Array.from(
+        document.querySelectorAll('.empleado-checkbox:checked')
+    ).map(cb => cb.dataset.id);
+    
+    if (empleadosSeleccionados.length === 0) {
+        mostrarNotificacion('Por favor seleccione al menos un empleado', 'warning');
+        return;
+    }
+    
+    const { value: conceptoData } = await Swal.fire({
+        title: 'Aplicar Concepto',
+        html: await obtenerFormularioConceptos(),
+        showCancelButton: true,
+        confirmButtonText: 'Aplicar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            const concepto = document.getElementById('concepto-aplicar').value;
+            const valor = document.getElementById('valor-aplicar').value;
+            if (!concepto || !valor) {
+                Swal.showValidationMessage('Por favor complete todos los campos');
+                return false;
+            }
+            return { concepto, valor };
+        }
+    });
+    
+    if (conceptoData) {
         try {
-            const response = await fetch('/api/empleados/', {
+            const response = await fetch('/api/nominas/aplicar_concepto_masivo/', {
+                method: 'POST',
                 headers: {
-                    'Accept': 'application/json'
-                }
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF_TOKEN
+                },
+                body: JSON.stringify({
+                    empleados: empleadosSeleccionados,
+                    concepto: conceptoData.concepto,
+                    valor: parseFloat(conceptoData.valor)
+                })
             });
-            if (!response.ok) throw new Error('Error al cargar empleados');
+            
+            if (!response.ok) throw new Error('Error al aplicar concepto');
             const data = await response.json();
-            if (!data.success) throw new Error(data.error || 'Error en la respuesta');
             
-            const empleados = data.empleados || [];
-            asignacionesIndividuales = {}; // Reset assignments
-            
-            // Render employee list
-            renderizarListaEmpleados(empleados);
-            
-            // Setup filter event
-            filtroInput.addEventListener('input', () => {
-                const filtro = filtroInput.value.toLowerCase();
-                const empleadosFiltrados = empleados.filter(emp => 
-                    emp.nombre.toLowerCase().includes(filtro) || 
-                    emp.email.toLowerCase().includes(filtro)
-                );
-                renderizarListaEmpleados(empleadosFiltrados);
-            });
+            if (data.success) {
+                mostrarNotificacion('Concepto aplicado correctamente', 'success');
+                await cargarEmpleadosPorTipo(); // Recargar tabla
+            } else {
+                throw new Error(data.error || 'Error al aplicar concepto');
+            }
             
         } catch (error) {
-            listaContainer.innerHTML = `<p class="error">Error al cargar empleados: ${error.message}</p>`;
+            console.error('Error:', error);
+            mostrarNotificacion(error.message, 'error');
         }
     }
+}
+
+async function obtenerFormularioConceptos() {
+    try {
+        const response = await fetch('/api/conceptos/');
+        if (!response.ok) throw new Error('Error al cargar conceptos');
+        const data = await response.json();
+        
+        return `
+            <div class="form-group">
+                <label for="concepto-aplicar">Concepto:</label>
+                <select id="concepto-aplicar" class="swal2-input">
+                    <option value="">Seleccione un concepto</option>
+                    ${data.conceptos.map(c => `
+                        <option value="${c.codigo}">${c.descripcion}</option>
+                    `).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="valor-aplicar">Valor:</label>
+                <input type="number" id="valor-aplicar" class="swal2-input" step="0.01" min="0">
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error:', error);
+        return '<p class="error">Error al cargar conceptos</p>';
+    }
+}
+
+async function mostrarDialogoConceptoGeneral() {
+    const { value: conceptoData } = await Swal.fire({
+        title: 'Agregar Concepto General',
+        html: await obtenerFormularioConceptos(),
+        showCancelButton: true,
+        confirmButtonText: 'Aplicar a Todos',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            const concepto = document.getElementById('concepto-aplicar').value;
+            const valor = document.getElementById('valor-aplicar').value;
+            if (!concepto || !valor) {
+                Swal.showValidationMessage('Por favor complete todos los campos');
+                return false;
+            }
+            return { concepto, valor };
+        }
+    });
+    
+    if (conceptoData) {
+        try {
+            const response = await fetch('/api/nominas/aplicar_concepto_general/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF_TOKEN
+                },
+                body: JSON.stringify({
+                    concepto: conceptoData.concepto,
+                    valor: parseFloat(conceptoData.valor),
+                    tipo_nomina: document.getElementById('modal-tipo-nomina').value
+                })
+            });
+            
+            if (!response.ok) throw new Error('Error al aplicar concepto general');
+            const data = await response.json();
+            
+            if (data.success) {
+                mostrarNotificacion('Concepto general aplicado correctamente', 'success');
+                await cargarEmpleadosPorTipo(); // Recargar tabla
+            } else {
+                throw new Error(data.error || 'Error al aplicar concepto general');
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarNotificacion(error.message, 'error');
+        }
+    }
+}
     
     function renderizarListaEmpleados(empleados) {
         const listaContainer = modal.querySelector('#lista-empleados');
@@ -656,7 +994,6 @@ async function actualizarTablaNominas(nominas) {
 
 async function aplicarFiltros() {
     const cuerpoTabla = document.getElementById('cuerpoTablaNominas');
-    await actualizarTablaNominas();
     if (!cuerpoTabla) return;
 
     try {
@@ -998,17 +1335,6 @@ window.initializeImportarNomina = initializeImportarNomina;
 window.aplicarFiltros = aplicarFiltros;
 window.limpiarFiltros = limpiarFiltros;
 
-// ===== EJECUCIÓN INICIAL =====
-// Verificar si estamos en la página de nóminas
-if (document.getElementById('cuerpoTablaNominas')) {
-    // Esperar a que el DOM esté listo
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', inicializarModuloNominas);
-    } else {
-        // Si el DOM ya está listo
-        setTimeout(inicializarModuloNominas, 100);
-    }
-}
 
 // Verificar y cargar SweetAlert2 correctamente
 if (typeof window.Swal !== 'undefined') {

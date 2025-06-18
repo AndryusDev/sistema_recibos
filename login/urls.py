@@ -103,4 +103,7 @@ urlpatterns = [
     #path('api/control_vacaciones/', views.api_control_vacaciones, name='api_control_vacaciones'),
 
     path('api/', include(router.urls)),
+
+    path('api/conceptos/', views.api_conceptos, name = 'api_conceptos'),
+    path('api/empleados/por_tipo/<str:tipo>/', views.api_empleados_por_tipo, name='api_empleados_por_tipo'),
 ]

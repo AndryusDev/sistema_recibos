@@ -51,6 +51,9 @@ class tipo_trabajador(models.Model):
 
     class Meta:
         db_table = 'tipo_trabajador'
+
+    def __str__(self):
+        return self.descripcion
         
 # /////////////////// proceso nomina automatico   ///////////////
 class nivel_salarial(models.Model):

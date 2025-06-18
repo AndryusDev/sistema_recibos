@@ -3387,6 +3387,96 @@ class ARCViewSet(viewsets.ModelViewSet):
 
         return Response(data)
 
+@require_http_methods(["GET"])
+def api_empleados_por_tipo(request, tipo):
+    """
+    API para obtener empleados filtrados por tipo de nómina
+    """
+    try:
+        logger.info(f"api_empleados_por_tipo called with tipo: {tipo}")
+        # Obtener el tipo de trabajador por descripción
+
+        try:
+            tipo_trabajador_obj = tipo_trabajador.objects.filter(descripcion__icontains=tipo).first()
+        except tipo_trabajador.DoesNotExist:
+            logger.warning(f"Tipo de trabajador no encontrado: {tipo}")
+            return JsonResponse({
+                'success': False,
+                'error': f'Tipo de trabajador "{tipo}" no encontrado'
+            }, status=404)
+        
+        # Filtrar empleados activos por tipo de trabajador
+        empleados_qs = empleado.objects.filter(
+            tipo_trabajador=tipo_trabajador_obj,
+            status=True
+        ).select_related('cargo', 'cargo__familia', 'cargo__nivel', 'tipo_trabajador').order_by('primer_apellido', 'primer_nombre')
+        
+        empleados_data = []
+        for emp in empleados_qs:
+            try:
+                cargo_nombre = emp.cargo.nombre_completo if emp.cargo else 'Sin cargo'
+                tipo_trab_desc = emp.tipo_trabajador.descripcion if emp.tipo_trabajador else 'Desconocido'
+                empleados_data.append({
+                    'cedula': emp.cedula,
+                    'nombre_completo': emp.get_nombre_completo(),
+                    'cargo': cargo_nombre,
+                    'tipo_trabajador': tipo_trab_desc
+                })
+            except Exception as inner_e:
+                logger.error(f"Error procesando empleado {emp.cedula}: {str(inner_e)}", exc_info=True)
+                # Skip this employee or add partial data
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'empleados': empleados_data,
+            'total': len(empleados_data)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en api_empleados_por_tipo: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al procesar la solicitud',
+            'detail': str(e)
+        }, status=500)
+
+@require_http_methods(["GET"])
+def api_conceptos(request):
+    """
+    API para obtener todos los conceptos de pago disponibles
+    """
+    try:
+        # Obtener conceptos activos ordenados por código
+        conceptos_qs = concepto_pago.objects.filter(
+            status='ACTIVO'
+        ).select_related('tipo_pago').order_by('codigo')
+        
+        conceptos_data = []
+        for concepto in conceptos_qs:
+            conceptos_data.append({
+                'codigo': concepto.codigo,
+                'descripcion': concepto.descripcion,
+                'tipo_concepto': concepto.tipo_concepto,
+                'tipo_pago': concepto.tipo_pago.nombre_tipopago if concepto.tipo_pago else '',
+                'nombre_nomina': concepto.nombre_nomina,
+                'status': concepto.status
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'conceptos': conceptos_data,
+            'total': len(conceptos_data)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en api_conceptos: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al procesar la solicitud',
+            'detail': str(e)
+        }, status=500)
+
 
 
 
