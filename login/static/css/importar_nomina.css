@@ -916,4 +916,36 @@
     display: none;
 }
 
-/*COLUMNA CIERRE NOMINA*/
+/* COLUMNA CIERRE NOMINA*/
+
+/* Mini panel modal for individual concept configuration */
+#mini-panel-configuracion {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fefefe;
+    border: 1px solid #00796b;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 121, 107, 0.3);
+    max-height: 480px;
+    overflow-y: auto;
+    z-index: 11000; /* Higher than main modal */
+    display: none;
+}
+
+#mini-panel-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.4);
+    z-index: 10999; /* Just below mini panel */
+    display: none;
+}
+
+#mini-panel-overlay.show {
+    display: block;
+}

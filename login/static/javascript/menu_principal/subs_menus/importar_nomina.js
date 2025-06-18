@@ -95,6 +95,31 @@ async function cargarDatosPaso3() {
             if (typeof actualizarPeriodo === 'function') {
                 actualizarPeriodo();
             }
+
+            // Add event listeners to general concept checkboxes to update mini panel if open
+            const generalCheckboxes = conceptosContainer.querySelectorAll('input[type="checkbox"]');
+            generalCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    const miniPanel = document.getElementById('mini-panel-configuracion');
+                    if (!miniPanel || miniPanel.style.display === 'none') return;
+
+                    const empleadoId = miniPanel.dataset.empleadoId;
+                    if (!empleadoId) return;
+
+                    // If individual override exists for this concept, do not override checkbox
+                    if (window.asignacionesIndividuales &&
+                        window.asignacionesIndividuales[empleadoId] &&
+                        typeof window.asignacionesIndividuales[empleadoId][checkbox.dataset.codigo] === 'boolean') {
+                        return;
+                    }
+
+                    // Update the corresponding individual checkbox in mini panel
+                    const indCheckbox = miniPanel.querySelector(`input[id="ind-concepto-${checkbox.dataset.codigo}"]`);
+                    if (indCheckbox) {
+                        indCheckbox.checked = checkbox.checked;
+                    }
+                });
+            });
         }
 
         // Pre-check conceptos for nomina administrativa
@@ -313,6 +338,11 @@ function renderizarEmpleados(empleados, conceptos) {
             <td>${empleado.nombre}</td>
             <td>${empleado.cedula}</td>
             <td>${empleado.cargo}</td>
+            <td>
+                <button class="btn-configuracion-individual" data-cedula="${empleado.cedula}">
+                    Configuración Individual
+                </button>
+            </td>
             ${conceptos.map(concepto => `
                 <td class="celda-editable valor-concepto" 
                     data-concepto="${concepto.codigo}"
@@ -340,6 +370,84 @@ function configurarEventosTabla() {
     
     // Botón de agregar concepto general
     // Removed duplicate global event listener for btn-agregar-concepto-general to fix click issue
+
+    // Add double-click event listener on employee name and cedula cells to open individual concept modal
+    const tablaBody = document.getElementById('tbody-gestion-nomina');
+    if (tablaBody) {
+        tablaBody.querySelectorAll('tr').forEach(tr => {
+            const nombreCelda = tr.querySelector('td:nth-child(2)');
+            const cedulaCelda = tr.querySelector('td:nth-child(3)');
+            if (nombreCelda) {
+                nombreCelda.addEventListener('dblclick', () => {
+                    const cedula = cedulaCelda ? cedulaCelda.textContent.trim() : null;
+                    if (cedula) abrirConfiguracionEmpleadoPorCedula(cedula);
+                });
+            }
+            if (cedulaCelda) {
+                cedulaCelda.addEventListener('dblclick', () => {
+                    const cedula = cedulaCelda.textContent.trim();
+                    abrirConfiguracionEmpleadoPorCedula(cedula);
+                });
+            }
+        });
+    }
+
+    // Add click event listeners to "Configuración Individual" buttons
+    if (tablaBody) {
+        const botonesConfiguracion = tablaBody.querySelectorAll('.btn-configuracion-individual');
+        botonesConfiguracion.forEach(boton => {
+            boton.addEventListener('click', () => {
+                const cedula = boton.getAttribute('data-cedula');
+                if (cedula) {
+                    abrirConfiguracionEmpleadoPorCedula(cedula);
+                }
+            });
+        });
+    }
+}
+
+// New function to open individual concept modal by cedula
+function abrirConfiguracionEmpleadoPorCedula(cedula) {
+    const modal = document.getElementById("importarnominaModal");
+    if (!modal) return;
+
+    // Find employee data by cedula from the current table rows
+    const tablaBody = document.getElementById('tbody-gestion-nomina');
+    if (!tablaBody) return;
+
+    let empleado = null;
+    tablaBody.querySelectorAll('tr').forEach(tr => {
+        const cedulaCelda = tr.querySelector('td:nth-child(3)');
+        if (cedulaCelda && cedulaCelda.textContent.trim() === cedula) {
+            empleado = {
+                id: tr.dataset.empleadoId,
+                nombre: tr.querySelector('td:nth-child(2)')?.textContent.trim() || '',
+                cedula: cedula,
+                cargo: tr.querySelector('td:nth-child(4)')?.textContent.trim() || ''
+            };
+        }
+    });
+
+    if (!empleado) {
+        mostrarNotificacion('Empleado no encontrado para cédula: ' + cedula, 'error');
+        return;
+    }
+
+    // Show the mini panel modal for the employee
+    abrirConfiguracionEmpleado(empleado);
+
+    // Show overlay for the mini panel modal
+    const miniPanelOverlay = document.getElementById('mini-panel-overlay');
+    if (miniPanelOverlay) {
+        miniPanelOverlay.style.display = 'block';
+        miniPanelOverlay.classList.add('show');
+        miniPanelOverlay.addEventListener('click', () => {
+            const miniPanel = document.getElementById('mini-panel-configuracion');
+            if (miniPanel) miniPanel.style.display = 'none';
+            miniPanelOverlay.style.display = 'none';
+            miniPanelOverlay.classList.remove('show');
+        }, { once: true });
+    }
 }
 
 function habilitarEdicion(celda) {
@@ -554,22 +662,26 @@ function abrirConfiguracionEmpleado(empleado) {
 
     const miniPanel = modal.querySelector("#mini-panel-configuracion");
     const conceptosLista = modal.querySelector("#conceptos-individuales-lista");
-    if (!miniPanel || !conceptosLista) return;
+    const empleadoInfo = modal.querySelector("#empleado-info");
+    if (!miniPanel || !conceptosLista || !empleadoInfo) return;
 
     // Show the mini panel
     miniPanel.style.display = "block";
 
+    // Display employee info
+    empleadoInfo.textContent = `Empleado: ${empleado.nombre} | Cédula: ${empleado.cedula} | Cargo: ${empleado.cargo}`;
+
     // Store current employee for reference
-    miniPanel.dataset.empleadoId = empleado.id || empleado.codigo || empleado.email || empleado.nombre;
+    miniPanel.dataset.empleadoId = empleado.cedula || empleado.codigo || empleado.email || empleado.nombre;
 
     // Get general selected concepts from Step 3
     const conceptosSeleccionados = Array.from(
-        modal.querySelectorAll('#paso-conceptos input[type="checkbox"]:checked')
+        modal.querySelectorAll('#conceptos-disponibles input[type="checkbox"]:checked')
     ).map(cb => cb.getAttribute('data-codigo'));
 
     // Get all concepts from Step 3 (checkboxes)
     const todosConceptos = Array.from(
-        modal.querySelectorAll('#paso-conceptos input[type="checkbox"]')
+        modal.querySelectorAll('#conceptos-disponibles input[type="checkbox"]')
     ).map(cb => ({
         codigo: cb.getAttribute('data-codigo'),
         descripcion: cb.nextElementSibling ? cb.nextElementSibling.textContent.trim() : '',
@@ -601,6 +713,17 @@ function abrirConfiguracionEmpleado(empleado) {
         } else {
             input.checked = concepto.seleccionadoGeneral;
         }
+
+        // Add event listener to update window.asignacionesIndividuales on change
+        input.addEventListener('change', () => {
+            if (!window.asignacionesIndividuales) {
+                window.asignacionesIndividuales = {};
+            }
+            if (!window.asignacionesIndividuales[miniPanel.dataset.empleadoId]) {
+                window.asignacionesIndividuales[miniPanel.dataset.empleadoId] = {};
+            }
+            window.asignacionesIndividuales[miniPanel.dataset.empleadoId][concepto.codigo] = input.checked;
+        });
 
         const label = document.createElement('label');
         label.htmlFor = input.id;
