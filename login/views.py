@@ -3107,7 +3107,8 @@ def generar_nomina_automatica(request):
                             montos_conceptos['1001'] = monto
                         
                         elif concepto.codigo == '1101':  # PRM por hijo
-                            hijos_activos = hijo.objects.filter(empleado=emp, estudia='S').count()
+                            hijos_activos = hijo.objects.filter(empleado=emp).count()
+                            # hijos_activos = hijo.objects.filter(empleado=emp, estudia='S').count()
                             monto = Decimal(hijos_activos) * Decimal('6')
                         
                         elif concepto.codigo == '1102':  # PRM por hijo discapacitado

@@ -58,48 +58,69 @@ function inicializarModalImportacion() {
         });
     }
 
-    async function cargarDatosPaso3() {
-        const tipoNomina = modal.querySelector('#modal-tipo-nomina').value;
-        if (!tipoNomina) return;
+async function cargarDatosPaso3() {
+    const tipoNomina = modal.querySelector('#modal-tipo-nomina').value;
+    if (!tipoNomina) return;
 
-        try {
-            // 1. Cargar empleados
-            await cargarEmpleadosPorTipo();
+    try {
+        // 1. Cargar empleados
+        await cargarEmpleadosPorTipo();
 
-            // 2. Cargar conceptos disponibles
-            const response = await fetch('/api/conceptos/', {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRFToken': CSRF_TOKEN
-                }
-            });
-
-            if (!response.ok) throw new Error('Error al cargar conceptos');
-            const data = await response.json();
-
-            // Renderizar conceptos en el panel
-            const conceptosContainer = document.getElementById('conceptos-disponibles');
-            if (conceptosContainer && data.conceptos) {
-                conceptosContainer.innerHTML = data.conceptos.map(concepto => `
-                    <div class="concepto-checkbox">
-                        <input type="checkbox" id="concepto-${concepto.codigo}" 
-                            data-codigo="${concepto.codigo}">
-                        <label for="concepto-${concepto.codigo}">
-                            ${concepto.descripcion}
-                        </label>
-                    </div>
-                `).join('');
+        // 2. Cargar conceptos disponibles
+        const response = await fetch('/api/conceptos/', {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRFToken': CSRF_TOKEN
             }
+        });
 
-            // 3. Configurar eventos
-            configurarEventosTabla();
-            configurarEventosConceptos();
+        if (!response.ok) throw new Error('Error al cargar conceptos');
+        const data = await response.json();
 
-        } catch (error) {
-            console.error('Error en cargarDatosPaso3:', error);
-            mostrarNotificacion('Error al cargar datos: ' + error.message, 'error');
+        // Renderizar conceptos en el panel
+        const conceptosContainer = document.getElementById('conceptos-disponibles');
+        if (conceptosContainer && data.conceptos) {
+            console.log('Renderizando conceptos...');
+            conceptosContainer.innerHTML = data.conceptos.map(concepto => `
+                <div class="concepto-checkbox">
+                    <input type="checkbox" id="concepto-${concepto.codigo}" 
+                        data-codigo="${concepto.codigo}">
+                    <label for="concepto-${concepto.codigo}">
+                        ${concepto.descripcion}
+                    </label>
+                </div>
+            `).join('');
+            console.log('Conceptos renderizados');
         }
+
+        // Pre-check conceptos for nomina administrativa
+        console.log('Tipo de nómina seleccionado:', tipoNomina);
+        if (tipoNomina.toLowerCase().includes('administrativ')) {
+            console.log('Nomina administrativa detectada, preseleccionando conceptos...');
+            const precheckedConcepts = ['1001', '1004', '1103', '20001', '20002', '20003', '20004'];
+            // Delay pre-checking to ensure DOM update
+            setTimeout(() => {
+                precheckedConcepts.forEach(codigo => {
+                    const checkbox = conceptosContainer.querySelector(`input[data-codigo="${codigo}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        console.log(`Checkbox preseleccionado: ${codigo}`);
+                    } else {
+                        console.warn(`Checkbox no encontrado para código: ${codigo}`);
+                    }
+                });
+            }, 50);
+        }
+
+        // 3. Configurar eventos
+        configurarEventosTabla();
+        configurarEventosConceptos();
+
+    } catch (error) {
+        console.error('Error en cargarDatosPaso3:', error);
+        mostrarNotificacion('Error al cargar datos: ' + error.message, 'error');
     }
+}
 
     function configurarEventosConceptos() {
         // Evento para "Agregar Concepto General"
