@@ -790,6 +790,18 @@ async function abrirConfiguracionEmpleado(empleado) {
         conceptosLista.appendChild(div);
     });
 
+    // Immediately update window.asignacionesIndividuales with the current checkbox states
+    if (!window.asignacionesIndividuales) {
+        window.asignacionesIndividuales = {};
+    }
+    if (!window.asignacionesIndividuales[miniPanel.dataset.empleadoId]) {
+        window.asignacionesIndividuales[miniPanel.dataset.empleadoId] = {};
+    }
+    const checkboxes = conceptosLista.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        window.asignacionesIndividuales[miniPanel.dataset.empleadoId][cb.dataset.codigo] = cb.checked;
+    });
+
     // Cache the mini panel content for this employee to avoid reloading
     window.miniPanelCache[empleado.cedula] = true;
 
