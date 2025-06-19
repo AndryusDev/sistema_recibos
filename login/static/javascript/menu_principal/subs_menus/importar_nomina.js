@@ -680,6 +680,16 @@ async function abrirConfiguracionEmpleado(empleado) {
     const empleadoInfo = modal.querySelector("#empleado-info");
     if (!miniPanel || !conceptosLista || !empleadoInfo) return;
 
+    // Check if this employee's mini panel is already loaded to avoid reloading
+    if (!window.miniPanelCache) {
+        window.miniPanelCache = {};
+    }
+    if (window.miniPanelCache[empleado.cedula]) {
+        // Show cached mini panel without reloading
+        miniPanel.style.display = "block";
+        return;
+    }
+
     // Show the mini panel
     miniPanel.style.display = "block";
 
@@ -779,6 +789,9 @@ async function abrirConfiguracionEmpleado(empleado) {
         div.appendChild(label);
         conceptosLista.appendChild(div);
     });
+
+    // Cache the mini panel content for this employee to avoid reloading
+    window.miniPanelCache[empleado.cedula] = true;
 
     // Save and Cancel buttons
     const btnGuardar = miniPanel.querySelector('button.guardar');
