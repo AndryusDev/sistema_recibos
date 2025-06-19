@@ -5,7 +5,7 @@ import json
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Exists, OuterRef
 import pandas as pd
 from django.http import JsonResponse
 import requests
@@ -27,6 +27,30 @@ def login(request):
     enable_fields = {'campo1': True, 'campo2': False}
     enable_fields_json = json.dumps(enable_fields)
     return render(request, 'login.html', {'enable_fields_json': enable_fields_json})
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def empleado_con_hijos_discapacidad(request, cedula):
+    if not cedula:
+        return JsonResponse({'success': False, 'message': 'Cédula no proporcionada.'}, status=400)
+    try:
+        empleado_obj = empleado.objects.get(cedula=cedula)
+        # Check if employee has any child
+        tiene_hijos = hijo.objects.filter(empleado=empleado_obj).exists()
+        # Check if employee has any child with discapacidad=True
+        tiene_hijo_discapacidad = hijo.objects.filter(empleado=empleado_obj, discapacidad=True).exists()
+        empleado_data = {
+            'primer_nombre': empleado_obj.primer_nombre,
+            'primer_apellido': empleado_obj.primer_apellido,
+            'cedula': empleado_obj.cedula,
+            'tiene_hijos': tiene_hijos,
+            'tiene_hijo_discapacidad': tiene_hijo_discapacidad
+        }
+        return JsonResponse({'success': True, 'empleado': empleado_data})
+    except empleado.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 @csrf_exempt
 def list_backups(request):

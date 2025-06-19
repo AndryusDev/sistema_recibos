@@ -671,7 +671,7 @@ async function mostrarDialogoConceptoGeneral() {
         });
     }
     
-function abrirConfiguracionEmpleado(empleado) {
+async function abrirConfiguracionEmpleado(empleado) {
     const modal = document.getElementById("importarnominaModal");
     if (!modal) return;
 
@@ -688,6 +688,40 @@ function abrirConfiguracionEmpleado(empleado) {
 
     // Store current employee for reference
     miniPanel.dataset.empleadoId = empleado.cedula || empleado.codigo || empleado.email || empleado.nombre;
+
+    // Fetch tiene_hijos and tiene_hijo_discapacidad flags from backend
+    try {
+        const response = await fetch(`/api/empleado_con_hijos_discapacidad/${empleado.cedula}/`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.empleado) {
+                if (!window.asignacionesIndividuales) {
+                    window.asignacionesIndividuales = {};
+                }
+                if (!window.asignacionesIndividuales[empleado.cedula]) {
+                    window.asignacionesIndividuales[empleado.cedula] = {};
+                }
+                window.asignacionesIndividuales[empleado.cedula]['1101'] = data.empleado.tiene_hijos;
+                window.asignacionesIndividuales[empleado.cedula]['1102'] = data.empleado.tiene_hijo_discapacidad;
+            }
+        } else {
+            console.warn('No se pudo obtener info de hijos/discapacidad para empleado:', empleado.cedula);
+            if (!window.asignacionesIndividuales) {
+                window.asignacionesIndividuales = {};
+            }
+            if (!window.asignacionesIndividuales[empleado.cedula]) {
+                window.asignacionesIndividuales[empleado.cedula] = {};
+            }
+        }
+    } catch (error) {
+        console.error('Error al obtener info de hijos/discapacidad:', error);
+        if (!window.asignacionesIndividuales) {
+            window.asignacionesIndividuales = {};
+        }
+        if (!window.asignacionesIndividuales[empleado.cedula]) {
+            window.asignacionesIndividuales[empleado.cedula] = {};
+        }
+    }
 
     // Get general selected concepts from Step 3
     const conceptosSeleccionados = Array.from(
@@ -707,9 +741,6 @@ function abrirConfiguracionEmpleado(empleado) {
     conceptosLista.innerHTML = '';
 
     // Load individual selections if any
-    if (!window.asignacionesIndividuales) {
-        window.asignacionesIndividuales = {};
-    }
     const asignacionEmpleado = window.asignacionesIndividuales[miniPanel.dataset.empleadoId] || {};
 
     // Render checkboxes for all concepts, marking those selected generally and individual overrides
