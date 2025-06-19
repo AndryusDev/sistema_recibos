@@ -3089,15 +3089,17 @@ def generar_nomina_automatica(request):
                     salario_base = Decimal(str(emp.nivel_salarial.monto))
                     
                     # Calcular asistencia
-                    asistencia_dias = asistencias.objects.filter(
+                    asistencia = asistencias.objects.filter(
                         empleado=emp,
                         fecha__range=(start_date, end_date),
-                        estado__in=['A', 'P']
+                        estado__in=['F']
                     ).count()
+
+                    asistencia_dias = dias_laborables - asistencia
                     
                     # Calcular salario por asistencias (base para deducciones)
                     salario_diario = salario_base / Decimal('30')
-                    salario_asistencias = salario_diario * Decimal(asistencia_dias)
+                    salario_asistencias = salario_diario * Decimal(dias_laborables - asistencia)
                     
                     # Calcular años de servicio
                     hoy = date.today()
