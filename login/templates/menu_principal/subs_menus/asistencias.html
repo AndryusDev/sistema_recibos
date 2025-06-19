@@ -4,20 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Asistencias - Sistema Policial</title>
+    <title>Gestión de Faltas - Sistema Policial</title>
     <link rel="stylesheet" href="{% static 'css/asistencias.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 <body>
     <div class="titulo-pagina">
-        <h1>Gestión de Asistencias</h1>
+        <h1>Gestión de Faltas</h1>
     </div>
 
     <div class="contenedor-tabla-recibos">
         <!-- Panel de Búsqueda/Filtros - Asistencias -->
         <div class="panel-busqueda">
-            <h4>Filtros de Asistencias</h4>
+            <h4>Filtros de Faltas</h4>
             <div class="busqueda-grupo">
                 <div class="form-group">
                     <label for="filtro-empleado-asistencia"><i class="fas fa-user"></i> Empleado:</label>
@@ -141,7 +141,7 @@
             </div>
         </div>
 
-        <!-- Calendario de Asistencias -->
+        <!-- Calendario de Asistencias 
         <div class="panel-busqueda">
             <h4>Calendario de Asistencias</h4>
             <div class="busqueda-grupo">
@@ -153,7 +153,7 @@
                     <i class="fas fa-calendar"></i> Cargar Calendario
                 </button>
             </div>
-        </div>
+        </div>-->
 
         <div id="calendario-asistencias">
             <!-- Calendario dinámico -->
@@ -189,7 +189,6 @@
                     <div class="form-group">
                         <label for="asistencia-estado"><i class="fas fa-info-circle"></i> Estado:</label>
                         <select id="asistencia-estado" class="busqueda-input modal-input">
-                            <option value="A">Asistió</option>
                             <option value="F">Falta</option>
                             <option value="V">Vacaciones</option>
                             <option value="P">Permiso</option>
@@ -264,49 +263,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Modal de Registro de Vacaciones, Permisos y Licencias -->
-    <div class="importarnomina-modal" id="registrarVPLModal">
-        <div class="importarnomina-modal__contenido">
-            <div class="recibo-modal__contenido">
-                <div class="modal-header">
-                    <h3><i class="fas fa-sun"></i> Vacaciones, Permisos y Licencias</h3>
-                    <button class="btn-cerrar" onclick="registrarVPLModal__cerrar()">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <!-- Formulario de registro de vacaciones, permisos y licencias -->
-                    <div class="form-group">
-                        <label for="vpl-empleado"><i class="fas fa-user"></i> Empleado:</label>
-                        <input type="text" id="vpl-empleado" class="busqueda-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="vpl-tipo"><i class="fas fa-list"></i> Tipo:</label>
-                        <select id="vpl-tipo" class="busqueda-input">
-                            <option value="vacaciones">Vacaciones</option>
-                            <option value="permiso">Permiso</option>
-                            <option value="licencia">Licencia</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="vpl-fecha-inicio"><i class="fas fa-calendar"></i> Fecha Inicio:</label>
-                        <input type="date" id="vpl-fecha-inicio" class="busqueda-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="vpl-fecha-fin"><i class="fas fa-calendar"></i> Fecha Fin:</label>
-                        <input type="date" id="vpl-fecha-fin" class="busqueda-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="vpl-notas"><i class="fas fa-sticky-note"></i> Notas:</label>
-                        <textarea id="vpl-notas" class="busqueda-input"></textarea>
-                    </div>
-                    <div class="form-group" id="vpl-documento-group" style="display: none;">
-                        <label for="vpl-documento"><i class="fas fa-upload"></i> Documento:</label>
-                        <input type="file" id="vpl-documento" class="busqueda-input">
-                    </div>
-                </div>
-
-
-
                 <div class="recibo-modal__acciones">
                     <button class="recibo-modal__boton btn-cancelar" onclick="registrarVPLModal__cerrar()">
                         <i class="fas fa-times"></i> Cancelar

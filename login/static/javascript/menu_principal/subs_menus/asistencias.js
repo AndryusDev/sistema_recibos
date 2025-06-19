@@ -388,7 +388,7 @@ function clearAsistenciaForm() {
     document.getElementById("asistencia-fecha").value = "";
     document.getElementById("asistencia-hora-entrada").value = "";
     document.getElementById("asistencia-hora-salida").value = "";
-    document.getElementById("asistencia-estado").value = "A";
+    document.getElementById("asistencia-estado").value = "F";
     document.getElementById("asistencia-notas").value = "";
 }
 
