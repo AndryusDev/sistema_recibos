@@ -280,75 +280,75 @@
                         </div>
                     </div>
                     
-                <!-- Paso 3: Gestión de empleados y conceptos -->
-                <div class="paso-importacion" data-paso="3" id="paso-gestion-nomina">
-                    <div class="gestion-header">
-                        <h4><i class="fas fa-users"></i> Gestión de Empleados y Conceptos</h4>
-                        <div class="controles-principales">
-                            <button id="btn-agregar-concepto-general" class="btn-control">
-                                <i class="fas fa-plus"></i> Añadir Concepto General
-                            </button>
-                            <button id="btn-aplicar-seleccionados" class="btn-control btn-aplicar">
-                                <i class="fas fa-check"></i> Aplicar a Seleccionados
-                            </button>
+                    <!-- Paso 3: Gestión de empleados y conceptos -->
+                    <div class="paso-importacion" data-paso="3" id="paso-gestion-nomina">
+                        <div class="gestion-header">
+                            <h4><i class="fas fa-users"></i> Gestión de Empleados y Conceptos</h4>
+                            <div class="controles-principales">
+                                <button id="btn-agregar-concepto-general" class="btn-control">
+                                    <i class="fas fa-plus"></i> Añadir Concepto General
+                                </button>
+                                <button id="btn-aplicar-seleccionados" class="btn-control btn-aplicar">
+                                    <i class="fas fa-check"></i> Aplicar a Seleccionados
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Filtros y búsqueda -->
-                    <div class="filtros-empleados">
-                        <input type="text" id="filtro-empleados" placeholder="Buscar empleado..." class="filtro-input">
-                        <select id="filtro-departamento" class="filtro-select">
-                            <option value="">Todos los departamentos</option>
-                        </select>
-                    </div>
+                        <!-- Filtros y búsqueda -->
+                        <div class="filtros-empleados">
+                            <input type="text" id="filtro-empleados" placeholder="Buscar empleado..." class="filtro-input">
+                            <select id="filtro-departamento" class="filtro-select">
+                                <option value="">Todos los departamentos</option>
+                            </select>
+                        </div>
 
-                    <!-- Tabla principal de empleados y conceptos -->
-                    <div class="tabla-gestion-container">
-                        <table id="tabla-gestion-nomina" class="tabla-gestion">
-                            <thead>
-                                <tr>
-                                    <th class="col-checkbox">
-                                        <input type="checkbox" id="select-all-empleados">
-                                    </th>
-                                    <th class="col-empleado">Empleado</th>
-                                    <th class="col-cedula">Cédula</th>
-                                    <th class="col-cargo">Cargo</th>
-                                    <th class="col-acciones">Acciones</th>
-                                    <!-- Removed single th with id conceptos-headers -->
-                                </tr>
-                                <tr id="conceptos-headers">
-                                    <!-- Columnas de conceptos se generarán dinámicamente -->
-                                </tr>
-                            </thead>
-                            <tbody id="tbody-gestion-nomina">
-                                <!-- Filas de empleados se generarán dinámicamente -->
-                            </tbody>
-                        </table>
-                    </div>
+                        <!-- Tabla principal de empleados y conceptos -->
+                        <div class="tabla-gestion-container">
+                            <table id="tabla-gestion-nomina" class="tabla-gestion">
+                                <thead>
+                                    <tr>
+                                        <th class="col-checkbox">
+                                            <input type="checkbox" id="select-all-empleados">
+                                        </th>
+                                        <th class="col-empleado">Empleado</th>
+                                        <th class="col-cedula">Cédula</th>
+                                        <th class="col-cargo">Cargo</th>
+                                        <th class="col-acciones">Acciones</th>
+                                        <!-- Removed single th with id conceptos-headers -->
+                                    </tr>
+                                    <tr id="conceptos-headers">
+                                        <!-- Columnas de conceptos se generarán dinámicamente -->
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-gestion-nomina">
+                                    <!-- Filas de empleados se generarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
 
-                    <!-- Panel de conceptos disponibles -->
-                    <div class="panel-conceptos-disponibles">
-                        <h5><i class="fas fa-list"></i> Conceptos Disponibles</h5>
-                        <div class="conceptos-grid" id="conceptos-disponibles">
-                            <!-- Conceptos disponibles se cargarán aquí -->
+                        <!-- Panel de conceptos disponibles -->
+                        <div class="panel-conceptos-disponibles">
+                            <h5><i class="fas fa-list"></i> Conceptos Disponibles</h5>
+                            <div class="conceptos-grid" id="conceptos-disponibles">
+                                <!-- Conceptos disponibles se cargarán aquí -->
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Mini panel para configuración individual de conceptos -->
-                    <div id="mini-panel-configuracion" style="display:none;">
-                        <h4>Configuración Individual de Conceptos</h4>
-                        <div id="empleado-info" style="margin-bottom: 15px; font-weight: 600; color: #003366;">
-                            <!-- Información del empleado se mostrará aquí -->
-                        </div>
-                        <div id="conceptos-individuales-lista">
-                            <!-- Lista de conceptos con checkboxes se generará aquí -->
-                        </div>
-                        <div class="botones-panel">
-                            <button class="guardar">Guardar</button>
-                            <button class="cancelar">Cancelar</button>
+                        <!-- Mini panel para configuración individual de conceptos -->
+                        <div id="mini-panel-configuracion" style="display:none;">
+                            <h4>Configuración Individual de Conceptos</h4>
+                            <div id="empleado-info" style="margin-bottom: 15px; font-weight: 600; color: #003366;">
+                                <!-- Información del empleado se mostrará aquí -->
+                            </div>
+                            <div id="conceptos-individuales-lista">
+                                <!-- Lista de conceptos con checkboxes se generará aquí -->
+                            </div>
+                            <div class="botones-panel">
+                                <button class="guardar">Guardar</button>
+                                <button class="cancelar">Cancelar</button>
+                            </div>
                         </div>
                     </div>
-                    
                     <!-- Paso 4: Confirmación -->
                     <div class="paso-importacion" data-paso="4" >
                         <div class="resumen-importacion">
@@ -364,10 +364,6 @@
                             <div class="resumen-item">
                                 <span>Empleados Procesados:</span>
                                 <strong id="resumen-empleados">-</strong>
-                            </div>
-                            <div class="resumen-item">
-                                <span>Conceptos Aplicados:</span>
-                                <strong id="resumen-conceptos">-</strong>
                             </div>
                             <div class="resumen-item">
                                 <span>Fecha de Cierre:</span>

@@ -2935,6 +2935,8 @@ def generar_nomina_automatica(request):
             # Procesar empleados
             empleados = empleado.objects.filter(status=True)
             stats = {
+                'empleados_procesados': 0,
+                'conceptos_generados': 0,
                 'errores': 0,
                 'prenomina_generada': False
             }

@@ -1192,7 +1192,6 @@ window.descargarNomina = descargarNomina;
     }
 }
 
-// Función auxiliar para crear el mensaje HTML
 function crearMensajeDetallado(resultado) {
     const conceptosLista = resultado.conceptos && resultado.conceptos.length > 0 
         ? resultado.conceptos.map(codigo => {
@@ -1201,12 +1200,15 @@ function crearMensajeDetallado(resultado) {
         }).join(', ')
         : 'Ningún concepto seleccionado';
 
+    const cantidadConceptos = resultado.conceptos ? resultado.conceptos.length : 0;
+
     return `
         <div class="notificacion-detallada">
             <div class="notificacion-titulo">${resultado.message || 'Proceso completado'}</div>
             <div class="notificacion-contenido">
                 <div class="notificacion-seccion">
                     <h4>Resumen de Importación</h4>
+                    <p><strong>Cantidad de conceptos de pago:</strong> ${cantidadConceptos}</p>
                     <ul class="notificacion-lista">
                         <li class="texto-exito">Proceso completado</li>
                     </ul>
@@ -1376,9 +1378,11 @@ async function actualizarTablaNominas(nominas) {
                 <button class="tabla-recibos__boton btn-descargar-nomina" data-id-nomina="${nomina.id_nomina}">
                     <i class="fas fa-download"></i> Descargar
                 </button>
+                ${nomina.estado.toLowerCase() !== 'aprobada' ? `
                 <button class="tabla-recibos__boton btn-aprobar" style="background-color: #28a745; color: white; margin-left: 5px;" data-id-aprobar="${nomina.id_nomina}">
                     <i class="fas fa-check"></i> Aprobar
                 </button>
+                ` : ''}
                 <button class="tabla-recibos__boton btn-eliminar" style="background-color: #dc3545;" data-id="${nomina.id_nomina}">
                     <i class="fas fa-trash"></i> Eliminar
                 </button>
