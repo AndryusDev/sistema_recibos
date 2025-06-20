@@ -1172,8 +1172,6 @@ window.descargarNomina = descargarNomina;
                 const mensajeDetallado = crearMensajeDetallado({
                     message: resultado.message || 'Nómina generada exitosamente',
                     stats: resultado.stats || {
-                        empleados_procesados: 0,
-                        conceptos_generados: 0,
                         errores: 0
                     },
                     conceptos: conceptosSeleccionados
@@ -1210,6 +1208,32 @@ function crearMensajeDetallado(resultado) {
                 <div class="notificacion-seccion">
                     <h4>Resumen de Importación</h4>
                     <ul class="notificacion-lista">
+                        <li class="texto-exito">Proceso completado</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+
+
+
+function crearMensajeDetalladoAPROBADA(resultado) {
+    const conceptosLista = resultado.conceptos && resultado.conceptos.length > 0 
+        ? resultado.conceptos.map(codigo => {
+            const checkbox = document.querySelector(`input[data-codigo="${codigo}"]`);
+            return checkbox ? checkbox.nextElementSibling.textContent.trim() : codigo;
+        }).join(', ')
+        : 'Ningún concepto seleccionado';
+
+    return `
+        <div class="notificacion-detallada">
+            <div class="notificacion-titulo">${resultado.message || 'Proceso completado'}</div>
+            <div class="notificacion-contenido">
+                <div class="notificacion-seccion">
+                    <h4>Resumen de Importación</h4>
+                    <ul class="notificacion-lista">
                         <li><strong>Empleados procesados:</strong> ${resultado.stats.empleados_procesados || 0}</li>
                         <li><strong>Recibos generados:</strong> ${resultado.stats.recibos_generados || 0}</li>
                         <li><strong>Conceptos aplicados:</strong> ${conceptosLista}</li>
@@ -1220,7 +1244,6 @@ function crearMensajeDetallado(resultado) {
         </div>
     `;
 }
-
 // Función para mostrar notificación con estilos
 async function mostrarNotificacionDetallada(mensaje) {
     const style = document.createElement('style');
@@ -1411,8 +1434,12 @@ document.addEventListener('click', function(event) {
             }
             return response.json();
         })
-        .then(data => {
-            mostrarNotificacion(data.message || 'Nómina aprobada exitosamente', 'success');
+        .then(async data => {
+            const mensajeDetallado = crearMensajeDetalladoAPROBADA({
+                message: data.message || 'Nómina aprobada exitosamente',
+                stats: data.stats || { recibos_generados: 0 }
+            });
+            await mostrarNotificacionDetallada(mensajeDetallado);
             actualizarTablaNominas();
         })
         .catch(error => {

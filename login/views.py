@@ -351,7 +351,7 @@ def recibos_pagos(request):
     
     # Filtrar recibos solo para el empleado autenticado
     recibos = recibo_pago.objects.filter(
-        
+        cedula_id=empleado_id
     ).select_related(
         'cedula', 
         'cedula__cargo'
@@ -2935,8 +2935,6 @@ def generar_nomina_automatica(request):
             # Procesar empleados
             empleados = empleado.objects.filter(status=True)
             stats = {
-                'empleados_procesados': 0,
-                'conceptos_generados': 0,
                 'errores': 0,
                 'prenomina_generada': False
             }
@@ -3057,22 +3055,7 @@ def generar_nomina_automatica(request):
                                 monto=float(round(monto, 2)))
                             detalles_empleado.append(detalle)
                             stats['conceptos_generados'] += 1
-                    
-                    # Crear recibo de pago solo si hay detalles
-                    """if detalles_empleado:
-                        recibo = recibo_pago.objects.create(
-                            nomina=nomina_obj,
-                            cedula=emp,
-                            fecha_generacion=now()
-                        )
-                        
-                        for detalle in detalles_empleado:
-                            detalle_recibo.objects.create(
-                                recibo=recibo,
-                                detalle_nomina=detalle
-                            )
-                        
-                        stats['recibos_generados'] += 1"""
+                
                     
                     stats['empleados_procesados'] += 1
                     
@@ -3093,9 +3076,13 @@ def generar_nomina_automatica(request):
                 stats['prenomina_generada'] = False
                 logger.error(f"Error al generar prenómina: {str(e)}", exc_info=True)
             
+            # Prepare first message summary
+            message_summary = "Exitoso"
+
             return JsonResponse({
                 'success': True,
                 'nomina_id': nomina_obj.id_nomina,
+                'message_summary': message_summary,
                 'stats': stats,
                 'tasa_bcv_utilizada': float(tasa_bcv),
                 'prenomina_generada': stats['prenomina_generada']
@@ -3128,11 +3115,12 @@ def aprobar_nomina(request, id_nomina):
             
             # 2. Generar recibos (aquí sí se crean)
             recibos_generados = 0
-            empleados_procesados = empleado.objects.filter(
+            empleados_procesados_qs = empleado.objects.filter(
                 detalle_nomina__nomina=nomina_obj
             ).distinct()
+            empleados_procesados_count = empleados_procesados_qs.count()
             
-            for emp in empleados_procesados:
+            for emp in empleados_procesados_qs:
                 recibo = recibo_pago.objects.create(
                     nomina=nomina_obj,
                     cedula=emp,
@@ -3151,7 +3139,11 @@ def aprobar_nomina(request, id_nomina):
             
             return JsonResponse({
                 'success': True,
-                'recibos_generados': recibos_generados,
+                'message': 'Nómina aprobada correctamente',
+                'stats': {
+                    'recibos_generados': recibos_generados,
+                    'empleados_procesados': empleados_procesados_count
+                },
                 'fecha_aprobacion': nomina_obj.fecha_aprobacion.strftime('%Y-%m-%d %H:%M')
             })
             
