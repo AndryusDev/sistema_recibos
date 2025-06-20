@@ -2,6 +2,38 @@
 const API_NOMINAS_URL = '/api/nominas/';
 const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
 
+// Función para descargar el archivo Excel de una nómina específica
+async function descargarNomina(idNomina) {
+    try {
+        const response = await fetch(`/api/nominas/${idNomina}/descargar_excel/`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': CSRF_TOKEN,
+                'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Error al descargar el archivo Excel');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `nomina_${idNomina}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error al descargar la nómina:', error);
+        mostrarNotificacion('Error al descargar la nómina: ' + error.message, 'error');
+    }
+}
+window.descargarNomina = descargarNomina;
+
 // Función global para abrir el modal
 function importarnominaModal__abrir() {
     const modal = document.getElementById("importarnominaModal");
@@ -30,7 +62,7 @@ function inicializarModalImportacion() {
     const descargarPlantilla = modal.querySelector('#descargar-plantilla');
     
     let pasoActual = 1;
-    const totalPasos = 5; // Updated total steps to 5
+    const totalPasos = 4; // Set total steps to 4
     
     // Store individual assignments data
     let asignacionesIndividuales = {};
@@ -46,17 +78,56 @@ function inicializarModalImportacion() {
     
     // Navegación entre pasos
     if (btnSiguiente) {
-        btnSiguiente.addEventListener('click', async function() {
-            if (await validarPasoActual()) {
-                // Si vamos al paso 3, cargar empleados y conceptos
-                if (pasoActual === 2) {
-                    await cargarDatosPaso3();
-                }
-                pasoActual++;
-                actualizarPasos();
+    btnSiguiente.addEventListener('click', async function() {
+        console.log("Intentando avanzar desde paso:", pasoActual); // Debug
+
+        // 1. Validar el paso actual
+        if (!await validarPasoActual()) {
+            console.log("Validación fallida en paso", pasoActual); // Debug
+            mostrarNotificacion('Complete todos los campos requeridos', 'error');
+            return;
+        }
+
+        // 2. Verificar si podemos avanzar
+        if (pasoActual >= totalPasos) {
+            console.log("Ya estamos en el último paso"); // Debug
+            return;
+        }
+
+        // 3. Avanzar al siguiente paso
+        pasoActual++;
+        console.log("Avanzando al paso:", pasoActual); // Debug
+
+        // 4. Carga especial para el paso 3
+        if (pasoActual === 3) {
+            try {
+                console.log("Cargando datos para paso 3..."); // Debug
+                await cargarDatosPaso3();
+            } catch (error) {
+                console.error("Error al cargar datos paso 3:", error); // Debug
+                pasoActual--; // Revertir el avance
+                mostrarNotificacion('Error al cargar datos: ' + error.message, 'error');
+                return;
             }
-        });
-    }
+        }
+
+        // 5. Actualizar la interfaz
+        actualizarPasos();
+        console.log("Pasos actualizados"); // Debug
+
+        // 6. Si es el paso 4, actualizar resumen
+        if (pasoActual === 4) {
+            console.log("Ejecutando actualizarResumen()..."); // Debug
+            try {
+                actualizarResumen();
+                console.log("Resumen actualizado correctamente"); // Debug
+            } catch (error) {
+                console.error("Error al actualizar resumen:", error); // Debug
+                mostrarNotificacion('Error al generar resumen', 'error');
+            }
+        }
+    });
+}
 
 async function cargarDatosPaso3() {
     const tipoNomina = modal.querySelector('#modal-tipo-nomina').value;
@@ -187,10 +258,16 @@ async function cargarDatosPaso3() {
         });
     }
     
-    function actualizarPasos() {
+function actualizarPasos() {
+        console.log("actualizarPasos called, pasoActual:", pasoActual);
         pasos.forEach(paso => paso.classList.remove('activo'));
         const pasoActivo = modal.querySelector(`.paso-importacion[data-paso="${pasoActual}"]`);
-        if (pasoActivo) pasoActivo.classList.add('activo');
+        if (pasoActivo) {
+            pasoActivo.classList.add('activo');
+            console.log("Activando paso:", pasoActual);
+        } else {
+            console.warn("No se encontró el paso para activar:", pasoActual);
+        }
         
         indicadoresPasos.forEach((indicador, index) => {
             indicador.classList.toggle('completado', index < pasoActual);
@@ -202,8 +279,16 @@ async function cargarDatosPaso3() {
         if (btnImportar) {
             btnImportar.style.display = pasoActual === totalPasos ? 'flex' : 'none';
             if (pasoActual === totalPasos) {
-                btnImportar.disabled = !validarPasoActual();
-                actualizarResumen();
+                validarPasoActual().then(valid => {
+                    console.log("validarPasoActual result at paso 4:", valid);
+                    btnImportar.disabled = !valid;
+                    if (valid) {
+                        actualizarResumen();
+                        console.log("Resumen actualizado en paso 4");
+                    } else {
+                        console.warn("Validación falló en paso 4, no se actualiza resumen");
+                    }
+                });
             }
         }
     }
@@ -839,23 +924,54 @@ async function abrirConfiguracionEmpleado(empleado) {
     });
 }
     
-    function actualizarResumen() {
+function actualizarResumen() {
+        const modal = document.getElementById("importarnominaModal");
+        const inputArchivo = modal.querySelector('#archivo-nomina-modal');
+        console.log("actualizarResumen called");
         const elementosResumen = {
-            'resumen-tipo': () => modal.querySelector('#modal-tipo-nomina')?.value || 'No seleccionado',
-            'resumen-periodo': () => {
-                const mes = modal.querySelector('#modal-mes');
-                const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                const nombreMes = meses[parseInt(mes?.value) - 1] || '';
-                return `${nombreMes} ${modal.querySelector('#modal-anio')?.value || ''} - ${modal.querySelector('#modal-secuencia')?.value || ''}`;
+            'resumen-tipo': () => {
+                const val = modal.querySelector('#modal-tipo-nomina')?.value || 'No seleccionado';
+                console.log("resumen-tipo:", val);
+                return val;
             },
-            'resumen-archivo': () => inputArchivo?.files[0]?.name || 'No seleccionado',
-            'resumen-fecha-cierre': () => modal.querySelector('#modal-fecha-cierre')?.value || 'No definida'
+            'resumen-periodo': () => {
+                const mes = modal.querySelector('#modal-mes')?.value || '';
+                const anio = modal.querySelector('#modal-anio')?.value || '';
+                const secuencia = modal.querySelector('#modal-secuencia')?.value || '';
+                const val = `${mes} ${anio} - ${secuencia}`;
+                console.log("resumen-periodo:", val);
+                return val;
+            },
+            'resumen-fecha-cierre': () => {
+                const val = modal.querySelector('#modal-fecha-cierre')?.value || 'No definida';
+                console.log("resumen-fecha-cierre:", val);
+                return val;
+            },
+'resumen-empleados': () => {
+                // Count all employees loaded in the table, not only checked
+                const empleados = modal.querySelectorAll('#tbody-gestion-nomina tr');
+                const val = empleados.length || 0;
+                console.log("resumen-empleados (total empleados cargados):", val);
+                return val;
+            },
+            'resumen-conceptos': () => {
+                const conceptosSeleccionados = modal.querySelectorAll('#conceptos-disponibles input[type="checkbox"]:checked');
+                const conceptosNombres = Array.from(conceptosSeleccionados).map(cb => cb.nextElementSibling?.textContent.trim() || '');
+                const val = conceptosNombres.join(', ') || 'Ninguno';
+                console.log("resumen-conceptos:", val);
+                return val;
+            }
         };
         
         Object.entries(elementosResumen).forEach(([id, fn]) => {
             const elemento = modal.querySelector(`#${id}`);
-            if (elemento) elemento.textContent = fn();
+            if (elemento) {
+                const value = fn();
+                elemento.textContent = value;
+                console.log(`Elemento resumen actualizado: ${id} = ${value}`);
+            } else {
+                console.warn(`Elemento resumen no encontrado: ${id}`);
+            }
         });
     }
     
@@ -891,13 +1007,46 @@ async function abrirConfiguracionEmpleado(empleado) {
         }
     }
     
-    // Descargar plantilla
-    if (descargarPlantilla) {
-        descargarPlantilla.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Descargando plantilla...');
+// Descargar plantilla
+if (descargarPlantilla) {
+    descargarPlantilla.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Descargando plantilla...');
+    });
+}
+
+// Función para descargar el archivo Excel de una nómina específica
+async function descargarNomina(idNomina) {
+    try {
+        const response = await fetch(`/api/nominas/${idNomina}/descargar_excel/`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': CSRF_TOKEN,
+                'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }
         });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Error al descargar el archivo Excel');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `nomina_${idNomina}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error al descargar la nómina:', error);
+        mostrarNotificacion('Error al descargar la nómina: ' + error.message, 'error');
     }
+}
+// Make descargarNomina globally accessible
+window.descargarNomina = descargarNomina;
     
                     if (btnImportar) {
                         btnImportar.addEventListener('click', async function() {
@@ -1198,7 +1347,7 @@ async function actualizarTablaNominas(nominas) {
                     </td>
                     <td class="tabla-recibos__celda">${nomina.fecha_carga}</td>
                     <td class="tabla-recibos__celda">
-                        <button class="tabla-recibos__boton" onclick="descargarNomina(${nomina.id_nomina})">
+                        <button class="tabla-recibos__boton btn-descargar-nomina" data-id-nomina="${nomina.id_nomina}">
                             <i class="fas fa-download"></i> Descargar
                         </button>
                         <button class="tabla-recibos__boton btn-eliminar" style="background-color: #dc3545;" data-id="${nomina.id_nomina}">
@@ -1216,6 +1365,17 @@ async function actualizarTablaNominas(nominas) {
         if (sinResultados) sinResultados.style.display = 'block';
     }
 }
+
+// Add event listener for download buttons using event delegation
+document.addEventListener('click', function(event) {
+    const target = event.target.closest('.btn-descargar-nomina');
+    if (target) {
+        const idNomina = target.getAttribute('data-id-nomina');
+        if (idNomina) {
+            descargarNomina(idNomina);
+        }
+    }
+});
 
 async function aplicarFiltros() {
     const cuerpoTabla = document.getElementById('cuerpoTablaNominas');

@@ -7,8 +7,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Sum, Exists, OuterRef
 import pandas as pd
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import requests
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
 from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion, control_vacaciones, registro_vacaciones, hijo, nivel_salarial,ARC, DetalleARC
 from datetime import date, datetime, timedelta
 import os
@@ -51,6 +53,51 @@ def empleado_con_hijos_discapacidad(request, cedula):
         return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+def descargar_nomina_excel(request, id_nomina):
+    from django.shortcuts import get_object_or_404
+    # Obtener la nómina o 404
+    nomina_obj = get_object_or_404(nomina, id_nomina=id_nomina)
+
+    # Obtener empleados relacionados y conceptos de pago para esta nómina
+    empleados = empleado.objects.filter(cedula__in=detalle_nomina.objects.filter(nomina=nomina_obj).values('cedula')).order_by('primer_nombre', 'primer_apellido')
+    conceptos = concepto_pago.objects.filter(codigo__in=detalle_nomina.objects.filter(nomina=nomina_obj).values('codigo')).order_by('descripcion')
+
+    # Crear libro y hoja de Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f"Nómina {nomina_obj.id_nomina}"
+
+    # Preparar fila de encabezado: primera columna "Empleado", luego descripciones de conceptos
+    headers = ['Empleado'] + [concepto.descripcion for concepto in conceptos]
+    ws.append(headers)
+
+    # Llenar filas: cada empleado con montos de pago por concepto
+    for empleado_obj in empleados:
+        fila = [f"{empleado_obj.primer_nombre} {empleado_obj.primer_apellido}"]
+        for concepto in conceptos:
+            # Asumiendo un método para obtener monto de pago por empleado y concepto
+            try:
+                detalle = detalle_nomina.objects.get(nomina=nomina_obj, cedula=empleado_obj, codigo=concepto)
+                monto = detalle.monto
+            except detalle_nomina.DoesNotExist:
+                monto = 0
+            fila.append(monto)
+        ws.append(fila)
+
+    # Ajustar ancho de columnas
+    for i, _ in enumerate(headers, 1):
+        ws.column_dimensions[get_column_letter(i)].width = 20
+
+    # Preparar respuesta HTTP con archivo Excel
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    filename = f"nomina_{nomina_obj.id_nomina}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    wb.save(response)
+    return response
 
 @csrf_exempt
 def list_backups(request):
