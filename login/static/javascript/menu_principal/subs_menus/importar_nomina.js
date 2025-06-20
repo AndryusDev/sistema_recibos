@@ -1346,14 +1346,20 @@ async function actualizarTablaNominas(nominas) {
                         </div>
                     </td>
                     <td class="tabla-recibos__celda">${nomina.fecha_carga}</td>
-                    <td class="tabla-recibos__celda">
-                        <button class="tabla-recibos__boton btn-descargar-nomina" data-id-nomina="${nomina.id_nomina}">
-                            <i class="fas fa-download"></i> Descargar
-                        </button>
-                        <button class="tabla-recibos__boton btn-eliminar" style="background-color: #dc3545;" data-id="${nomina.id_nomina}">
-                            <i class="fas fa-trash"></i> Eliminar
-                        </button>
-                    </td>
+                    <td class="tabla-recibos__celda"><span class="badge-estado relieve-fuerte ${nomina.estado.toLowerCase()}">
+                ${nomina.estado}
+            </span></td>
+            <td class="tabla-recibos__celda">
+                <button class="tabla-recibos__boton btn-descargar-nomina" data-id-nomina="${nomina.id_nomina}">
+                    <i class="fas fa-download"></i> Descargar
+                </button>
+                <button class="tabla-recibos__boton btn-aprobar" style="background-color: #28a745; color: white; margin-left: 5px;" data-id-aprobar="${nomina.id_nomina}">
+                    <i class="fas fa-check"></i> Aprobar
+                </button>
+                <button class="tabla-recibos__boton btn-eliminar" style="background-color: #dc3545;" data-id="${nomina.id_nomina}">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </td>
                 </tr>
             `).join('');
             
@@ -1374,6 +1380,45 @@ document.addEventListener('click', function(event) {
         if (idNomina) {
             descargarNomina(idNomina);
         }
+    }
+
+    // Add event listener for approve buttons using event delegation
+    const approveBtn = event.target.closest('.btn-aprobar');
+    if (approveBtn) {
+        const idNomina = approveBtn.getAttribute('data-id-aprobar');
+        if (!idNomina) {
+            mostrarNotificacion('ID de nómina no encontrado para aprobar', 'error');
+            return;
+        }
+
+        if (!confirm('¿Está seguro que desea aprobar esta nómina?')) {
+            return;
+        }
+
+        fetch(`/api/nomina/aprobada/${idNomina}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': CSRF_TOKEN,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Error al aprobar la nómina');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            mostrarNotificacion(data.message || 'Nómina aprobada exitosamente', 'success');
+            actualizarTablaNominas();
+        })
+        .catch(error => {
+            console.error('Error al aprobar nómina:', error);
+            mostrarNotificacion(error.message, 'error');
+        });
     }
 });
 

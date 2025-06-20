@@ -99,7 +99,9 @@ path('api/nominas/<int:id_nomina>/descargar_excel/', views.descargar_nomina_exce
     path('api/vacaciones_permisos/crear/', views.crear_vacacion_permiso, name='crear_vacacion_permiso'),
     path('api/empleado_por_cedula/', views.empleado_por_cedula, name='empleado_por_cedula'),
     path('api/vacaciones_listar/' ,views.listar_registros_vacaciones, name = 'listar_registros_vacaciones'),
+
     path('api/generar_nomina_automatica/', views.generar_nomina_automatica, name = 'generar_nomina_automatica'),
+    path('api/nomina/aprobada/<int:id_nomina>/', views.aprobar_nomina, name='aprobar_nomina'),
 
     #path('api/control_vacaciones/', views.api_control_vacaciones, name='api_control_vacaciones'),
 

@@ -969,12 +969,18 @@ from django.db import models
 
 
 class nomina(models.Model):
+    ESTADOS = [
+        ('PENDIENTE', 'Pendiente de Aprobación'),
+        ('APROBADA', 'Aprobada'),
+    ]
     id_nomina =  models.AutoField(primary_key=True, unique=True)
     tipo_nomina = models.ForeignKey(tipo_nomina, on_delete=models.CASCADE)
     periodo = models.CharField(max_length=255)
     secuencia = models.ForeignKey(secuencia, on_delete=models.PROTECT)
     fecha_cierre = models.DateField()
     fecha_carga = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='PENDIENTE')
+    fecha_aprobacion = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         db_table = 'nomina'

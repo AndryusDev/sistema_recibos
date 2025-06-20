@@ -351,7 +351,7 @@ def recibos_pagos(request):
     
     # Filtrar recibos solo para el empleado autenticado
     recibos = recibo_pago.objects.filter(
-        cedula_id=empleado_id
+        
     ).select_related(
         'cedula', 
         'cedula__cargo'
@@ -1161,190 +1161,6 @@ def logout_empleado(request):
 
 #   <----------codigo importar documento -------------------->
 
-logger = logging.getLogger(__name__)
-
-
-
-@csrf_exempt
-@transaction.atomic
-def importar_nominas(request):
-    if request.method == 'POST':
-        try:
-            # 1. Validación y obtención de parámetros básicos
-            tipo_nomina_nombre = request.POST.get('tipo_nomina')
-            mes_nombre = request.POST.get('mes')
-            anio = request.POST.get('anio')
-            secuencia_nombre = request.POST.get('secuencia')
-            fecha_cierre = request.POST.get('fecha_cierre')
-            archivo = request.FILES.get('archivo')
-            
-            # Validaciones básicas
-            if not all([tipo_nomina_nombre, mes_nombre, anio, secuencia_nombre, fecha_cierre, archivo]):
-                return JsonResponse({'error': 'Todos los campos son requeridos'}, status=400)
-            
-            if archivo.size > 10 * 1024 * 1024:  # 10MB máximo
-                return JsonResponse({'error': 'El archivo excede el tamaño máximo permitido (10MB)'}, status=400)
-
-            # 2. Validar referencias a tablas maestras
-            try:
-                tipo_nomina_obj = tipo_nomina.objects.get(tipo_nomina=tipo_nomina_nombre)
-                meses_obj = meses.objects.get(nombre_mes=mes_nombre)
-                secuencia_obj = secuencia.objects.get(nombre_secuencia=secuencia_nombre)
-            except ObjectDoesNotExist as e:
-                return JsonResponse({'error': f'Referencia inválida: {str(e)}'}, status=400)
-
-            # 3. Procesamiento del archivo
-            try:
-                if archivo.name.endswith('.csv'):
-                    df = pd.read_csv(archivo, dtype={'COD': str, 'CEDULA': str})
-                elif archivo.name.endswith(('.xls', '.xlsx')):
-                    df = pd.read_excel(archivo, dtype={'COD': str, 'CEDULA': str})
-                else:
-                    return JsonResponse({'error': 'Formato de archivo no soportado. Use CSV o Excel'}, status=400)
-            except Exception as e:
-                return JsonResponse({'error': f'Error al leer el archivo: {str(e)}'}, status=400)
-
-            # 4. Validación de estructura del archivo
-            required_columns = [
-                'COD', 'CEDULA', 'APELLIDO', 'NOMBRE', 
-                'SDOBASE', 'TOTPGONOMINA', 'NUMERO DE CUENTA DE BANCO'
-            ]
-            
-            # Normalizar nombres de columnas
-            df.columns = [col.strip().upper().replace(' ', '_') for col in df.columns]
-            missing_columns = [col for col in required_columns 
-                            if col.replace(' ', '_') not in df.columns]
-            
-            if missing_columns:
-                return JsonResponse({
-                    'error': f'El archivo no tiene la estructura esperada. Faltan: {", ".join(missing_columns)}'
-                }, status=400)
-
-            # 5. Crear registro de nómina
-            nueva_nomina = nomina.objects.create(
-                tipo_nomina=tipo_nomina_obj,
-                periodo=f"{meses_obj.nombre_mes}-{anio}",
-                secuencia=secuencia_obj,
-                fecha_cierre=datetime.strptime(fecha_cierre, '%Y-%m-%d').date()
-            )
-
-            # 6. Procesar cada registro del archivo
-            stats = {
-                'empleados_procesados': 0,
-                'conceptos_procesados': 0,
-                'recibos_generados': 0,
-                'errores': 0
-            }
-
-            for _, row in df.iterrows():
-                detalles_empleado = []  # Mover la declaración aquí para que sea visible en todo el bloque
-                try:
-                    # 6.1. Obtener empleado (no crear si no existe)
-                    try:
-                        empleado_obj = empleado.objects.get(cedula=row['CEDULA'])
-                    except empleado.DoesNotExist:
-                        stats['errores'] += 1
-                        logger.error(f"Empleado no encontrado: {row['CEDULA']}")
-                        continue
-
-                    # 6.2. Procesar conceptos dinámicos
-                    concept_cols = [col for col in df.columns if col not in [
-                        'COD', 'CEDULA', 'APELLIDO', 'NOMBRE', 
-                        'SDOBASE', 'TOTPGONOMINA', 'NUMERO_DE_CUENTA_DE_BANCO'
-                    ] and pd.api.types.is_numeric_dtype(df[col])]
-
-                    for col in concept_cols:
-                        monto = row[col]
-                        if pd.notna(monto) and float(monto) != 0:
-                            # 6.3. Buscar concepto en catálogo
-                            try:
-                                concepto_obj = concepto_pago.objects.get(
-                                    Q(nombre_nomina__iexact=col) | 
-                                    Q(codigo__iexact=extract_codigo_from_colname(col))
-                                )
-                                
-                                # 6.4. Crear detalle de nómina
-                                detalle = detalle_nomina.objects.create(
-                                    nomina=nueva_nomina,
-                                    cedula=empleado_obj,
-                                    codigo=concepto_obj,
-                                    monto=Decimal(str(monto))
-                                )
-                                detalles_empleado.append(detalle)
-                                stats['conceptos_procesados'] += 1
-                            except ObjectDoesNotExist:
-                                logger.warning(f'Concepto no encontrado para columna: {col}')
-                                stats['errores'] += 1
-                            except Exception as e:
-                                logger.error(f"Error procesando concepto {col}: {str(e)}")
-                                stats['errores'] += 1
-
-                    stats['empleados_procesados'] += 1
-
-                    # 6.5. Crear recibo de pago si hay detalles
-                    if detalles_empleado:  # Ahora la variable es visible aquí
-                        try:
-                            # Crear el recibo en la base de datos
-                            recibo = recibo_pago.objects.create(
-                                nomina=nueva_nomina,
-                                cedula=empleado_obj,
-                                fecha_generacion=datetime.now()
-                            )
-                            
-                            # Asociar los detalles al recibo
-                            for detalle in detalles_empleado:
-                                detalle_recibo.objects.create(
-                                    recibo=recibo,
-                                    detalle_nomina=detalle
-                                )
-                            
-                            stats['recibos_generados'] += 1
-                        except Exception as e:
-                            stats['errores'] += 1
-                            logger.error(f"Error creando recibo para {empleado_obj.cedula}: {str(e)}")
-
-                except Exception as e:
-                    stats['errores'] += 1
-                    logger.error(f"Error procesando empleado {row['CEDULA']}: {str(e)}")
-
-            # 7. Retornar resultados
-            generar_prenomina_para_nomina(nueva_nomina)
-            return JsonResponse({
-                'success': True,
-                'message': f'Nómina importada correctamente. Empleados: {stats["empleados_procesados"]}, ' +
-                        f'Conceptos: {stats["conceptos_procesados"]}, ' +
-                        f'Recibos generados: {stats["recibos_generados"]}',
-                'id': nueva_nomina.id_nomina,  # <--- aquí cambias de 'nomina_id' a 'id'
-                'stats': stats
-            })
-
-        except Exception as e:
-            logger.error(f"Error en importar_nominas: {str(e)}", exc_info=True)
-            return JsonResponse({
-                'success': False,
-                'error': f'Error interno del servidor: {str(e)}'
-            }, status=500)
-    
-    return JsonResponse({
-        'success': False,
-        'error': 'Método no permitido'
-    }, status=405)
-
-
-
-
-def extract_codigo_from_colname(col_name):
-    """
-    Extrae el código de concepto del nombre de columna.
-    Implementa según tu mapeo específico.
-    """
-    codigo_map = {
-        'MTO_VACAC': '1401c',
-        'PRM_HJOS': '1101c',
-        'DEDUC_FAOV': '20003c',
-        # Agrega todos los mapeos necesarios
-    }
-    return codigo_map.get(col_name, col_name)
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -1563,6 +1379,7 @@ def listar_nominas(request):
         tipo = request.GET.get('tipo', '').strip()
         mes = request.GET.get('mes', '').strip()
         anio = request.GET.get('anio', '').strip()
+        estado = request.GET.get('estado', '').strip()  # Nuevo filtro por estado
         orden = request.GET.get('orden', '-fecha_carga')
         
         # 2. Construir consulta base con select_related para optimización
@@ -1583,6 +1400,9 @@ def listar_nominas(request):
         if anio:
             # Busca año al inicio (2023-), en medio (-2023-) o al final (-2023)
             filters &= Q(periodo__contains=anio)
+            
+        if estado:  # Nuevo filtro por estado
+            filters &= Q(estado__iexact=estado)
         
         queryset = queryset.filter(filters)
         
@@ -1590,7 +1410,8 @@ def listar_nominas(request):
         campos_orden_validos = [
             '-fecha_carga', 'fecha_carga',
             'tipo_nomina__tipo_nomina', '-tipo_nomina__tipo_nomina',
-            '-fecha_cierre', 'fecha_cierre'
+            '-fecha_cierre', 'fecha_ciere',
+            'estado', '-estado'  # Nuevos campos de ordenamiento
         ]
         
         if orden not in campos_orden_validos:
@@ -1617,8 +1438,11 @@ def listar_nominas(request):
                 'secuencia': nom.secuencia.nombre_secuencia if nom.secuencia else '',
                 'fecha_cierre': nom.fecha_cierre.strftime('%d/%m/%Y') if nom.fecha_cierre else '',
                 'fecha_carga': nom.fecha_carga.strftime('%d/%m/%Y %H:%M') if nom.fecha_carga else '',
+                'estado': nom.estado,  # Nuevo campo estado
+                'estado_display': nom.get_estado_display(),  # Versión legible del estado
                 'total_empleados': detalle_nomina.objects.filter(nomina=nom).values('cedula').distinct().count(),
-                'total_conceptos': detalle_nomina.objects.filter(nomina=nom).count()
+                'total_conceptos': detalle_nomina.objects.filter(nomina=nom).count(),
+                'fecha_aprobacion': nom.fecha_aprobacion.strftime('%d/%m/%Y %H:%M') if nom.fecha_aprobacion else None
             })
         
         # 7. Retornar respuesta estructurada
@@ -1632,6 +1456,7 @@ def listar_nominas(request):
                 'tipo': tipo,
                 'mes': mes,
                 'anio': anio,
+                'estado': estado,  # Nuevo parámetro
                 'orden': orden
             }
         })
@@ -3073,6 +2898,7 @@ def generar_nomina_automatica(request):
                 periodo=periodo_str,
                 secuencia=secuencia_obj,
                 fecha_cierre=datetime.strptime(data['fecha_cierre'], '%Y-%m-%d').date(),
+                estado='PENDIENTE'  # Estado inicial
             )
             
             # Calcular rango de fechas del periodo
@@ -3111,7 +2937,6 @@ def generar_nomina_automatica(request):
             stats = {
                 'empleados_procesados': 0,
                 'conceptos_generados': 0,
-                'recibos_generados': 0,
                 'errores': 0,
                 'prenomina_generada': False
             }
@@ -3234,7 +3059,7 @@ def generar_nomina_automatica(request):
                             stats['conceptos_generados'] += 1
                     
                     # Crear recibo de pago solo si hay detalles
-                    if detalles_empleado:
+                    """if detalles_empleado:
                         recibo = recibo_pago.objects.create(
                             nomina=nomina_obj,
                             cedula=emp,
@@ -3247,7 +3072,7 @@ def generar_nomina_automatica(request):
                                 detalle_nomina=detalle
                             )
                         
-                        stats['recibos_generados'] += 1
+                        stats['recibos_generados'] += 1"""
                     
                     stats['empleados_procesados'] += 1
                     
@@ -3284,6 +3109,59 @@ def generar_nomina_automatica(request):
     
     return JsonResponse({'error': 'Método no permitido'}, status=405)
 
+@csrf_exempt
+
+@transaction.atomic
+def aprobar_nomina(request, id_nomina):
+    print(f"aprobar_nomina called with id_nomina: {id_nomina}")  # Logging for debugging
+    if request.method == 'POST':
+        try:
+            nomina_obj = nomina.objects.get(id_nomina=id_nomina)
+            
+            if nomina_obj.estado == 'APROBADA':
+                return JsonResponse({'warning': 'Esta nómina ya fue aprobada anteriormente'})
+            
+            # 1. Cambiar estado
+            nomina_obj.estado = 'APROBADA'
+            nomina_obj.fecha_aprobacion = timezone.now()
+            nomina_obj.save()
+            
+            # 2. Generar recibos (aquí sí se crean)
+            recibos_generados = 0
+            empleados_procesados = empleado.objects.filter(
+                detalle_nomina__nomina=nomina_obj
+            ).distinct()
+            
+            for emp in empleados_procesados:
+                recibo = recibo_pago.objects.create(
+                    nomina=nomina_obj,
+                    cedula=emp,
+                    fecha_generacion=timezone.now()
+                )
+                
+                # Asociar detalles
+                detalles = detalle_nomina.objects.filter(nomina=nomina_obj, cedula=emp)
+                for detalle in detalles:
+                    detalle_recibo.objects.create(
+                        recibo=recibo,
+                        detalle_nomina=detalle
+                    )
+                
+                recibos_generados += 1
+            
+            return JsonResponse({
+                'success': True,
+                'recibos_generados': recibos_generados,
+                'fecha_aprobacion': nomina_obj.fecha_aprobacion.strftime('%Y-%m-%d %H:%M')
+            })
+            
+        except nomina.DoesNotExist:
+            return JsonResponse({'error': 'Nómina no encontrada'}, status=404)
+        except Exception as e:
+            logger.error(f"Error al aprobar: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 
 
