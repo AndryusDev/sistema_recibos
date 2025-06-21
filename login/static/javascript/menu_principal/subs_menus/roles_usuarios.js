@@ -214,11 +214,17 @@ async function abrirModalEditarUsuario(usuarioId) {
             return;
         }
 
+        // Obtener el primer rol asignado si existe
+        let rolIdSeleccionado = null;
+        if (Array.isArray(data.usuario.roles) && data.usuario.roles.length > 0) {
+            rolIdSeleccionado = data.usuario.roles[0].id;
+        }
+
         // Cargar roles
         
         const modal = document.getElementById('edit-user-modal');
         modal.style.display = 'flex';
-        await cargarRoles(data.usuario.rol?.id || null);
+        await cargarRoles(rolIdSeleccionado);
         
     } catch (error) {
         console.error('Error al abrir modal:', error);
