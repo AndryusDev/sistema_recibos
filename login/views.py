@@ -344,25 +344,46 @@ def noticias(request):
     return render(request, 'menu_principal/subs_menus/noticias.html')
 
 def recibos_pagos(request):
-    # Verificar si el usuario está autenticado
-    if 'empleado_id' not in request.session:
-        # Redirigir a login si no hay sesión
-        return redirect('login_empleado')
-    
-    # Obtener el ID del empleado de la sesión
-    empleado_id = request.session['empleado_id']
-    
-    # Filtrar recibos solo para el empleado autenticado
-    recibos = recibo_pago.objects.filter(
-        cedula_id=empleado_id
-    ).select_related(
-        'cedula', 
-        'cedula__cargo'
-    ).order_by('-fecha_generacion')
-    
-    return render(request, 'menu_principal/subs_menus/recibos_pagos.html', {
-        'recibos': recibos
-    })
+    try:
+        if 'empleado_id' not in request.session:
+            return redirect('login_empleado')
+        
+        empleado_id = request.session['empleado_id']
+        
+        try:
+            user = usuario.objects.get(empleado_id=empleado_id)
+            # Obtener roles del usuario
+            roles = usuario_rol.objects.filter(usuario=user).select_related('rol')
+            # Verificar si el usuario tiene rol administrador (codigo_rol == 3)
+            es_administrador = any(ur.rol.codigo_rol == 3 for ur in roles)
+        except usuario.DoesNotExist:
+            return redirect('login_empleado')
+        
+        # Base query
+        recibos = recibo_pago.objects.all().select_related('cedula', 'cedula__cargo')
+        
+        # Filtro para no administradores
+        if not es_administrador:
+            recibos = recibos.filter(cedula_id=empleado_id)
+        # Filtro adicional por empleado si se especifica
+        elif 'empleado_id' in request.GET:
+            recibos = recibos.filter(cedula_id=request.GET['empleado_id'])
+        
+        # Ordenamiento
+        recibos = recibos.order_by('-fecha_generacion')
+        
+        return render(request, 'menu_principal/subs_menus/recibos_pagos.html', {
+            'recibos': recibos,
+            'es_administrador': es_administrador,
+            'empleados_disponibles': empleado.objects.filter(status=True),
+            'empleado_filtrado': request.GET.get('empleado_id', '')
+        })
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error en recibos_pagos view: {str(e)}", exc_info=True)
+        from django.http import HttpResponseServerError
+        return HttpResponseServerError("Error al cargar la página de recibos. Por favor intente más tarde.")
 
 def constancia_trabajo(request):
     return render(request, 'menu_principal/subs_menus/constancia_trabajo.html')

@@ -24,9 +24,27 @@
                         <i class="fa-solid fa-broom"></i>
                     </button>
                 </div>
+                
+                <!-- Selector de empleados SOLO para administradores -->
+                {% if es_administrador %}
+                <div class="busqueda-grupo">
+                    <select id="filtroEmpleado" class="busqueda-input" onchange="filtrarPorEmpleado()">
+                        <option value="">Todos los empleados</option>
+                        {% for emp in empleados_disponibles %}
+                            <option value="{{ emp.cedula }}" {% if emp.cedula == empleado_filtrado %}selected{% endif %}>
+                                {{ emp.get_nombre_completo|upper }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <button onclick="limpiarFiltroEmpleado()" class="busqueda-boton secundario">
+                        <i class="fa-solid fa-user-slash"></i>
+                    </button>
+                </div>
+                {% endif %}
             </div>
+            
             <div class="tabla-recibo-linea">
-                <table class="tabla-recibos tabla-estandar" >
+                <table class="tabla-recibos tabla-estandar">
                     <thead class="tabla-recibos__thead">
                         <tr class="tabla-recibos__fila">
                             <th class="tabla-recibos__columna">ID</th>
@@ -53,7 +71,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" class="text-center">No tienes recibos registrados.</td>
+                            <td colspan="5" class="text-center">No se encontraron recibos registrados.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -62,16 +80,35 @@
         </div>
 
         <!-- Modal del recibo -->
-        
         <div class="recibo-modal" id="reciboModal">
-            <div class="recibo-modal__contenido" id="contenidoRecibo">
-
-            </div>
+            <div class="recibo-modal__contenido" id="contenidoRecibo"></div>
             <div class="recibo-modal__acciones">
                 <button class="recibo-modal__boton" onclick="ImprimirRecibo()">Imprimir</button>
                 <button class="recibo-modal__boton" onclick="reciboModal__cerrar()">Cerrar</button>
             </div>
         </div>
-    <script src="{% static 'javascript/menu_principal/subs_menus/recibos_pagos.js' %}"></script>
+
+        <script src="{% static 'javascript/menu_principal/subs_menus/recibos_pagos.js' %}"></script>
+        <script>
+            // Función para filtrar por empleado (solo para administradores)
+            function filtrarPorEmpleado() {
+                const empleadoId = document.getElementById("filtroEmpleado").value;
+                const urlParams = new URLSearchParams(window.location.search);
+                
+                if (empleadoId) {
+                    urlParams.set('empleado_id', empleadoId);
+                } else {
+                    urlParams.delete('empleado_id');
+                }
+                
+                window.location.search = urlParams.toString();
+            }
+            
+            // Función para limpiar filtro de empleado
+            function limpiarFiltroEmpleado() {
+                document.getElementById("filtroEmpleado").value = "";
+                filtrarPorEmpleado();
+            }
+        </script>
     </body>
 </html>

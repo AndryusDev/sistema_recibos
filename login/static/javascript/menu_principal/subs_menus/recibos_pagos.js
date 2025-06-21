@@ -1,6 +1,3 @@
-console.log("recibos_pagos.js cargado correctamente");
-
-console.log("recibos_pagos.js cargado correctamente");
 
 // Definimos primero la función global para asegurar su disponibilidad
 window.abrirRecibo = function(boton) {
