@@ -5,7 +5,7 @@ import json
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q, Sum, Exists, OuterRef
+from django.db.models import Q, Sum, Exists, OuterRef, Prefetch
 import pandas as pd
 from django.http import JsonResponse, HttpResponse
 import requests
@@ -1053,7 +1053,6 @@ def completar_registro(request):
 
 #          <-------LOGIN------->
 
-@require_POST
 @require_POST
 def login_empleado(request):
     try:
@@ -2160,8 +2159,10 @@ def listar_usuarios(request):
         orden = request.GET.get('orden', '-fecha_registro')
         page = request.GET.get('page', 1)
         
-        # 2. Construir consulta base
-        queryset = usuario.objects.select_related('empleado', 'rol').all()
+        # 2. Construir consulta base con prefetch para roles
+        queryset = usuario.objects.select_related('empleado').prefetch_related(
+            Prefetch('usuario_rol_set', queryset=usuario_rol.objects.select_related('rol'))
+        ).all()
         
         # 3. Aplicar filtros
         if nombre:
@@ -2172,14 +2173,14 @@ def listar_usuarios(request):
         if email:
             queryset = queryset.filter(email__icontains=email)
         if rol_filter:
-            queryset = queryset.filter(rol__nombre_rol__icontains=rol_filter)
+            queryset = queryset.filter(usuario_rol__rol__nombre_rol__icontains=rol_filter).distinct()
         if estado:
             queryset = queryset.filter(activo=(estado.lower() == 'activo'))
         
         # 4. Ordenamiento
         orden_validos = ['-fecha_registro', 'fecha_registro', 'empleado__primer_nombre', 
-                        '-empleado__primer_nombre', 'email', '-email', 'rol__nombre_rol', 
-                        '-rol__nombre_rol', '-ultimo_login', 'ultimo_login']
+                        '-empleado__primer_nombre', 'email', '-email', 'usuario_rol__rol__nombre_rol', 
+                        '-usuario_rol__rol__nombre_rol', '-ultimo_login', 'ultimo_login']
         orden = orden if orden in orden_validos else '-fecha_registro'
         queryset = queryset.order_by(orden)
         
@@ -2190,23 +2191,22 @@ def listar_usuarios(request):
         except:
             usuarios_paginados = paginator.page(1)
         
-        # 6. Preparar respuesta (versión simplificada)
+        # 6. Preparar respuesta (versión actualizada para múltiples roles)
         usuarios_data = []
         for user in usuarios_paginados:
             empleado_nombre = 'Sin nombre'
             if hasattr(user, 'empleado') and user.empleado:
                 empleado_nombre = f"{user.empleado.primer_nombre or ''} {user.empleado.primer_apellido or ''}".strip()
             
+            roles = [ur.rol.nombre_rol for ur in user.usuario_rol_set.all()]
+            
             usuarios_data.append({
                 'id': user.id,
                 'nombre': empleado_nombre if empleado_nombre else 'Sin nombre',
                 'email': user.email,
-                'rol': {
-                    'codigo': user.rol.codigo_rol if user.rol else None,
-                    'nombre': user.rol.nombre_rol if user.rol else 'Sin rol'
-                },
+                'roles': roles if roles else ['Sin rol'],
                 'activo': user.activo,
-                'ultimo_login': user.ultimo_login.strftime('%d/%m/%Y %H:%M') if user.ultimo_login else 'Nunca',
+                'ultimo_login': user.ultimo_login.strftime('%Y-%m-%d %H:%M:%S') if user.ultimo_login else None,
                 'fecha_registro': user.fecha_registro.strftime('%d/%m/%Y %H:%M') if user.fecha_registro else ''
             })
         
@@ -2236,7 +2236,7 @@ def manejar_usuario(request, usuario_id):
     try:
         # Obtener el usuario
         try:
-            user = usuario.objects.select_related('empleado', 'rol').get(pk=usuario_id)
+            user = usuario.objects.select_related('empleado').get(pk=usuario_id)
         except usuario.DoesNotExist:
             return JsonResponse({
                 'success': False,
@@ -2249,20 +2249,16 @@ def manejar_usuario(request, usuario_id):
             if hasattr(user, 'empleado') and user.empleado:
                 empleado_nombre = f"{user.empleado.primer_nombre or ''} {user.empleado.primer_apellido or ''}".strip()
             
-            # Manejo seguro del rol
-            rol_data = None
-            if user.rol:
-                rol_data = {
-                    'codigo': getattr(user.rol, 'codigo_rol', None),
-                    'nombre': getattr(user.rol, 'nombre_rol', 'Sin rol'),
-                    'id': user.rol.pk  # Usamos pk en lugar de id para mayor seguridad
-                }
-            else:
-                rol_data = {
-                    'codigo': None,
-                    'nombre': 'Sin rol',
-                    'id': None
-                }
+            # Obtener roles del usuario a través de usuario_rol
+            roles_qs = usuario_rol.objects.filter(usuario=user).select_related('rol')
+            roles_list = []
+            for ur in roles_qs:
+                rol_obj = ur.rol
+                roles_list.append({
+                    'id': rol_obj.pk,
+                    'codigo': getattr(rol_obj, 'codigo_rol', None),
+                    'nombre': getattr(rol_obj, 'nombre_rol', 'Sin rol')
+                })
             
             # Formateo seguro de fechas
             def format_date(date):
@@ -2274,7 +2270,7 @@ def manejar_usuario(request, usuario_id):
                 'id': user.id,
                 'nombre': empleado_nombre if empleado_nombre else 'Sin nombre',
                 'email': user.email,
-                'rol': rol_data,
+                'roles': roles_list,
                 'activo': user.activo,
                 'ultimo_login': format_date(getattr(user, 'ultimo_login', None)) or 'Nunca',
                 'fecha_registro': format_date(getattr(user, 'fecha_registro', None)) or ''
@@ -2305,20 +2301,42 @@ def manejar_usuario(request, usuario_id):
             # Actualizar campos
             user.email = data['email']
             
-            if 'rol' in data and data['rol'] is not None:
+            if 'roles' in data and data['roles'] is not None:
                 try:
-                    # Si viene como objeto {id: X} o directamente como número
-                    rol_id = data['rol']['id'] if isinstance(data['rol'], dict) else data['rol']
-                    nuevo_rol = rol.objects.get(pk=rol_id)
-                    user.rol = nuevo_rol
-                except (rol.DoesNotExist, KeyError, TypeError):
+                    # roles esperado como lista de ids
+                    roles_ids = data['roles']
+                    if not isinstance(roles_ids, list):
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'Roles debe ser una lista de IDs'
+                        }, status=400)
+                    
+                    # Validar que todos los roles existan
+                    roles_objs = rol.objects.filter(pk__in=roles_ids)
+                    if roles_objs.count() != len(roles_ids):
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'Uno o más roles no son válidos'
+                        }, status=400)
+                    
+                    # Eliminar roles antiguos
+                    usuario_rol.objects.filter(usuario=user).delete()
+                    
+                    # Asignar nuevos roles
+                    for rol_obj in roles_objs:
+                        usuario_rol.objects.create(
+                            usuario=user,
+                            rol=rol_obj,
+                            fecha_asignacion=timezone.now()
+                        )
+                except Exception as e:
                     return JsonResponse({
                         'success': False,
-                        'error': 'Rol no válido'
+                        'error': f'Error actualizando roles: {str(e)}'
                     }, status=400)
             else:
-                # Opcional: quitar rol si no viene en los datos
-                user.rol = None
+                # Si no se envían roles, eliminar todos
+                usuario_rol.objects.filter(usuario=user).delete()
             
             if 'activo' in data:
                 user.activo = bool(data['activo'])
@@ -2362,17 +2380,22 @@ def manejar_usuario(request, usuario_id):
     
 @require_http_methods(["GET"])
 def listar_roles(request):
-    """API para listar todos los roles disponibles con permisos y cantidad de usuarios"""
+    """API para listar todos los roles disponibles con permisos y cantidad de usuarios (nuevo formato)"""
     try:
         roles = rol.objects.all().order_by('nombre_rol')
         roles_data = []
+        
         for r in roles:
+            # Obtener permisos asociados al rol
             permisos_qs = permiso.objects.filter(rol_permisos__rol=r)
             permisos_list = list(permisos_qs.values('codigo', 'nombre', 'descripcion'))
-            usuarios_count = usuario.objects.filter(rol=r).count()
+            
+            # Obtener cantidad de usuarios con este rol (usando la tabla intermedia)
+            usuarios_count = usuario_rol.objects.filter(rol_id=r).count()
+            
             roles_data.append({
                 'codigo_rol': r.codigo_rol,
-                'nombre_rol': r.nombre_rol,
+                'nombre_rol': r.nombre_rol,  # Cambiado a string para compatibilidad con frontend
                 'descripcion': r.descripcion,
                 'permisos': permisos_list,
                 'usuarios_count': usuarios_count,
@@ -2380,7 +2403,8 @@ def listar_roles(request):
         
         return JsonResponse({
             'success': True,
-            'roles': roles_data
+            'roles': roles_data,
+            'total_roles': len(roles_data)
         })
         
     except Exception as e:
@@ -2398,7 +2422,7 @@ def obtener_rol(request, codigo_rol):
         rol_obj = rol.objects.get(codigo_rol=codigo_rol)
         permisos_qs = permiso.objects.filter(rol_permisos__rol=rol_obj)
         permisos_list = list(permisos_qs.values('codigo', 'nombre', 'descripcion'))
-        usuarios_count = usuario.objects.filter(rol=rol_obj).count()
+        usuarios_count = usuario_rol.objects.filter(rol=rol_obj).count()
         rol_data = {
             'codigo_rol': rol_obj.codigo_rol,
             'nombre_rol': rol_obj.nombre_rol,
@@ -2592,7 +2616,7 @@ def eliminar_roles(request, rol_id):
             }, status=404)
         
         # Verificar si hay usuarios asignados a este rol
-        usuarios_con_rol = usuario.objects.filter(rol=rol_obj).count()
+        usuarios_con_rol = usuario_rol.objects.filter(rol=rol_obj).count()
         if usuarios_con_rol > 0:
             return JsonResponse({
                 'success': False,

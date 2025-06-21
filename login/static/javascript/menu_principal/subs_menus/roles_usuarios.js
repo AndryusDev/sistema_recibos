@@ -9,7 +9,7 @@ const API_ROLES_URL = '/api/roles_listar/';
 
 // Función para cargar y mostrar la lista de usuarios
 async function cargarUsuarios(filtro = 'all', pagina = 1, busqueda = '') {
-    paginaActual = pagina;  // Update global current page variable
+    paginaActual = pagina;
     const tbody = document.getElementById('cuerpo-tabla-usuarios');
     const loadingIndicator = `
         <tr>
@@ -41,38 +41,88 @@ async function cargarUsuarios(filtro = 'all', pagina = 1, busqueda = '') {
         const data = await response.json();
         
         if (data.success && data.usuarios && data.usuarios.length > 0) {
-            tbody.innerHTML = data.usuarios.map(usuario => `
-                <tr class="tabla-recibos__fila" data-id="${usuario.id}">
-                    <td class="tabla-recibos__celda">
-                        <div class="user-avatar">
-                            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nombre || '')}&background=random" alt="${usuario.nombre}">
-                        </div>
-                        <span>${usuario.nombre || 'Sin nombre'}</span>
-                    </td>
-                    <td class="tabla-recibos__celda">${usuario.email || ''}</td>
-                    <td class="tabla-recibos__celda">
-                        <span class="badge rol-${usuario.rol?.codigo || ''}">
-                            ${usuario.rol?.nombre || 'Sin rol'}
-                        </span>
-                    </td>
-                    <td class="tabla-recibos__celda">
-                        <span class="badge ${usuario.activo ? 'badge-success' : 'badge-danger'}">
-                            ${usuario.activo ? 'Activo' : 'Inactivo'}
-                        </span>
-                    </td>
-                    <td class="tabla-recibos__celda">
-                        ${formatearFecha(usuario.ultimo_login) || 'Nunca'}
-                    </td>
-                    <td class="tabla-recibos__celda">
-                        <button class="btn-action btn-edit" title="Editar" onclick="abrirModalEditarUsuario(${usuario.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn-action btn-delete" title="Eliminar" onclick="eliminarUsuario(${usuario.id})">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = '';
+            
+            data.usuarios.forEach(usuario => {
+                // Si el usuario no tiene roles, mostramos una fila con "Sin rol"
+                if (!usuario.roles || usuario.roles.length === 0) {
+                    tbody.innerHTML += `
+                    <tr class="tabla-recibos__fila" data-id="${usuario.id}">
+                        <td class="tabla-recibos__celda">
+                            <div class="user-avatar">
+                                <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nombre || '')}&background=random" alt="${usuario.nombre}">
+                            </div>
+                            <span>${usuario.nombre || 'Sin nombre'}</span>
+                        </td>
+                        <td class="tabla-recibos__celda">${usuario.email || ''}</td>
+                        <td class="tabla-recibos__celda">
+                            <span class="badge rol-sin-rol">
+                                Sin rol
+                            </span>
+                        </td>
+                        <td class="tabla-recibos__celda">
+                            <span class="badge ${usuario.activo ? 'badge-success' : 'badge-danger'}">
+                                ${usuario.activo ? 'Activo' : 'Inactivo'}
+                            </span>
+                        </td>
+                        <td class="tabla-recibos__celda">
+                            ${formatearFecha(usuario.ultimo_login) || 'Nunca'}
+                        </td>
+                        <td class="tabla-recibos__celda">
+                            <button class="btn-action btn-edit" title="Editar" onclick="abrirModalEditarUsuario(${usuario.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-action btn-delete" title="Eliminar" onclick="eliminarUsuario(${usuario.id})">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+                } else {
+                    // Para cada rol del usuario, creamos una fila
+                    usuario.roles.forEach((rol, index) => {
+                        // Solo mostramos nombre/email en la primera fila
+                        const nombreCell = index === 0 ? `
+                            <td class="tabla-recibos__celda" rowspan="${usuario.roles.length}">
+                                <div class="user-avatar">
+                                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nombre || '')}&background=random" alt="${usuario.nombre}">
+                                </div>
+                                <span>${usuario.nombre || 'Sin nombre'}</span>
+                            </td>
+                            <td class="tabla-recibos__celda" rowspan="${usuario.roles.length}">${usuario.email || ''}</td>
+                        ` : '';
+                        
+                        tbody.innerHTML += `
+                        <tr class="tabla-recibos__fila" data-id="${usuario.id}">
+                            ${nombreCell}
+                            <td class="tabla-recibos__celda">
+                                <span class="badge rol-${rol.toLowerCase().replace(' ', '-')}">
+                                    ${rol}
+                                </span>
+                            </td>
+                            ${index === 0 ? `
+                            <td class="tabla-recibos__celda" rowspan="${usuario.roles.length}">
+                                <span class="badge ${usuario.activo ? 'badge-success' : 'badge-danger'}">
+                                    ${usuario.activo ? 'Activo' : 'Inactivo'}
+                                </span>
+                            </td>
+                            <td class="tabla-recibos__celda" rowspan="${usuario.roles.length}">
+                                ${usuario.ultimo_login ? formatearFecha(usuario.ultimo_login) : 'Nunca'}
+                            </td>
+                            <td class="tabla-recibos__celda" rowspan="${usuario.roles.length}">
+                                <button class="btn-action btn-edit" title="Editar" onclick="abrirModalEditarUsuario(${usuario.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-action btn-delete" title="Eliminar" onclick="eliminarUsuario(${usuario.id})">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                            ` : ''}
+                        </tr>
+                        `;
+                    });
+                }
+            });
             
             // Actualizar paginación si está disponible
             if (data.paginacion) {
@@ -98,14 +148,21 @@ async function cargarUsuarios(filtro = 'all', pagina = 1, busqueda = '') {
 }
 
 // Función auxiliar para formatear fechas (opcional)
-function formatearFecha(fecha) {
-    if (!fecha) return null;
+function formatearFecha(fechaString) {
+    if (!fechaString || fechaString === 'Nunca') return 'Nunca';
+    
     try {
-        const date = new Date(fecha);
-        return date.toLocaleString();
+        const fecha = new Date(fechaString);
+        return fecha.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     } catch (e) {
         console.error('Error formateando fecha:', e);
-        return fecha; // Devuelve la fecha original si no se puede formatear
+        return fechaString; // Devuelve el valor original si falla
     }
 }
 
@@ -115,7 +172,6 @@ async function abrirModalEditarUsuario(usuarioId) {
         // Obtener datos del usuario
         const response = await fetch(`${API_USUARIOS_URL}${usuarioId}/`, {
             headers: {
-                'X-CSRFToken': getCSRFToken(),
                 'Accept': 'application/json'
             }
         });
@@ -197,14 +253,30 @@ async function cargarRoles(rolSeleccionadoId = null) {
             data.roles.forEach(rol => {
                 const option = document.createElement('option');
                 option.value = rol.codigo_rol;
-                option.textContent = rol.nombre_rol;
+                // Accedemos al primer elemento del array nombre_rol
+                option.textContent = rol.nombre_rol; 
                 option.selected = rol.codigo_rol == rolSeleccionadoId;
+                
+                // Almacenamos toda la información del rol en dataset
+                option.dataset.descripcion = rol.descripcion;
+                option.dataset.permisos = JSON.stringify(rol.permisos);
+                option.dataset.usuariosCount = rol.usuarios_count;
+                
                 selectRol.appendChild(option);
             });
         } else {
             console.error('Error: No se encontró el elemento select#edit-user-role');
             mostrarError('No se pudieron cargar los roles');
         }
+        
+        // Si necesitas usar la información adicional después de seleccionar
+        selectRol?.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            console.log('Descripción:', selectedOption.dataset.descripcion);
+            console.log('Permisos:', JSON.parse(selectedOption.dataset.permisos));
+            console.log('Usuarios con este rol:', selectedOption.dataset.usuariosCount);
+        });
+        
     } catch (error) {
         console.error('Error al cargar roles:', error);
         mostrarError('Error al cargar roles: ' + error.message);

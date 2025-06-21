@@ -204,14 +204,14 @@ async function guardarRol() {
     const nombre = document.getElementById('rol-nombre').value.trim();
     const codigo = document.getElementById('rol-codigo').value.trim();
     const descripcion = document.getElementById('rol-descripcion').value.trim();
-    const permisosSeleccionados = Array.from(document.querySelectorAll('input[name="permisos"]:checked')).map(el => parseInt(el.value));
+const permisosSeleccionados = Array.from(document.querySelectorAll('input[name="permisos"]:checked')).map(el => el.value);
 
-    const payload = {
-        nombre,
-        codigo,
-        descripcion,
-        permisos: permisosSeleccionados
-    };
+const payload = {
+    nombre,
+    codigo,
+    descripcion,
+    permisos: permisosSeleccionados
+};
 
     try {
         let url = '';
