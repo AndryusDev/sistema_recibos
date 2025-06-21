@@ -11,7 +11,7 @@ from django.http import JsonResponse, HttpResponse
 import requests
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
-from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion, control_vacaciones, registro_vacaciones, hijo, nivel_salarial,ARC, DetalleARC
+from .models import concepto_pago, nomina, recibo_pago, detalle_recibo, prenomina, detalle_prenomina, banco, familia_cargo, nivel_cargo, cargo, cuenta_bancaria, permiso,empleado, Justificacion, control_vacaciones, registro_vacaciones, hijo, nivel_salarial,ARC, DetalleARC, usuario_rol
 from datetime import date, datetime, timedelta
 import os
 from django.conf import settings
@@ -249,10 +249,13 @@ def menu(request):
     
     usuario_id = request.session['usuario_id']
     try:
-        usuario_instance = usuario.objects.select_related('rol').get(id=usuario_id)
-        rol_usuario = usuario_instance.rol
-        permisos_qs = rol_permisos.objects.filter(rol=rol_usuario).select_related('permiso')
-        permisos_usuario = [perm.permiso.codigo for perm in permisos_qs]
+        usuario_instance = usuario.objects.get(id=usuario_id)
+        usuario_roles = usuario_rol.objects.filter(usuario=usuario_instance).select_related('rol')
+        permisos_usuario = []
+        for ur in usuario_roles:
+            permisos_qs = rol_permisos.objects.filter(rol=ur.rol).select_related('permiso')
+            permisos_usuario.extend([perm.permiso.codigo for perm in permisos_qs])
+        permisos_usuario = list(set(permisos_usuario))  # Remove duplicates
         print("User permissions:", permisos_usuario)
 
     except usuario.DoesNotExist:
@@ -1018,7 +1021,12 @@ def completar_registro(request):
             contraseña_hash=datos_sesion['contraseña'],  # ← Contraseña en texto plano
             empleado=empleado_instance,  # Usamos _id para asignación directa
             ultimo_login=timezone.now(),
-            rol_id='1',
+        )
+        rol_principal = rol.objects.get(codigo_rol= 1)
+        roles_usuario = usuario_rol.objects.create(
+            rol_id = rol_principal.codigo_rol,
+            usuario_id = nuevo_usuario.id,
+            fecha_asignacion = timezone.now()
         )
 
         # 4. Preguntas de seguridad (SIN HASH)
@@ -1082,7 +1090,11 @@ def login_empleado(request):
         usuario_instance.save()
 
         # Obtener el nombre del rol como array para mantener compatibilidad con el frontend
-        rol_nombre = [usuario_instance.rol.nombre_rol] if usuario_instance.rol else ['Sin rol asignado']
+        usuario_roles = usuario_rol.objects.filter(usuario=usuario_instance).select_related('rol')
+        if usuario_roles.exists():
+            rol_nombre = [ur.rol.nombre_rol for ur in usuario_roles]
+        else:
+            rol_nombre = ['Sin rol asignado']
 
         # Información del usuario para enviar al frontend
         usuario_info = {

@@ -470,7 +470,6 @@ class usuario(models.Model):
     contraseña_hash = models.CharField(max_length=128)
     ultimo_login = models.DateTimeField(null=True, blank=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
-    rol = models.ForeignKey(rol, on_delete=models.PROTECT)
     activo = models.BooleanField(default=True)
     
     class Meta:
@@ -479,14 +478,17 @@ class usuario(models.Model):
     def set_password(self, raw_password):
         """Guardar contraseña sin hash (solo para pruebas)"""
         self.contraseña_hash = raw_password  # ← No la está cifrando
-
-    def check_password(self, raw_password):
-        """Comparación directa de contraseña (solo para pruebas)"""
-        return self.contraseña_hash == raw_password  # ← Comparación directa
-
-    def __str__(self):
-        return f"{self.email} ({self.empleado})"
     
+class usuario_rol(models.Model):
+    usuario = models.ForeignKey('usuario', on_delete=models.CASCADE)
+    rol = models.ForeignKey('rol', on_delete=models.CASCADE)
+    fecha_asignacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'usuario_rol'
+        unique_together = (('usuario', 'rol'),)
+        verbose_name = 'Usuario Rol'
+        verbose_name_plural = 'Usuarios Roles'
 
 class usuario_pregunta(models.Model):
     """Relación entre usuarios y sus preguntas de seguridad"""
