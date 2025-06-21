@@ -51,7 +51,6 @@ function setupButtons() {
     }
 }
 
-// 8. Función para generar la constancia
 function generarConstancia() {
     console.log("Generando constancia...");
 
@@ -63,21 +62,26 @@ function generarConstancia() {
         return;
     }
 
-    const datos = {
-        nombre: "ANDRYUS JOSÉ GUAIQUIRIMA CERMEÑO",
-        cedula: "V-30.480.815",
-        cargo: "ASISTENTE ADMINISTRATIVO I",
-        fechaIngreso: "07/08/2023",
-        salario: "142,88",
-        bono: "2.120,00",
-        fechaActual: new Date()
-    };
+    // Fetch data from API endpoint
+    fetch('/api/constancia_datos/', { credentials: 'include' })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al obtener datos de constancia');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.message || 'Error en la respuesta del servidor');
+            }
+            const datos = data.datos;
 
-    const dia = datos.fechaActual.getDate();
-    const mes = datos.fechaActual.toLocaleString('es-ES', { month: 'long' });
-    const año = datos.fechaActual.getFullYear();
+            const fechaActual = new Date(datos.fechaActual);
+            const dia = fechaActual.getDate();
+            const mes = fechaActual.toLocaleString('es-ES', { month: 'long' });
+            const año = fechaActual.getFullYear();
 
-    contenido.innerHTML = `
+            contenido.innerHTML = `
 <div class="constancia-trabajo">
     <!-- Encabezado con logos -->
     <div class="encabezado-constancia">
@@ -160,12 +164,17 @@ function generarConstancia() {
 </div>
     `;
 
-    modal.style.display = "flex";
+            modal.style.display = "flex";
 
-    const botonesAcciones = document.querySelector('.botones-acciones');
-    if (botonesAcciones) {
-        botonesAcciones.style.display = "flex";
-    }
+            const botonesAcciones = document.querySelector('.botones-acciones');
+            if (botonesAcciones) {
+                botonesAcciones.style.display = "flex";
+            }
+        })
+        .catch(error => {
+            console.error('Error al generar constancia:', error);
+            alert('No se pudo generar la constancia. Intente nuevamente.');
+        });
 }
 
 

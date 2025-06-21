@@ -385,6 +385,70 @@ def recibos_pagos(request):
         from django.http import HttpResponseServerError
         return HttpResponseServerError("Error al cargar la página de recibos. Por favor intente más tarde.")
 
+from django.views.decorators.http import require_GET
+from django.contrib.auth.decorators import login_required
+
+@csrf_exempt
+@require_GET
+def obtener_constancia_datos(request):
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        empleado_id = request.session.get('empleado_id')
+        if not empleado_id:
+            logger.error("Empleado no autenticado: empleado_id no encontrado en sesión")
+            return JsonResponse({'success': False, 'message': 'Empleado no autenticado'}, status=401)
+
+        # Obtener datos del empleado
+        empleado_obj = empleado.objects.select_related('cargo').get(pk=empleado_id)
+
+        # Obtener el recibo más reciente
+        recibo = recibo_pago.objects.filter(cedula=empleado_obj).order_by('-fecha_generacion').first()
+        if not recibo:
+            logger.error(f"No se encontró recibo para el empleado {empleado_id}")
+            return JsonResponse({'success': False, 'message': 'No se encontró recibo para el empleado'}, status=404)
+
+        # Buscar salario base y bono de alimentación en detalles del recibo
+        salario_base = None
+        bono_alimentacion = None
+
+        try:
+            detalles = recibo.detalles.all()
+        except Exception as e:
+            logger.error(f"Error accediendo a recibo.detalles para empleado {empleado_id}: {str(e)}")
+            return JsonResponse({'success': False, 'message': 'Error accediendo a detalles del recibo'}, status=500)
+
+        for detalle in detalles:
+            try:
+                codigo = detalle.detalle_nomina.codigo.codigo if detalle.detalle_nomina and detalle.detalle_nomina.codigo else None
+            except Exception as e:
+                logger.error(f"Error accediendo a detalle_nomina.codigo en recibo para empleado {empleado_id}: {str(e)}")
+                codigo = None
+            if codigo == '1001':  # Asumiendo código 1001 es salario base
+                salario_base = detalle.detalle_nomina.monto
+            elif codigo == '8003':  # Asumiendo código 8003 es cesta ticket (bono alimentación)
+                bono_alimentacion = detalle.detalle_nomina.monto
+
+        # Formatear datos para respuesta
+        datos = {
+            'nombre': empleado_obj.get_nombre_completo(),
+            'cedula': empleado_obj.cedula,
+            'fechaIngreso': empleado_obj.fecha_ingreso.strftime('%d/%m/%Y') if empleado_obj.fecha_ingreso else '',
+            'cargo': str(empleado_obj.cargo) if empleado_obj.cargo else '',
+            'salario': f"{salario_base:,.2f}" if salario_base is not None else '0.00',
+            'bono': f"{bono_alimentacion:,.2f}" if bono_alimentacion is not None else '0.00',
+            'fechaActual': datetime.now()
+        }
+
+        return JsonResponse({'success': True, 'datos': datos})
+
+    except empleado.DoesNotExist:
+        logger.error(f"Empleado no encontrado con id {empleado_id}")
+        return JsonResponse({'success': False, 'message': 'Empleado no encontrado'}, status=404)
+    except Exception as e:
+        logger.error(f"Error inesperado en obtener_constancia_datos: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
 def constancia_trabajo(request):
     return render(request, 'menu_principal/subs_menus/constancia_trabajo.html')
 
