@@ -3,8 +3,74 @@ document.addEventListener('templateLoaded', function(e) {
         // Inicializar componentes específicos del perfil
         console.log('Panel de arc cargado');
         // Aquí puedes añadir la lógica específica para el perfil
+
+        // Debug usuarioId
+        console.log('usuarioId:', window.usuarioId);
+
+        // Añadir event listeners a botones "Ver ARC"
+        const usuarioId = window.usuarioId || null;
+        if (usuarioId) {
+            const botonesVerArc = document.querySelectorAll('.ver-arc-btn');
+            botonesVerArc.forEach(boton => {
+                boton.addEventListener('click', () => {
+                    const anio = boton.getAttribute('data-anio');
+                    arcModal__abrir(parseInt(anio), usuarioId);
+                });
+            });
+        } else {
+            console.error('usuarioId no está definido en el contexto global.');
+        }
     }
 });
+
+function initArcModule(passedUsuarioId) {
+    console.log('Inicializando módulo ARC');
+
+    if (passedUsuarioId) {
+        window.usuarioId = passedUsuarioId;
+    }
+
+    // Debug usuarioId
+    const usuarioId = window.usuarioId || null;
+    console.log('usuarioId:', usuarioId);
+
+    if (usuarioId) {
+        // Añadir event listeners a botones "Ver ARC"
+        const botonesVerArc = document.querySelectorAll('.ver-arc-btn');
+        botonesVerArc.forEach(boton => {
+            boton.addEventListener('click', () => {
+                const anio = boton.getAttribute('data-anio');
+                arcModal__abrir(parseInt(anio), usuarioId);
+            });
+        });
+        cargarListaARC();
+    } else {
+        console.error('usuarioId no está definido en el contexto global.');
+    }
+
+    // Evento para generar nuevo ARC
+    const generarNuevoArcBtn = document.getElementById('generarNuevoArc');
+    if (generarNuevoArcBtn) {
+        generarNuevoArcBtn.addEventListener('click', function() {
+            const añoActual = new Date().getFullYear();
+            generarNuevoARC(añoActual, usuarioId);
+        });
+    }
+}
+
+// Nueva función para establecer usuarioId y cargar lista ARC
+function setUsuarioId(usuarioId) {
+    if (usuarioId) {
+        window.usuarioId = usuarioId;
+        cargarListaARC();
+    } else {
+        console.error('setUsuarioId: usuarioId no proporcionado o inválido.');
+    }
+}
+
+// Expose the init and setUsuarioId functions globally for dynamic loading
+window.initArcModule = initArcModule;
+window.setUsuarioId = setUsuarioId;
 
 document.addEventListener('templateUnloading', function(e) {
     if (e.detail.template === 'arc.html') {
@@ -13,103 +79,148 @@ document.addEventListener('templateUnloading', function(e) {
     }
 });
 
-function arcModal__abrir(anio, usuarioId) {
-    const modal = document.getElementById("arcModal");
-    const contenido = document.getElementById("contenidoArc");
-    
-    // Mostrar carga mientras se obtienen los datos
-    contenido.innerHTML = '<div class="loading">Cargando ARC...</div>';
-    
-    // Obtener datos del ARC desde la API
-    fetch(`/api/arc/generar_arc/?cedula=${usuarioId}&anio=${anio}`)
-        .then(async response => {
+document.addEventListener('DOMContentLoaded', function() {
+    cargarListaARC();
+
+    // Evento para generar nuevo ARC
+    const generarNuevoArcBtn = document.getElementById('generarNuevoArc');
+    if (generarNuevoArcBtn) {
+        generarNuevoArcBtn.addEventListener('click', function() {
+            const añoActual = new Date().getFullYear();
+            generarNuevoARC(añoActual);
+        });
+    }
+});
+
+function cargarListaARC() {
+    if (!window.usuarioId || window.usuarioId.trim() === '') {
+        console.error('Cedula (usuarioId) no proporcionada o vacía.');
+        return;
+    }
+    fetch(`/api/arc/listar/?cedula=${window.usuarioId}`)
+        .then(response => {
             if (!response.ok) {
-                const text = await response.text();
-                console.error('Error en generar_arc:', response.status, text);
-                throw new Error(`Error en generar_arc: ${response.status} ${text}`);
+                return response.json().then(errData => {
+                    throw new Error(errData.error || 'Error desconocido al obtener ARC');
+                });
             }
             return response.json();
         })
-        .then(arcData => {
-            console.log('Datos recibidos de generar_arc:', arcData); // Debug log added
-            // Obtener datos formateados para el frontend
-            return fetch(`/api/arc/${arcData.id}/datos_arc/`);
-        })
-        .then(response => response.json())
         .then(data => {
-            console.log('Datos recibidos para ARC:', data); // Debug log added
-            // Generar el HTML con los datos recibidos
-            contenido.innerHTML = generarHTMLARC(data);
-            modal.style.display = 'flex';
+            const tbody = document.getElementById('listaArc');
+            tbody.innerHTML = '';
+            if (!data.success) {
+                console.error('Error en respuesta ARC:', data.error);
+                return;
+            }
+            if (!Array.isArray(data.arcs)) {
+                console.error('Datos ARC no es un arreglo:', data.arcs);
+                return;
+            }
+            data.arcs.forEach(arc => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td>${arc.anio}</td>
+                    <td>${arc.fecha_emision ? new Date(arc.fecha_emision).toLocaleDateString() : ''}</td>
+                        <td>${Number(arc.islr_total_retenido).toFixed(2)}</td>
+                    <td>
+                        <button class="btn-ver" onclick="verARC(${arc.id_arc})">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(fila);
+            });
         })
         .catch(error => {
-            console.error('Error al generar ARC:', error);
-            contenido.innerHTML = '<div class="error">Error al generar el ARC</div>';
+            console.error('Error cargando lista ARC:', error.message);
+        });
+}
+
+function generarNuevoARC(año) {
+    if(confirm(`¿Generar ARC para el año ${año}?`)) {
+        fetch(`/api/arc/generar_arc/?cedula=${window.usuarioId}&anio=${año}`)
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    alert('ARC generado correctamente');
+                    cargarListaARC();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+    }
+}
+
+function verARC(arcId) {
+    const modal = document.getElementById('arcModal');
+    const contenido = document.getElementById('contenidoArc');
+
+    contenido.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Cargando ARC...</div>';
+    modal.style.display = 'block';
+
+    fetch(`/api/arc/${arcId}/datos_arc/`)
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                contenido.innerHTML = generarHTMLARC(data.data);
+            } else {
+                contenido.innerHTML = `<div class="error">${data.error}</div>`;
+            }
         });
 }
 
 function generarHTMLARC(data) {
     return `
         <div class="arc-container">
-            <!-- Encabezado con logos -->
             <div class="arc-header">
                 <div class="logo-izquierdo">
                     <img src="/static/image/MinRIntPaz.png" alt="Logo Ministerio" width="80">
                 </div>
                 <div class="textos-centro__titulo">
-                    <h2><strong>${data.agente.nombre}</strong></h2>
+                    <h2>COMPROBANTE DE RETENCIÓN DE I.S.L.R.</h2>
+                    <h3>Artículo 11, Parágrafo Único del Reglamento de la Ley de I.S.L.R.</h3>
+                    <h4>AÑO ${data.anio}</h4>
                 </div>
                 <div class="logo-derecho">
                     <img src="/static/image/logo_polibanz.png" alt="Logo Policía" width="80">
                 </div>
             </div>
 
-            <div class="sub">
-                <h3 class="sub_titulo">ARC - AÑO ${data.anio}</h3>
-            </div>
-            
-            <!-- Tablas de agente y sujeto -->
             <div class="contenedor-tablas">
                 <table class="tabla-modal-arc__agente">
                     <thead>
-                        <tr>
-                            <th>NOMBRE O RAZÓN SOCIAL DEL AGENTE DE RETENCIÓN</th>
-                        </tr>
+                        <tr><th>AGENTE DE RETENCIÓN</th></tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>${data.agente.nombre}</td>
-                        </tr>
+                        <tr><td>${data.agente.nombre}</td></tr>
+                        <tr><td>RIF: ${data.agente.rif}</td></tr>
+                        <tr><td>${data.agente.direccion}</td></tr>
                     </tbody>
                 </table>
+                
                 <table class="tabla-modal-arc__sujeto">
                     <thead>
-                        <tr>
-                            <th>NOMBRE O RAZÓN SOCIAL DEL SUJETO RETENCIÓN</th>
-                        </tr>
+                        <tr><th>SUJETO DE RETENCIÓN</th></tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>${data.usuario.nombre_completo}</td>
-                        </tr>
+                        <tr><td>${data.usuario.nombre_completo}</td></tr>
+                        <tr><td>C.I.: ${data.usuario.cedula}</td></tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Más tablas... -->
-            
-            <!-- Tabla detalle por meses -->
             <table class="tabla-arc-detalle">
                 <thead>
                     <tr>
-                        <th>OPER. NRO.</th>
-                        <th>Mes</th>
-                        <th>Esp</th>
-                        <th>Monto Bruto</th>
-                        <th>%</th>
-                        <th>ISLR Retenido</th>
-                        <th>Monto Neto</th>
-                        <th>Monto a Declarar</th>
+                        <th>N°</th>
+                        <th>MES</th>
+                        <th>ESPECIFICACIÓN</th>
+                        <th>MONTO BRUTO</th>
+                        <th>% RET.</th>
+                        <th>ISLR RETENIDO</th>
+                        <th>MONTO NETO</th>
+                        <th>MONTO A DECLARAR</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -118,61 +229,42 @@ function generarHTMLARC(data) {
                             <td>${index + 1}</td>
                             <td>${mes.nombre_mes}</td>
                             <td class="eps-celda">
-                                <table class="eps-tabla">
-                                    <tr><td class="eps-superior">${mes.especificacion_superior}</td></tr>
-                                    <tr><td class="eps-inferior">${mes.especificacion_inferior}</td></tr>
-                                </table>
+                                <div class="eps-superior">${mes.especificacion_superior}</div>
+                                ${mes.especificacion_inferior ? `<div class="eps-inferior">${mes.especificacion_inferior}</div>` : ''}
                             </td>
-                            <td class="montobruto-celda">
-                                <table class="montobruto-tabla">
-                                    <tr><td class="montobruto-superior">${mes.monto_bruto.toFixed(2)}</td></tr>
-                                    <tr><td class="montobruto-inferior"></td></tr>
-                                </table>
-                            </td>
-                            <td class="porcentaje-celda">
-                                <table class="porcentaje-tabla">
-                                    <tr><td class="porcentaje-superior">${mes.porcentaje_retencion.toFixed(2)}</td></tr>
-                                    <tr><td class="porcentaje-inferior">%</td></tr>
-                                </table>
-                            </td>
-                            <td class="porcentaje-celda">
-                                <table class="porcentaje-tabla">
-                                    <tr><td class="porcentaje-superior">${mes.islr_retenido.toFixed(2)}</td></tr>
-                                    <tr><td class="porcentaje-inferior">%</td></tr>
-                                </table>
-                            </td>
-                            <td class="montoneto-celda">
-                                <table class="montoneto-tabla">
-                                    <tr><td class="montoneto-superior"></td></tr>
-                                    <tr><td class="montoneto-inferior"></td></tr>
-                                </table>
-                            </td>
-                            <td>${mes.monto_declarar.toFixed(2)}</td>
+                            <td>${Number(mes.monto_bruto).toFixed(2)}</td>
+                            <td>${Number(mes.porcentaje_retencion).toFixed(2)}%</td>
+                            <td>${Number(mes.islr_retenido).toFixed(2)}</td>
+                            <td>${Number(mes.monto_bruto - mes.islr_retenido).toFixed(2)}</td>
+                            <td>${Number(mes.monto_declarar).toFixed(2)}</td>
                         </tr>
                     `).join('')}
                     
                     <tr class="fila-total">
-                        <td colspan="7" class="total-texto">Total monto a declarar Bs.:</td>
-                        <td class="total-monto">${data.total_monto_declarar.toFixed(2)}</td>
+                        <td colspan="5">TOTALES</td>
+                    <td>${Number(data.meses.reduce((sum, mes) => sum + Number(mes.islr_retenido), 0)).toFixed(2)}</td>
+                        <td></td>
+                        <td>${data.total_monto_declarar.toFixed(2)}</td>
                     </tr>
                 </tbody>
             </table>
             
-            <!-- Resumen de conceptos -->
-            <div class="tabla-arc-resumen">
-                ${Object.entries(data.resumen).map(([concepto, monto]) => `
-                    <table class="tabla-arc-resumen__${concepto.toLowerCase()}">
-                        <tr>
-                            <th><strong>${concepto.toUpperCase()}</strong></th>
-                        </tr>
-                        <tr>
-                            <td>${monto.toFixed(2)}</td>
-                        </tr>
-                    </table>
-                `).join('')}
+            <div class="resumen-conceptos">
+                <h4>RESUMEN POR CONCEPTOS</h4>
+                <div class="contenedor-resumen">
+                    ${Object.entries(data.resumen).map(([concepto, monto]) => `
+                        <div class="concepto-resumen">
+                            <div class="concepto-titulo">${concepto}</div>
+                        <div class="concepto-monto">${Number(monto).toFixed(2)}</div>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
             
-            <p class="nota-final">${data.nota}</p>
+            <div class="nota-final">
+                <p>${data.nota}</p>
+                <p class="fecha-emision">Emitido el: ${new Date().toLocaleDateString()}</p>
+            </div>
         </div>
     `;
 }

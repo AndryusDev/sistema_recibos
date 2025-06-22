@@ -520,9 +520,22 @@ def obtener_constancia_datos_admin(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
+from django.shortcuts import redirect
+
 def arc(request):
     empleado_id = request.session.get('empleado_id')
-    return render(request, 'menu_principal/subs_menus/arc.html', {'empleado_id': empleado_id})
+    if not empleado_id:
+        return redirect('/login/')  # Redirect to login if not authenticated
+
+    usuario = None
+    try:
+        usuario = empleado.objects.get(cedula=empleado_id)
+    except empleado.DoesNotExist:
+        return redirect('/login/')  # Redirect to login if empleado not found
+
+    # Pass usuario.cedula as usuarioIdForFrontend to be used in JS
+    usuarioIdForFrontend = usuario.cedula if usuario else None
+    return render(request, 'menu_principal/subs_menus/arc.html', {'usuario': usuario, 'usuarioIdForFrontend': usuarioIdForFrontend})
 
 from .models import concepto_pago
 
@@ -3346,182 +3359,6 @@ def aprobar_nomina(request, id_nomina):
     
     return JsonResponse({'error': 'Método no permitido'}, status=405)
 
-
-
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
-from .serializers import ARCSerializer
-
-class ARCViewSet(viewsets.ModelViewSet):
-    queryset = ARC.objects.all()
-    serializer_class = ARCSerializer
-    permission_classes = [AllowAny]
-
-    @action(detail=False, methods=['get'])
-    def generar_arc(self, request):
-        """Genera o actualiza el ARC para un empleado en un año específico"""
-        cedula = request.query_params.get('cedula')
-        anio = request.query_params.get('anio', datetime.now().year)
-
-        try:
-            empleado_obj = empleado.objects.get(cedula=cedula)
-            anio = int(anio)
-        except (empleado.DoesNotExist, ValueError):
-            return Response(
-                {"error": "Empleado no encontrado o año inválido"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Verificar si ya existe un ARC para este empleado y año
-        arc, created = ARC.objects.get_or_create(
-            empleado=empleado_obj,
-            anio=anio,
-            defaults={
-                'total_monto_declarar': 0,
-                'total_vacaciones': 0,
-                'total_aguinaldos': 0,
-                'total_evaluacion': 0,
-                'total_salarios': 0
-            }
-        )
-
-        # Obtener todas las nóminas del año
-        nominas_anio = nomina.objects.filter(
-            periodo__startswith=str(anio)
-        ).values_list('id_nomina', flat=True)
-
-        # Obtener detalles de nómina para el empleado en ese año
-        detalles_nomina = detalle_nomina.objects.filter(
-            nomina__in=nominas_anio,
-            cedula=empleado_obj
-        ).select_related('codigo', 'nomina')
-
-        # Procesar por meses
-        meses_data = {}
-        for mes in range(1, 13):
-            # Filtrar por mes (asumiendo que el periodo incluye el mes)
-            detalles_mes = detalles_nomina.filter(
-                nomina__periodo__contains=f"-{mes:02d}-"  # Ajusta según tu formato de periodo
-            )
-
-            # Calcular montos
-            monto_bruto = detalles_mes.filter(
-                codigo__tipo_concepto='ASIGNACION'
-            ).aggregate(total=Sum('monto'))['total'] or 0
-
-            islr_retenido = detalles_mes.filter(
-                codigo__codigo='ISLR'  # Ajusta según tu código de concepto ISLR
-            ).aggregate(total=Sum('monto'))['total'] or 0
-
-            # Calcular porcentaje de retención (simplificado)
-            porcentaje_retencion = 0
-            if monto_bruto > 0:
-                porcentaje_retencion = (islr_retenido / monto_bruto) * 100
-
-            monto_declarar = monto_bruto - islr_retenido
-
-            meses_data[mes] = {
-                'monto_bruto': monto_bruto,
-                'islr_retenido': islr_retenido,
-                'porcentaje_retencion': porcentaje_retencion,
-                'monto_declarar': monto_declarar,
-                'especificacion': 'Exento' if islr_retenido == 0 else 'Bse Imp'
-            }
-
-        # Calcular totales
-        total_monto_declarar = sum(d['monto_declarar'] for d in meses_data.values())
-
-        # Calcular conceptos especiales (vacaciones, aguinaldos, etc.)
-        total_vacaciones = detalles_nomina.filter(
-            codigo__codigo__in=['VAC', 'VACACIONES']  # Ajusta según tus códigos
-        ).aggregate(total=Sum('monto'))['total'] or 0
-
-        total_aguinaldos = detalles_nomina.filter(
-            codigo__codigo__in=['AGU', 'AGUINALDO']
-        ).aggregate(total=Sum('monto'))['total'] or 0
-
-        total_evaluacion = detalles_nomina.filter(
-            codigo__codigo__in=['EVA', 'EVALUACION']
-        ).aggregate(total=Sum('monto'))['total'] or 0
-
-        total_salarios = detalles_nomina.filter(
-            codigo__tipo_concepto='ASIGNACION',
-            codigo__codigo__in=['SAL', 'SALARIO', 'SUELDO']
-        ).aggregate(total=Sum('monto'))['total'] or 0
-
-        # Actualizar el ARC y sus detalles
-        arc.total_monto_declarar = total_monto_declarar
-        arc.total_vacaciones = total_vacaciones
-        arc.total_aguinaldos = total_aguinaldos
-        arc.total_evaluacion = total_evaluacion
-        arc.total_salarios = total_salarios
-        arc.save()
-
-        # Actualizar detalles por mes
-        for mes, data in meses_data.items():
-            DetalleARC.objects.update_or_create(
-                arc=arc,
-                mes=mes,
-                defaults={
-                    'monto_bruto': data['monto_bruto'],
-                    'porcentaje_retencion': data['porcentaje_retencion'],
-                    'islr_retenido': data['islr_retenido'],
-                    'monto_declarar': data['monto_declarar'],
-                    'especificacion': data['especificacion']
-                }
-            )
-
-        serializer = self.get_serializer(arc)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['get'])
-    def datos_arc(self, request, pk=None):
-        """Obtiene los datos formateados para el frontend (similar a tu estructura HTML)"""
-        arc = self.get_object()
-
-        # Datos del agente de retención (podrías mover esto a configuración)
-        agente = {
-            'nombre': "POLICÍA BOLIVARIANA DEL ESTADO ANZOÁTEGUI",
-            'direccion': "Av. Jorge Rodríguez, Crucero de Lechería..."
-        }
-
-        # Preparar respuesta
-        data = {
-            'agente': agente,
-            'usuario': {
-                'nombre_completo': arc.empleado.get_nombre_completo(),
-                'cedula': arc.empleado.cedula
-            },
-            'anio': arc.anio,
-            'meses': [],
-            'total_monto_declarar': arc.total_monto_declarar,
-            'resumen': {
-                'vacaciones': arc.total_vacaciones,
-                'aguinaldos': arc.total_aguinaldos,
-                'evaluacion': arc.total_evaluacion,
-                'salarios': arc.total_salarios
-            },
-            'nota': "Individuo no trabajador"  # Puedes personalizar esto
-        }
-
-        # Agregar detalles por mes
-        for detalle in arc.detalles.all().order_by('mes'):
-            data['meses'].append({
-                'nombre_mes': detalle.nombre_mes,
-                'especificacion_superior': detalle.especificacion,
-                'especificacion_inferior': 'Bse Imp',
-                'monto_bruto': detalle.monto_bruto,
-                'porcentaje_retencion': detalle.porcentaje_retencion,
-                'islr_retenido': detalle.islr_retenido,
-                'monto_neto_superior': "",
-                'monto_neto_inferior': "",
-                'monto_declarar': detalle.monto_declarar
-            })
-
-        return Response(data)
-
 @require_http_methods(["GET"])
 def api_empleados_por_tipo(request, tipo):
     """
@@ -3613,5 +3450,212 @@ def api_conceptos(request):
         }, status=500)
 
 
+@require_GET
+def generar_arc(request):
+    import calendar
+    from decimal import Decimal
+    from django.db.models import Sum
+    try:
+        cedula = request.GET.get('cedula')
+        anio = int(request.GET.get('anio'))
+        
+        empleado_obj = empleado.objects.get(cedula=cedula)
+        
+        # Verificar si ya existe un ARC para este año
+        arc, created = ARC.objects.get_or_create(
+            empleado=empleado_obj,
+            anio=anio,
+            defaults={
+                'total_monto_declarar': 0,
+                'islr_total_retenido': 0
+            }
+        )
+        
+        def crear_detalles_arc(arc_instance):
+            # Eliminar detalles existentes para evitar duplicados
+            arc_instance.detalles.all().delete()
+            
+            meses = [(i, calendar.month_name[i]) for i in range(1, 13)]
+            
+            total_monto_declarar = Decimal('0')
+            total_islr_retenido = Decimal('0')
+            
+            for mes_num, nombre_mes in meses:
+                # Aquí se puede obtener datos reales de recibo_pago o cálculos específicos
+                # Por simplicidad, se asignan valores de ejemplo o cero
+                monto_bruto = Decimal('0')
+                porcentaje_retencion = Decimal('0')
+                islr_retenido = Decimal('0')
+                monto_declarar = Decimal('0')
+                
+                # Ejemplo: sumar montos de recibo_pago para el empleado, año y mes
+                recibos_mes = recibo_pago.objects.filter(
+                    cedula=arc_instance.empleado,
+                    fecha_generacion__year=arc_instance.anio,
+                    fecha_generacion__month=mes_num
+                )
+                monto_bruto_mes = recibos_mes.aggregate(total=Sum('detalles__detalle_nomina__monto'))['total'] or Decimal('0')
+                monto_bruto = monto_bruto_mes
+                
+                # Ejemplo: calcular islr_retenido y porcentaje_retencion (puede ajustarse según reglas)
+                # Aquí se asigna 0 para simplificar, se puede mejorar con lógica real
+                porcentaje_retencion = Decimal('0')
+                islr_retenido = Decimal('0')
+                monto_declarar = monto_bruto  # Asumir monto declarar igual a bruto para ejemplo
+                
+                total_monto_declarar += monto_declarar
+                total_islr_retenido += islr_retenido
+                
+                DetalleARC.objects.create(
+                    arc=arc_instance,
+                    mes=mes_num,
+                    nombre_mes=nombre_mes,
+                    especificacion_superior='OTROS',
+                    especificacion_inferior='',
+                    monto_bruto=monto_bruto,
+                    porcentaje_retencion=porcentaje_retencion,
+                    islr_retenido=islr_retenido,
+                    monto_declarar=monto_declarar
+                )
+            
+            arc_instance.total_monto_declarar = total_monto_declarar
+            arc_instance.islr_total_retenido = total_islr_retenido
+            arc_instance.save()
+        
+        if created:
+            crear_detalles_arc(arc)
+        else:
+            # Si ya existía, recalcular los totales
+            arc.total_monto_declarar = sum(d.monto_declarar for d in arc.detalles.all())
+            arc.islr_total_retenido = sum(d.islr_retenido for d in arc.detalles.all())
+            arc.save()
+        
+        return JsonResponse({
+            'success': True,
+            'arc_id': arc.id_arc
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+@require_GET
+def datos_arc(request, arc_id):
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"datos_arc called with arc_id={arc_id}")
+    try:
+        arc = ARC.objects.get(id_arc=arc_id)
+        detalles = arc.detalles.all().order_by('mes')
+        logger.info(f"datos_arc: detalles count = {detalles.count()} for arc_id={arc_id}")
+
+        from django.db.models import Sum, F, Q
+        from django.db.models.functions import ExtractMonth
+
+        empleado_obj = arc.empleado
+        anio = arc.anio
+
+        recibos = (
+            recibo_pago.objects.filter(
+                cedula=empleado_obj,
+                fecha_generacion__year=anio
+            )
+            .annotate(mes=ExtractMonth('fecha_generacion'))
+            .values('mes')
+            .annotate(
+                suma_monto=Sum(
+                    'detalles__detalle_nomina__monto',
+                    filter=Q(detalles__detalle_nomina__codigo__codigo='1001')
+                )
+            )
+            .order_by('mes')
+        )
+        recibos_count = recibos.count()
+        logger.info(f"datos_arc: recibos count = {recibos_count} for empleado={empleado_obj} year={anio}")
+
+        monto_por_mes = {item['mes']: item['suma_monto'] or 0 for item in recibos}
+
+        resumen = {}
+        for d in detalles:
+            desc = d.especificacion_superior or 'OTROS'
+            if desc not in resumen:
+                resumen[desc] = 0
+            resumen[desc] += float(d.monto_bruto)
+
+        resumen['ISLR RETENIDO'] = float(arc.islr_total_retenido)
+
+        meses_actualizados = []
+        for d in detalles:
+            mes_num = d.mes
+            suma_monto = monto_por_mes.get(mes_num, 0)
+            meses_actualizados.append({
+                'nombre_mes': d.nombre_mes,
+                'especificacion_superior': d.especificacion_superior,
+                'especificacion_inferior': d.especificacion_inferior,
+                'monto_bruto': float(suma_monto),
+                'porcentaje_retencion': float(d.porcentaje_retencion),
+                'islr_retenido': float(d.islr_retenido),
+                'monto_declarar': float(suma_monto)
+            })
+
+        logger.info(f"datos_arc: meses_actualizados length = {len(meses_actualizados)}")
+
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'anio': arc.anio,
+                'agente': {
+                    'nombre': 'POLICÍA DEL ESTADO ANZOÁTEGUI',
+                    'rif': 'G-20001091-6',
+                    'direccion': 'Av. Intercomunal Jorge Rodríguez, Lechería'
+                },
+                'usuario': {
+                    'nombre_completo': arc.empleado.get_nombre_completo(),
+                    'cedula': arc.empleado.cedula
+                },
+                'meses': meses_actualizados,
+                'total_monto_declarar': float(arc.total_monto_declarar),
+                'resumen': resumen,
+                'nota': 'Este comprobante es válido para la declaración del ISLR del año correspondiente.'
+            }
+        })
+
+    except ARC.DoesNotExist:
+        logger.error(f"datos_arc: ARC with id {arc_id} does not exist")
+        return JsonResponse({
+            'success': False,
+            'error': 'ARC no encontrado'
+        }, status=404)
+    except Exception as e:
+        logger.error(f"datos_arc: Exception {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+@csrf_exempt
+@require_GET
+def listar_arc(request):
+    cedula = request.GET.get('cedula')
+    if not cedula:
+        return JsonResponse({'success': False, 'error': 'Cédula no proporcionada'}, status=400)
+    try:
+        empleado_obj = empleado.objects.get(cedula=cedula)
+        arcs = ARC.objects.filter(empleado=empleado_obj).order_by('-anio')
+        arcs_data = []
+        for arc in arcs:
+            arcs_data.append({
+                'id_arc': arc.id_arc,
+                'anio': arc.anio,
+                'total_monto_declarar': float(arc.total_monto_declarar),
+                'islr_total_retenido': float(arc.islr_total_retenido)
+            })
+        return JsonResponse({'success': True, 'arcs': arcs_data})
+    except empleado.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Empleado no encontrado'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 

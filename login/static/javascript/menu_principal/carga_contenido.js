@@ -18,6 +18,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Add initialization call for arc module when arc.html is loaded
+document.addEventListener('templateLoaded', function(e) {
+    if (e.detail.template === 'arc.html') {
+        if (window.initArcModule) {
+            window.initArcModule();
+        } else {
+            console.error('initArcModule function is not defined.');
+        }
+    }
+});
+
 // Función para cargar templates regulares
 function loadRegularTemplate(templateName) {
     const templateUrls = {
@@ -50,6 +61,11 @@ function loadRegularTemplate(templateName) {
         })
         .then(html => {
             container.innerHTML = html;
+
+            // Inject usuarioId globally if loading arc.html
+            if (templateName === 'arc.html' && window.usuarioIdFromBackend) {
+                window.usuarioId = window.usuarioIdFromBackend;
+            }
             
             // Esperar a que el navegador procese el HTML antes de continuar
             return new Promise(resolve => setTimeout(resolve, 50));
@@ -102,6 +118,7 @@ function loadDashboardContent() {
 // Función para cargar scripts específicos
 function loadTemplateScripts(templateName) {
     const templateScripts = {
+        "arc.html": "/static/javascript/menu_principal/subs_menus/arc.js",
         "importar_nomina.html": "/static/javascript/menu_principal/subs_menus/importar_nomina.js",
         "crear_usuarios.html": "/static/javascript/menu_principal/subs_menus/crear_usuarios.js",
         "roles_usuarios.html": "/static/javascript/menu_principal/subs_menus/roles_usuarios.js",
@@ -271,6 +288,15 @@ function initializeTemplateFunctions(templateName) {
         if (templateName === "gestion_respaldo.html" && typeof window.initGestionRespaldo === 'function') {
             console.log("Llamando a initGestionRespaldo desde carga_contenido.js");
             window.initGestionRespaldo();
+        }
+
+        if (templateName === "arc.html") {
+            if (typeof window.initArcModule === 'function') {
+                console.log("Ejecutando initArcModule");
+                window.initArcModule();
+            } else {
+                console.warn("initArcModule no está disponible");
+            }
         }
         
     } catch (error) {

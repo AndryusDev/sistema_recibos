@@ -6,11 +6,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from .views import listado_recibos
 
-from rest_framework.routers import DefaultRouter
-from .views import ARCViewSet
 
-router = DefaultRouter()
-router.register(r'arc', ARCViewSet, basename='arc')
 
 urlpatterns = [
     path('login/', views.login, name='login'),  # Nuevo login JWT
@@ -105,8 +101,6 @@ path('api/nominas/<int:id_nomina>/descargar_excel/', views.descargar_nomina_exce
 
     #path('api/control_vacaciones/', views.api_control_vacaciones, name='api_control_vacaciones'),
 
-    path('api/', include(router.urls)),
-
     path('api/conceptos/', views.api_conceptos, name = 'api_conceptos'),
     path('api/empleados/por_tipo/<str:tipo>/', views.api_empleados_por_tipo, name='api_empleados_por_tipo'),
 
@@ -114,4 +108,8 @@ path('api/empleado_con_hijos_discapacidad/<int:cedula>/', views.empleado_con_hij
 
 path('api/constancia_datos/', views.obtener_constancia_datos, name='obtener_constancia_datos'),
 path('api/constancia_datos_admin/', views.obtener_constancia_datos_admin, name='obtener_constancia_datos_admin'),
+
+path('api/arc/generar_arc/', views.generar_arc, name='generar_arc'),
+path('api/arc/listar/', views.listar_arc, name='listar_arc'),
+path('api/arc/<int:arc_id>/datos_arc/', views.datos_arc, name='datos_arc'),
 ]
