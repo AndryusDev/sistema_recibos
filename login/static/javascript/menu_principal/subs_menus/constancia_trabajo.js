@@ -62,8 +62,15 @@ function generarConstancia() {
         return;
     }
 
-    // Fetch data from API endpoint
-    fetch('/api/constancia_datos/', { credentials: 'include' })
+    const cedulaInput = document.getElementById('cedulaInput');
+    const cedula = cedulaInput ? cedulaInput.value.trim() : '';
+
+    let url = '/api/constancia_datos/';
+    if (cedula) {
+        url = `/api/constancia_datos_admin/?cedula=${encodeURIComponent(cedula)}`;
+    }
+
+    fetch(url, { credentials: 'include' })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Error al obtener datos de constancia');

@@ -112,5 +112,6 @@ path('api/nominas/<int:id_nomina>/descargar_excel/', views.descargar_nomina_exce
 
 path('api/empleado_con_hijos_discapacidad/<int:cedula>/', views.empleado_con_hijos_discapacidad, name='empleado_con_hijos_discapacidad'),
 
-    path('api/constancia_datos/', views.obtener_constancia_datos, name='obtener_constancia_datos'),
+path('api/constancia_datos/', views.obtener_constancia_datos, name='obtener_constancia_datos'),
+path('api/constancia_datos_admin/', views.obtener_constancia_datos_admin, name='obtener_constancia_datos_admin'),
 ]

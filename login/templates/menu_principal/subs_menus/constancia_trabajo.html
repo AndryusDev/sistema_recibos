@@ -12,6 +12,13 @@
         <div class="contenedor">
             <h1>Generar Constancia de Trabajo</h1>
 
+            {% if es_administrador %}
+            <div class="input-cedula-container" style="margin-bottom: 20px;">
+                <label for="cedulaInput">Ingrese Cédula:</label>
+                <input type="text" id="cedulaInput" name="cedulaInput" placeholder="Cédula de identidad">
+            </div>
+            {% endif %}
+
             <div class="boton-generar">
                 <button id="generarConstancia">Generar Constancia</button>
             </div>

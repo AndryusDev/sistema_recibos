@@ -257,3 +257,42 @@
     text-decoration: underline;
     margin: 20px 0;
 }
+
+/* Improved styles for cedula input and buscar button */
+.input-cedula-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+#cedulaInput {
+    padding: 10px 15px;
+    font-size: 1rem;
+    border: 2px solid #3498db;
+    border-radius: 8px;
+    width: 250px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#cedulaInput:focus {
+    outline: none;
+    border-color: #2980b9;
+    box-shadow: 0 0 8px rgba(41, 128, 185, 0.5);
+}
+
+#buscarCedulaBtn {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#buscarCedulaBtn:hover {
+    background-color: #2980b9;
+}

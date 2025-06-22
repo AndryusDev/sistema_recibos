@@ -450,7 +450,75 @@ def obtener_constancia_datos(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 def constancia_trabajo(request):
-    return render(request, 'menu_principal/subs_menus/constancia_trabajo.html')
+    # Determine if user is admin
+    es_administrador = False
+    usuario_id = request.session.get('usuario_id')
+    if usuario_id:
+        try:
+            usuario_instance = usuario.objects.get(id=usuario_id)
+            roles_usuario = usuario_rol.objects.filter(usuario=usuario_instance).select_related('rol')
+            es_administrador = any(ur.rol.codigo_rol == 3 for ur in roles_usuario)
+        except usuario.DoesNotExist:
+            es_administrador = False
+
+    return render(request, 'menu_principal/subs_menus/constancia_trabajo.html', {
+        'es_administrador': es_administrador
+    })
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def obtener_constancia_datos_admin(request):
+    cedula = request.GET.get('cedula')
+    usuario_id = request.session.get('usuario_id')
+    if not usuario_id:
+        return JsonResponse({'success': False, 'message': 'Usuario no autenticado'}, status=401)
+    try:
+        usuario_instance = usuario.objects.get(id=usuario_id)
+        roles_usuario = usuario_rol.objects.filter(usuario=usuario_instance).select_related('rol')
+        es_administrador = any(ur.rol.codigo_rol == 3 for ur in roles_usuario)
+        if not es_administrador:
+            return JsonResponse({'success': False, 'message': 'Permiso denegado'}, status=403)
+    except usuario.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Usuario no encontrado'}, status=404)
+
+    if not cedula:
+        return JsonResponse({'success': False, 'message': 'Cédula no proporcionada'}, status=400)
+
+    try:
+        empleado_obj = empleado.objects.get(cedula=cedula)
+        # Obtener el recibo más reciente
+        recibo = recibo_pago.objects.filter(cedula=empleado_obj).order_by('-fecha_generacion').first()
+        if not recibo:
+            return JsonResponse({'success': False, 'message': 'No se encontró recibo para el empleado'}, status=404)
+
+        salario_base = None
+        bono_alimentacion = None
+
+        detalles = recibo.detalles.all()
+
+        for detalle in detalles:
+            codigo = detalle.detalle_nomina.codigo.codigo if detalle.detalle_nomina and detalle.detalle_nomina.codigo else None
+            if codigo == '1001':  # Salario base
+                salario_base = detalle.detalle_nomina.monto
+            elif codigo == '8003':  # Bono alimentación
+                bono_alimentacion = detalle.detalle_nomina.monto
+
+        datos = {
+            'nombre': empleado_obj.get_nombre_completo(),
+            'cedula': empleado_obj.cedula,
+            'fechaIngreso': empleado_obj.fecha_ingreso.strftime('%d/%m/%Y') if empleado_obj.fecha_ingreso else '',
+            'cargo': str(empleado_obj.cargo) if empleado_obj.cargo else '',
+            'salario': f"{salario_base:,.2f}" if salario_base is not None else '0.00',
+            'bono': f"{bono_alimentacion:,.2f}" if bono_alimentacion is not None else '0.00',
+            'fechaActual': datetime.now()
+        }
+
+        return JsonResponse({'success': True, 'datos': datos})
+
+    except empleado.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Empleado no encontrado'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 def arc(request):
     empleado_id = request.session.get('empleado_id')
