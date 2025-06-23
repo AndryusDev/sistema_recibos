@@ -112,4 +112,6 @@ path('api/constancia_datos_admin/', views.obtener_constancia_datos_admin, name='
 path('api/arc/generar_arc/', views.generar_arc, name='generar_arc'),
 path('api/arc/listar/', views.listar_arc, name='listar_arc'),
 path('api/arc/<int:arc_id>/datos_arc/', views.datos_arc, name='datos_arc'),
+
+path('vacaciones/', views.vacaciones, name = 'vacaciones'),
 ]

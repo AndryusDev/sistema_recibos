@@ -321,11 +321,11 @@ async function guardarCambiosUsuario() {
         return;
     }
 
-        const datos = {
-            email: email,
-            rol: { id: parseInt(rolId) },  // Enviar como objeto con propiedad id
-            activo: activo
-        };
+    const datos = {
+        email: email,
+        roles: [parseInt(rolId)],  // Enviar como lista de IDs
+        activo: activo
+    };
 
     try {
         const response = await fetch(`${API_USUARIOS_URL}${usuarioEditando.id}/`, {

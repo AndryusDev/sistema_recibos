@@ -21,11 +21,28 @@ document.addEventListener('DOMContentLoaded', function() {
 // Add initialization call for arc module when arc.html is loaded
 document.addEventListener('templateLoaded', function(e) {
     if (e.detail.template === 'arc.html') {
-        if (window.initArcModule) {
-            window.initArcModule();
-        } else {
-            console.error('initArcModule function is not defined.');
-        }
+        let attempts = 0;
+        const maxAttempts = 6;
+        const interval = 500;
+
+        const tryInitArcModule = () => {
+            attempts++;
+            if (typeof window.initArcModule === 'function') {
+                console.log(`Ejecutando initArcModule (intento ${attempts})`);
+                try {
+                    window.initArcModule();
+                } catch (e) {
+                    console.error('Error ejecutando initArcModule:', e);
+                }
+            } else if (attempts < maxAttempts) {
+                console.warn(`initArcModule no está disponible (intento ${attempts}), reintentando...`);
+                setTimeout(tryInitArcModule, interval * attempts);
+            } else {
+                console.error(`No se pudo cargar initArcModule después de ${maxAttempts} intentos`);
+            }
+        };
+
+        tryInitArcModule();
     }
 });
 
@@ -37,7 +54,7 @@ function loadRegularTemplate(templateName) {
         "recibos_pagos.html": "/recibos_pagos",
         "constancia_trabajo.html": "/constancia_trabajo/",
         "arc.html": "/arc/",
-        "noticias.html": "/noticias/",
+        "noticias.html": "/noticias",
         "ver_prenomina.html": "/ver_prenomina",
         "crear_usuarios.html": "/crear_usuarios",
         "roles_usuarios.html": "/roles_usuarios",
@@ -46,6 +63,7 @@ function loadRegularTemplate(templateName) {
 
         "gestion_respaldo.html": "/gestion_respaldo",
         "vacaciones_permisos.html": "/vacaciones_permisos",
+        "vacaciones.html": "/vacaciones",
     };
 
     const url = templateUrls[templateName];
@@ -117,7 +135,7 @@ function loadDashboardContent() {
 
 // Función para cargar scripts específicos
 function loadTemplateScripts(templateName) {
-    const templateScripts = {
+    const templateScripts = { 
         "arc.html": "/static/javascript/menu_principal/subs_menus/arc.js",
         "importar_nomina.html": "/static/javascript/menu_principal/subs_menus/importar_nomina.js",
         "crear_usuarios.html": "/static/javascript/menu_principal/subs_menus/crear_usuarios.js",
@@ -127,6 +145,7 @@ function loadTemplateScripts(templateName) {
         "ver_prenomina.html": "/static/javascript/menu_principal/subs_menus/ver_prenomina.js",
         "asistencias.html": "/static/javascript/menu_principal/subs_menus/asistencias.js",
         "vacaciones_permisos.html": "/static/javascript/menu_principal/subs_menus/vacaciones_permisos.js",
+        "vacaciones.html": "/static/javascript/menu_principal/subs_menus/vacaciones.js",
     };
 
 

@@ -25,6 +25,10 @@
         <div id="contenido-dinamico" class="rightweb-section">
         </div>
     </div>
+    <script>
+        // Expose usuarioIdFromBackend globally for dynamic arc.html loading
+        window.usuarioIdFromBackend = "{{ usuario.empleado.cedula|default:'' }}";
+    </script>
     <script src="{% static 'javascript/menu_principal/carga_contenido.js' %}"></script>
 
     <footer class="FooterWeb">

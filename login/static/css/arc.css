@@ -553,3 +553,35 @@
     align-items: center;
     gap: 1rem;
 }
+
+/* Estilo para el botón Generar Nuevo ARC */
+#generarNuevoArc {
+    background-color: var(--secondary-color);
+    color: var(--text-light);
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#generarNuevoArc i {
+    font-size: 1.2rem;
+}
+
+#generarNuevoArc:hover:not(:disabled) {
+    background-color: #1a73e8;
+    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.4);
+}
+
+#generarNuevoArc:disabled {
+    background-color: var(--medium-gray);
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
+}

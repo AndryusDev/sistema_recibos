@@ -19,16 +19,100 @@ from decimal import Decimal, getcontext
 import logging
 from django.db import transaction
 from login.models import usuario, recibo_pago
-from .models import usuario, empleado, rol, asistencias
+from .models import usuario, empleado, rol, asistencias, registro_vacaciones
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.timezone import now
 from django.db.models.functions import ExtractMonth
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+import json
 
 # Create your views here.
 def login(request):
     enable_fields = {'campo1': True, 'campo2': False}
     enable_fields_json = json.dumps(enable_fields)
     return render(request, 'login.html', {'enable_fields_json': enable_fields_json})
+
+@login_required
+def api_listar_vacaciones(request):
+    """
+    API view to list vacation records for the logged-in user.
+    """
+    user = request.user
+    try:
+        empleado_obj = empleado.objects.get(usuario=user)
+    except empleado.DoesNotExist:
+        return JsonResponse({'error': 'Empleado no encontrado'}, status=404)
+
+    registros = registro_vacaciones.objects.filter(empleado=empleado_obj).order_by('-fechaInicio')
+    registros_list = []
+    dias_acumulados = 0
+    dias_tomados = 0
+    dias_pendientes = 0
+
+    for reg in registros:
+        registros_list.append({
+            'id': reg.id,
+            'fechaInicio': reg.fechaInicio.strftime('%Y-%m-%d'),
+            'fechaFin': reg.fechaFin.strftime('%Y-%m-%d'),
+            'diasPlanificados': reg.diasPlanificados,
+            'diasEfectivos': reg.diasEfectivos,
+            'estado': reg.estado,
+            'motivoInhabilitacion': reg.motivoInhabilitacion,
+            'fechaInhabilitacion': reg.fechaInhabilitacion.strftime('%Y-%m-%d') if reg.fechaInhabilitacion else None,
+        })
+        dias_tomados += reg.diasEfectivos
+
+    # For demo, set dias_acumulados and dias_pendientes statically or calculate as needed
+    dias_acumulados = 20  # Example static value
+    dias_pendientes = dias_acumulados - dias_tomados
+
+    data = {
+        'diasAcumulados': dias_acumulados,
+        'diasTomados': dias_tomados,
+        'diasPendientes': dias_pendientes,
+        'registros': registros_list,
+    }
+    return JsonResponse(data)
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_crear_solicitud_vacaciones(request):
+    """
+    API view to create a new vacation request for the logged-in user.
+    Expects JSON body with 'fechaInicio' and 'fechaFin'.
+    """
+    user = request.user
+    try:
+        empleado_obj = empleado.objects.get(usuario=user)
+    except empleado.DoesNotExist:
+        return JsonResponse({'error': 'Empleado no encontrado'}, status=404)
+
+    try:
+        data = json.loads(request.body)
+        fecha_inicio = datetime.strptime(data.get('fechaInicio'), '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(data.get('fechaFin'), '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Fechas inválidas'}, status=400)
+
+    if fecha_fin <= fecha_inicio:
+        return JsonResponse({'error': 'La fecha de fin debe ser posterior a la fecha de inicio'}, status=400)
+
+    dias_planificados = (fecha_fin - fecha_inicio).days + 1
+
+    nuevo_registro = registro_vacaciones(
+        empleado=empleado_obj,
+        fechaInicio=fecha_inicio,
+        fechaFin=fecha_fin,
+        diasPlanificados=dias_planificados,
+        diasEfectivos=0,
+        estado='PLAN',
+    )
+    nuevo_registro.save()
+
+    return JsonResponse({'message': 'Solicitud de vacaciones creada exitosamente'})
 
 @csrf_exempt
 @require_http_methods(["GET"])
@@ -269,7 +353,7 @@ def menu(request):
 
 def load_template(request, template_name):
     allowed_templates = ['noticias.html', 'perfil_usuario.html', 'recibos_pagos.html',
-                        'constancia_trabajo.html', 'arc.html','importar_nomina.html', 'ver_prenomina.html','crear_usuarios.html','gestion_respaldo.html', 'dashboard.html', 'roles_usuarios.html', 'crear_roles.html']  # Añade todos tus templates
+                        'constancia_trabajo.html', 'arc.html','importar_nomina.html', 'ver_prenomina.html','crear_usuarios.html','gestion_respaldo.html', 'dashboard.html', 'roles_usuarios.html', 'crear_roles.html', 'vacaciones.html']  # Añade todos tus templates
     
     if template_name not in allowed_templates:
         return HttpResponseNotFound('Plantilla no permitida')
@@ -283,7 +367,7 @@ def serve_js(request, script_name):
     # Lista blanca de scripts permitidos
     allowed_scripts = ['noticias.js', 'perfil_usuario.js','recibos_pagos.js',
                         'constancia_trabajo.js', 'arc.js', 'importar_nomina.js',
-                        'ver_prenomina.js', 'crear_usuarios.js', 'gestion_respaldo.js', 'dashboard.js', 'roles_usuarios.js', 'crear_roles.js']  # Añade todos tus scripts aquí
+                        'ver_prenomina.js', 'crear_usuarios.js', 'gestion_respaldo.js', 'dashboard.js', 'roles_usuarios.js', 'crear_roles.js', 'vacaciones.js']  # Añade todos tus scripts aquí
     
     if script_name not in allowed_scripts:
         return HttpResponseNotFound('Script no permitido')
@@ -342,6 +426,9 @@ def perfil_usuario(request):
 
 def noticias(request):
     return render(request, 'menu_principal/subs_menus/noticias.html')
+
+def vacaciones(request):
+    return render(request, 'menu_principal/subs_menus/vacaciones.html')
 
 def recibos_pagos(request):
     try:

@@ -63,7 +63,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'gestion_respaldo.html': ['/static/javascript/menu_principal/subs_menus/gestion_respaldo.js'],
             'dashboard.html': ['/static/javascript/menu_principal/subs_menus/dashboard.js'],
             'roles_usuarios': ['/static/javascript/menu_principal/subs_menus/roles_usuarios.js'],
-            'crear_roles.html': ['/static/javascript/menu_principal/subs_menus/crear_roles.js']
+            'crear_roles.html': ['/static/javascript/menu_principal/subs_menus/crear_roles.js'],
+            'vacaciones.html': ['/static/javascript/menu_principal/subs_menus/vacaciones.js']
         }
     };
     
@@ -98,6 +99,7 @@ async function loadTemplate(templateName) {
             case "roles_usuarios.html": url = "/roles_usuarios"; break;
             case "crear_roles.html": url = "/crear_roles"; break;
             case "gestion_respaldo.html": url = "/gestion_respaldo"; break;
+            case "vacaciones.html": url = "/vacaciones"; break;
             case "dashboard.html": 
                 url = "/dashboard";
                 // Manejo especial para dashboard como en tu primer enfoque
