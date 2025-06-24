@@ -1,4 +1,3 @@
-
 const usuarioId = window.usuarioId || '';
 
 // JavaScript for cambiar_correo.html modal verification
@@ -49,7 +48,12 @@ const usuarioId = window.usuarioId || '';
             }
 
             // Send new email to backend API to update
-            fetch('/api/cambiar_correo', {
+            if (!usuarioId) {
+                alert('Error: Usuario no autenticado. Por favor inicie sesión.');
+                return;
+            }
+            console.log('Sending cambiar_correo request with usuarioId:', usuarioId);
+            fetch('/api/cambiar_correo/', {  // Reverted URL to include trailing slash
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

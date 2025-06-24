@@ -27,7 +27,7 @@
                 Después de guardar, recibirás un código o enlace de confirmación en tu nuevo correo para verificarlo.
             </div>
             <div class="button-group">
-                <button type="submit" class="btn-primary">Guardar cambios</button>
+                <button type="submit" class="btn-primary" data-usuarioid="{{ usuario_id|default:'' }}">Guardar cambios</button>
                 <button type="button" class="btn-danger" onclick="window.history.back();">Cancelar</button>
             </div>
     </form>

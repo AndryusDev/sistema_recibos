@@ -65,6 +65,7 @@ function loadRegularTemplate(templateName) {
         "vacaciones_permisos.html": "/vacaciones_permisos",
         "vacaciones.html": "/vacaciones",
         "cambiar_correo.html": "/cambiar_correo",
+        "cambiar_contrasena.html": "/cambiar_contrasena",
     };
 
     const url = templateUrls[templateName];
@@ -81,8 +82,8 @@ function loadRegularTemplate(templateName) {
         .then(html => {
             container.innerHTML = html;
 
-            // Inject usuarioId globally if loading arc.html
-            if (templateName === 'arc.html' && window.usuarioIdFromBackend) {
+            // Inject usuarioId globally if loading arc.html or cambiar_correo.html
+            if ((templateName === 'arc.html' || templateName === 'cambiar_correo.html') && window.usuarioIdFromBackend) {
                 window.usuarioId = window.usuarioIdFromBackend;
             }
             
@@ -176,6 +177,7 @@ document.addEventListener('templateLoaded', function(e) {
             "vacaciones_permisos.html": "/static/javascript/menu_principal/subs_menus/vacaciones_permisos.js",
             "vacaciones.html": "/static/javascript/menu_principal/subs_menus/vacaciones.js",
             "cambiar_correo.html": "/static/javascript/menu_principal/subs_menus/correo.js",
+            "cambiar_contrasena.html": "/static/javascript/menu_principal/subs_menus/cambiar_contrasena.js",
         };
 
 

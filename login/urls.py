@@ -117,4 +117,7 @@ path('vacaciones/', views.vacaciones, name = 'vacaciones'),
 
 path('cambiar_correo/', views.cambiar_correo, name = 'cambiar_correo'),
 path('api/cambiar_correo/', views.api_cambiar_correo, name='api_cambiar_correo'),
+
+path('cambiar_contrasena/', views.cambiar_contrasena, name = 'cambiar_contrasena'),
+path('api/cambiar_contrasena/', views.api_cambiar_contrasena, name = 'api_cambiar_contrasena'),
 ]

@@ -327,6 +327,13 @@ import re
 
 from .models import usuario
 
+def cambiar_contrasena(request):
+    usuario_id = request.session.get('usuario_id', None)
+    usuario_obj = None
+    usuario_obj = usuario.objects.get(id=usuario_id)
+    print(usuario_obj)
+    return render(request, 'menu_principal/subs_menus/cambiar_contrasena.html', {'usuario_id': usuario_obj.id})
+    
 def cambiar_correo(request):
     usuario_id = request.session.get('usuario_id', None)
     usuario_obj = None
@@ -343,10 +350,12 @@ logger = logging.getLogger(__name__)
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_cambiar_correo(request):
+    logger.info(f"api_cambiar_correo called with method: {request.method}")
     try:
         data = json.loads(request.body)
         nuevo_email = data.get('email', '').strip()
         usuario_id = data.get('usuario_id')
+        logger.info(f"Received usuario_id: {usuario_id}")
         if not nuevo_email:
             return JsonResponse({'success': False, 'message': 'El email es requerido.'}, status=400)
         if not usuario_id:
@@ -386,6 +395,54 @@ def api_cambiar_correo(request):
         return JsonResponse({'success': False, 'message': 'Error de integridad en la base de datos.'}, status=500)
     except Exception as e:
         logger.error(f"Error inesperado en api_cambiar_correo: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': f'Error inesperado: {str(e)}'}, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_cambiar_contrasena(request):
+    logger.info(f"api_cambiar_contrasena called with method: {request.method}")
+    try:
+        data = json.loads(request.body)
+        usuario_id = data.get('usuario_id')
+        contrasena_actual = data.get('contrasena_actual', '').strip()
+        nueva_contrasena = data.get('nueva_contrasena', '').strip()
+        confirmar_contrasena = data.get('confirmar_contrasena', '').strip()
+
+        if not usuario_id:
+            return JsonResponse({'success': False, 'message': 'El usuario_id es requerido.'}, status=400)
+        if not contrasena_actual:
+            return JsonResponse({'success': False, 'message': 'La contraseña actual es requerida.'}, status=400)
+        if not nueva_contrasena:
+            return JsonResponse({'success': False, 'message': 'La nueva contraseña es requerida.'}, status=400)
+        if nueva_contrasena != confirmar_contrasena:
+            return JsonResponse({'success': False, 'message': 'La nueva contraseña y la confirmación no coinciden.'}, status=400)
+        if len(nueva_contrasena) < 8:
+            return JsonResponse({'success': False, 'message': 'La nueva contraseña debe tener al menos 8 caracteres.'}, status=400)
+
+        try:
+            usuario_actual = usuario.objects.get(id=usuario_id)
+        except usuario.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Usuario no encontrado.'}, status=404)
+
+        # Verify current password
+        if not check_password(contrasena_actual, usuario_actual.contraseña_hash):
+            return JsonResponse({'success': False, 'message': 'La contraseña actual es incorrecta.'}, status=400)
+
+        # Update password
+        usuario_actual.contraseña_hash = make_password(nueva_contrasena)
+        try:
+            usuario_actual.save()
+        except Exception as save_error:
+            logger.error(f"Error saving usuario password update: {save_error}", exc_info=True)
+            return JsonResponse({'success': False, 'message': 'Error al guardar la nueva contraseña en la base de datos.'}, status=500)
+
+        return JsonResponse({'success': True, 'message': 'Contraseña actualizada correctamente.'})
+
+    except json.JSONDecodeError:
+        logger.error("JSON inválido en api_cambiar_contrasena", exc_info=True)
+        return JsonResponse({'success': False, 'message': 'JSON inválido.'}, status=400)
+    except Exception as e:
+        logger.error(f"Error inesperado en api_cambiar_contrasena: {e}", exc_info=True)
         return JsonResponse({'success': False, 'message': f'Error inesperado: {str(e)}'}, status=500)
 
 

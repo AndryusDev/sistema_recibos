@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cambiar contraseña</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/arc.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cambiar_correo.css' %}">
+</head>
+<body>
+    <div class="cambiar-contrasena-container">
+        <div class="cambiar-contrasena-header">
+            <i class="fas fa-key"></i>
+            <h3>Cambiar contraseña</h3>
+        </div>
+        <form id="form-cambiar-contrasena">
+            <div class="form-group">
+                <label for="contrasena-actual">Contraseña actual:</label>
+                <input type="password" id="contrasena-actual" name="contrasena-actual" class="form-control" placeholder="Contraseña actual" required>
+            </div>
+            <div class="form-group">
+                <label for="nueva-contrasena">Nueva contraseña:</label>
+                <input type="password" id="nueva-contrasena" name="nueva-contrasena" class="form-control" placeholder="Nueva contraseña" required>
+            </div>
+            <div class="form-group">
+                <label for="confirmar-contrasena">Confirmar nueva contraseña:</label>
+                <input type="password" id="confirmar-contrasena" name="confirmar-contrasena" class="form-control" placeholder="Confirmar nueva contraseña" required>
+            </div>
+            <div class="instruction-text">
+                Después de guardar, recibirás un código o enlace de confirmación para verificar el cambio de contraseña.
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn-primary" data-usuarioid="{{ usuario_id }}" onclick="cambiarContrasena(this)">Guardar cambios</button>
+                <button type="button" class="btn-danger" onclick="window.history.back();">Cancelar</button>
+            </div>
+        </form>
+
+        <!-- Modal para ingresar código de verificación -->
+        <div id="modal-verificacion" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span id="close-modal" class="close">&times;</span>
+                <h3>Ingrese el código de verificación</h3>
+                <p>Por favor, ingrese el código que le fue enviado para confirmar el cambio de contraseña.</p>
+                <input type="text" id="codigo-verificacion" placeholder="Código de verificación" />
+                <div id="error-codigo" style="color: red; display: none; margin-top: 0.5rem;">Código incorrecto. Intente de nuevo.</div>
+                <button id="btn-verificar" class="btn-primary" style="margin-top: 1rem;">Verificar</button>
+            </div>
+        </div>
+        <h1>{{ usuario_id }}</h1>
+    <script src="{% static 'javascript/menu_principal/subs_menus/cambiar_contrasena.js' %}"></script>
+    <script>
+        window.usuarioId = "{{ usuario_id|default:'' }}";
+    </script>
+
+</body>
+</html>
