@@ -64,6 +64,7 @@ function loadRegularTemplate(templateName) {
         "gestion_respaldo.html": "/gestion_respaldo",
         "vacaciones_permisos.html": "/vacaciones_permisos",
         "vacaciones.html": "/vacaciones",
+        "cambiar_correo.html": "/cambiar_correo",
     };
 
     const url = templateUrls[templateName];
@@ -133,20 +134,49 @@ function loadDashboardContent() {
         });
 }
 
-// Función para cargar scripts específicos
-function loadTemplateScripts(templateName) {
-    const templateScripts = { 
-        "arc.html": "/static/javascript/menu_principal/subs_menus/arc.js",
-        "importar_nomina.html": "/static/javascript/menu_principal/subs_menus/importar_nomina.js",
-        "crear_usuarios.html": "/static/javascript/menu_principal/subs_menus/crear_usuarios.js",
-        "roles_usuarios.html": "/static/javascript/menu_principal/subs_menus/roles_usuarios.js",
-        "crear_roles.html": "/static/javascript/menu_principal/subs_menus/crear_roles.js",
-        "gestion_respaldo.html": "/static/javascript/menu_principal/subs_menus/gestion_respaldo.js",
-        "ver_prenomina.html": "/static/javascript/menu_principal/subs_menus/ver_prenomina.js",
-        "asistencias.html": "/static/javascript/menu_principal/subs_menus/asistencias.js",
-        "vacaciones_permisos.html": "/static/javascript/menu_principal/subs_menus/vacaciones_permisos.js",
-        "vacaciones.html": "/static/javascript/menu_principal/subs_menus/vacaciones.js",
-    };
+// Add initialization call for correo.js when cambiar_correo.html is loaded
+document.addEventListener('templateLoaded', function(e) {
+    if (e.detail.template === 'cambiar_correo.html') {
+        let attempts = 0;
+        const maxAttempts = 6;
+        const interval = 500;
+
+        const checkAndInitializeCorreo = () => {
+            attempts++;
+            if (window.initCorreoJS) {
+                console.log(`Ejecutando initCorreoJS (intento ${attempts})`);
+                try {
+                    window.initCorreoJS();
+                } catch (e) {
+                    console.error('Error ejecutando initCorreoJS:', e);
+                }
+            } else if (attempts < maxAttempts) {
+                console.warn(`initCorreoJS no está disponible (intento ${attempts}), reintentando...`);
+                setTimeout(checkAndInitializeCorreo, interval * attempts);
+            } else {
+                console.error(`No se pudo cargar initCorreoJS después de ${maxAttempts} intentos`);
+            }
+        };
+
+        checkAndInitializeCorreo();
+    }
+});
+
+    // Función para cargar scripts específicos
+    function loadTemplateScripts(templateName) {
+        const templateScripts = { 
+            "arc.html": "/static/javascript/menu_principal/subs_menus/arc.js",
+            "importar_nomina.html": "/static/javascript/menu_principal/subs_menus/importar_nomina.js",
+            "crear_usuarios.html": "/static/javascript/menu_principal/subs_menus/crear_usuarios.js",
+            "roles_usuarios.html": "/static/javascript/menu_principal/subs_menus/roles_usuarios.js",
+            "crear_roles.html" : "/static/javascript/menu_principal/subs_menus/crear_roles.js",
+            "gestion_respaldo.html": "/static/javascript/menu_principal/subs_menus/gestion_respaldo.js",
+            "ver_prenomina.html": "/static/javascript/menu_principal/subs_menus/ver_prenomina.js",
+            "asistencias.html": "/static/javascript/menu_principal/subs_menus/asistencias.js",
+            "vacaciones_permisos.html": "/static/javascript/menu_principal/subs_menus/vacaciones_permisos.js",
+            "vacaciones.html": "/static/javascript/menu_principal/subs_menus/vacaciones.js",
+            "cambiar_correo.html": "/static/javascript/menu_principal/subs_menus/correo.js",
+        };
 
 
 
@@ -301,6 +331,14 @@ function initializeTemplateFunctions(templateName) {
                 window.initializeVacacionesPermisos();
             } else {
                 console.warn("initializeVacacionesPermisos no está disponible");
+            }
+        }
+        if (templateName === "cambiar_correo.html") {
+            if (window.initCorreoJS) {
+                console.log("Ejecutando initCorreoJS");
+                window.initCorreoJS();
+            } else {
+                console.warn("initCorreoJS no está disponible");
             }
         }
 

@@ -114,4 +114,7 @@ path('api/arc/listar/', views.listar_arc, name='listar_arc'),
 path('api/arc/<int:arc_id>/datos_arc/', views.datos_arc, name='datos_arc'),
 
 path('vacaciones/', views.vacaciones, name = 'vacaciones'),
+
+path('cambiar_correo/', views.cambiar_correo, name = 'cambiar_correo'),
+path('api/cambiar_correo/', views.api_cambiar_correo, name='api_cambiar_correo'),
 ]

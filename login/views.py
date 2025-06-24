@@ -323,6 +323,73 @@ def crear_cuenta(request):
 def recuperar_contraseña(request):
     return render(request, 'recuperar_contraseña.html')
 
+import re
+
+from .models import usuario
+
+def cambiar_correo(request):
+    usuario_id = request.session.get('usuario_id', None)
+    usuario_obj = None
+    if usuario_id:
+        try:
+            usuario_obj = usuario.objects.get(id=usuario_id)
+        except usuario.DoesNotExist:
+            usuario_obj = None
+    return render(request, 'menu_principal/subs_menus/cambiar_correo.html', {'usuario_id': usuario_obj.id if usuario_obj else None})
+
+import logging
+logger = logging.getLogger(__name__)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_cambiar_correo(request):
+    try:
+        data = json.loads(request.body)
+        nuevo_email = data.get('email', '').strip()
+        usuario_id = data.get('usuario_id')
+        if not nuevo_email:
+            return JsonResponse({'success': False, 'message': 'El email es requerido.'}, status=400)
+        if not usuario_id:
+            return JsonResponse({'success': False, 'message': 'El usuario_id es requerido.'}, status=400)
+
+        # Simple email format validation
+        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(email_regex, nuevo_email):
+            return JsonResponse({'success': False, 'message': 'Formato de email inválido.'}, status=400)
+
+        from .models import usuario
+
+        try:
+            usuario_actual = usuario.objects.get(id=usuario_id)
+        except usuario.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Usuario no encontrado.'}, status=404)
+
+        # Check if email is already used by another user
+        if usuario.objects.filter(email=nuevo_email).exclude(id=usuario_actual.id).exists():
+            return JsonResponse({'success': False, 'message': 'El email ya está en uso por otro usuario.'}, status=400)
+
+        # Update email
+        usuario_actual.email = nuevo_email
+        try:
+            usuario_actual.save()
+        except Exception as save_error:
+            logger.error(f"Error saving usuario email update: {save_error}", exc_info=True)
+            return JsonResponse({'success': False, 'message': 'Error al guardar el email en la base de datos.'}, status=500)
+
+        return JsonResponse({'success': True, 'message': 'Email actualizado correctamente.'})
+
+    except json.JSONDecodeError:
+        logger.error("JSON inválido en api_cambiar_correo", exc_info=True)
+        return JsonResponse({'success': False, 'message': 'JSON inválido.'}, status=400)
+    except IntegrityError as ie:
+        logger.error(f"Error de integridad en la base de datos: {ie}", exc_info=True)
+        return JsonResponse({'success': False, 'message': 'Error de integridad en la base de datos.'}, status=500)
+    except Exception as e:
+        logger.error(f"Error inesperado en api_cambiar_correo: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': f'Error inesperado: {str(e)}'}, status=500)
+
+
+
 # <-----Estrucutra del menu ------->
 
 from login.models import rol_permisos

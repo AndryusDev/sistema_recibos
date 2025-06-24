@@ -45,6 +45,8 @@ function getModuleNameFromScript(scriptUrl) {
         .join('');
 }
 
+
+
 document.addEventListener('DOMContentLoaded', function() {
     const menuLinks = document.querySelectorAll('[data-template]');
     const mainContentDiv = document.querySelector('.rightweb-section');
