@@ -354,24 +354,30 @@ def api_cambiar_correo(request):
     try:
         data = json.loads(request.body)
         nuevo_email = data.get('email', '').strip()
-        usuario_id = data.get('usuario_id')
-        logger.info(f"Received usuario_id: {usuario_id}")
+        cedula = data.get('usuario_id')  # The frontend sends cedula as usuario_id
+        logger.info(f"Received cedula: {cedula}")
         if not nuevo_email:
             return JsonResponse({'success': False, 'message': 'El email es requerido.'}, status=400)
-        if not usuario_id:
-            return JsonResponse({'success': False, 'message': 'El usuario_id es requerido.'}, status=400)
+        if not cedula:
+            return JsonResponse({'success': False, 'message': 'La cédula es requerida.'}, status=400)
 
         # Simple email format validation
         email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(email_regex, nuevo_email):
             return JsonResponse({'success': False, 'message': 'Formato de email inválido.'}, status=400)
 
-        from .models import usuario
+        from .models import usuario, empleado
 
         try:
-            usuario_actual = usuario.objects.get(id=usuario_id)
+            empleado_obj = empleado.objects.get(cedula=cedula)
+            usuario_actual = usuario.objects.get(empleado=empleado_obj)
+            logger.info(f"User found for cedula: {cedula}")
+        except empleado.DoesNotExist:
+            logger.error(f"Empleado not found with cedula: {cedula}")
+            return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
         except usuario.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Usuario no encontrado.'}, status=404)
+            logger.error(f"Usuario not found for empleado with cedula: {cedula}")
+            return JsonResponse({'success': False, 'message': 'Usuario no encontrado para el empleado.'}, status=404)
 
         # Check if email is already used by another user
         if usuario.objects.filter(email=nuevo_email).exclude(id=usuario_actual.id).exists():
