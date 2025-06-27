@@ -29,9 +29,14 @@ const usuarioId = window.usuarioId || '';
     function initCorreoJS() {
         if (!form) return; // Exit if form not present
 
-        // Show modal when form is submitted
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
+        // Change event handling: use button click instead of form submit
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (!submitButton) return;
+
+        submitButton.type = 'button'; // Change button type to prevent default form submit
+
+        submitButton.addEventListener('click', function(event) {
+            // No need to preventDefault since button type is 'button'
 
             // Basic validation for matching emails
             const email = document.getElementById('nuevo-correo').value.trim();
@@ -65,8 +70,9 @@ const usuarioId = window.usuarioId || '';
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Show verification modal instead of alert
-                    modal.style.display = 'block';
+                    // Instead of showing modal, show success alert and reset form
+                    alert('Correo actualizado correctamente. Por favor, verifica tu nuevo correo.');
+                    form.reset();
                 } else {
                     alert('Error: ' + data.message);
                 }
@@ -80,7 +86,9 @@ const usuarioId = window.usuarioId || '';
         // Close modal handler
         if (closeModalBtn) {
             closeModalBtn.addEventListener('click', function() {
-                modal.style.display = 'none';
+                if (modal) {
+                    modal.style.display = 'none';
+                }
             });
         }
 
@@ -110,7 +118,9 @@ const usuarioId = window.usuarioId || '';
         // Optional: Close modal when clicking outside modal content
         window.addEventListener('click', function(event) {
             if (event.target === modal) {
-                modal.style.display = 'none';
+                if (modal) {
+                    modal.style.display = 'none';
+                }
             }
         });
     }
