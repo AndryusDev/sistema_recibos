@@ -163,6 +163,34 @@ document.addEventListener('templateLoaded', function(e) {
     }
 });
 
+// Add initialization call for cambiar_contrasena.js when cambiar_contrasena.html is loaded
+document.addEventListener('templateLoaded', function(e) {
+    if (e.detail.template === 'cambiar_contrasena.html') {
+        let attempts = 0;
+        const maxAttempts = 6;
+        const interval = 500;
+
+        const checkAndInitializeContrasena = () => {
+            attempts++;
+            if (window.initCambiarContrasena) {
+                console.log(`Ejecutando initCambiarContrasena (intento ${attempts})`);
+                try {
+                    window.initCambiarContrasena();
+                } catch (e) {
+                    console.error('Error ejecutando initCambiarContrasena:', e);
+                }
+            } else if (attempts < maxAttempts) {
+                console.warn(`initCambiarContrasena no está disponible (intento ${attempts}), reintentando...`);
+                setTimeout(checkAndInitializeContrasena, interval * attempts);
+            } else {
+                console.error(`No se pudo cargar initCambiarContrasena después de ${maxAttempts} intentos`);
+            }
+        };
+
+        checkAndInitializeContrasena();
+    }
+});
+
     // Función para cargar scripts específicos
     function loadTemplateScripts(templateName) {
         const templateScripts = { 
@@ -326,7 +354,6 @@ function initializeTemplateFunctions(templateName) {
                 initializeVerPrenomina();
             }
         }
-
         if (templateName === "vacaciones_permisos.html") {
             if (typeof window.initializeVacacionesPermisos === 'function') {
                 console.log("Ejecutando initializeVacacionesPermisos");
@@ -341,6 +368,14 @@ function initializeTemplateFunctions(templateName) {
                 window.initCorreoJS();
             } else {
                 console.warn("initCorreoJS no está disponible");
+            }
+        }
+        if (templateName === "cambiar_contrasena.html") {
+            if (window.initCambiarContrasena) {
+                console.log("Ejecutando initCambiarContrasena");
+                window.initCambiarContrasena();
+            } else {
+                console.warn("initCambiarContrasena no está disponible");
             }
         }
 
