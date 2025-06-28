@@ -15,6 +15,7 @@
             <h3>Cambiar contraseña</h3>
         </div>
         <form id="form-cambiar-contrasena">
+            <input type="hidden" id="usuario-id" name="usuario-id" value="{% if usuario_id %}{{ usuario_id }}{% else %}NO_ID{% endif %}">
             <div class="form-group">
                 <label for="contrasena-actual">Contraseña actual:</label>
                 <input type="password" id="contrasena-actual" name="contrasena-actual" class="form-control" placeholder="Contraseña actual" required>
@@ -49,9 +50,5 @@
         </div>
         <h1>{{ usuario_id }}</h1>
     <script src="{% static 'javascript/menu_principal/subs_menus/cambiar_contrasena.js' %}"></script>
-    <script>
-        window.usuarioId = "{{ usuario_id|default:'' }}";
-    </script>
-
 </body>
 </html>

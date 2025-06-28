@@ -22,7 +22,15 @@ const usuarioId = window.usuarioId || '';
     }
 
     async function cambiarContrasena() {
-        const usuario_id = window.usuarioId || '';
+        // Read usuario_id from hidden input field
+        const usuarioInput = document.getElementById('usuario-id');
+        let usuario_id = usuarioInput ? usuarioInput.value : '';
+        console.log('usuario_id at start of cambiarContrasena:', usuario_id);
+        if (!usuario_id || usuario_id === 'NO_ID') {
+            alert('Error: usuario_id no está definido. Por favor, inicie sesión nuevamente.');
+            return;
+        }
+        console.log('usuario_id used in cambiar_contrasena:', usuario_id);
 
         const currentPassword = document.getElementById('contrasena-actual').value.trim();
         const newPassword = document.getElementById('nueva-contrasena').value.trim();
@@ -39,6 +47,14 @@ const usuarioId = window.usuarioId || '';
         }
 
         try {
+            const requestBody = {
+                contrasena_actual: currentPassword,
+                nueva_contrasena: newPassword,
+                confirmar_contrasena: confirmPassword,
+                usuario_id: usuario_id
+            };
+            console.log('Request body for cambiar_contrasena:', requestBody);
+
             const response = await fetch('/api/cambiar_contrasena/', {
                 method: 'POST',
                 headers: {
@@ -46,15 +62,11 @@ const usuarioId = window.usuarioId || '';
                     'X-CSRFToken': getCookie('csrftoken')
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify({
-                    contrasena_actual: currentPassword,
-                    nueva_contrasena: newPassword,
-                    confirmar_contrasena: confirmPassword,
-                    usuario_id: usuario_id
-                })
+                body: JSON.stringify(requestBody)
             });
 
             const data = await response.json();
+            console.log('Response from api_cambiar_contrasena:', data);
 
             if (data.success) {
                 alert('Contraseña cambiada correctamente.');
