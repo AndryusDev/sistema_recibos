@@ -1,8 +1,7 @@
-const usuarioId = window.usuarioId || '';
+(function() {
 
 // JavaScript for cambiar_contrasena.html modal verification
 
-(function() {
     const form = document.getElementById('form-cambiar-contrasena');
     const modal = document.getElementById('modal-verificacion');
 
@@ -107,4 +106,5 @@ const usuarioId = window.usuarioId || '';
             initCambiarContrasena();
         }
     });
+
 })();
