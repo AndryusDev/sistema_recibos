@@ -428,12 +428,23 @@ function submitJustificacionForm() {
 }
 
 function clearAsistenciaForm() {
-    document.getElementById("asistencia-empleado").value = "";
-    document.getElementById("asistencia-fecha-inicio").value = "";
-    document.getElementById("asistencia-fecha-fin").value = "";
-    // Removed hora_entrada and hora_salida as they are no longer in the form
-    document.getElementById("asistencia-estado").value = "F";
-    document.getElementById("asistencia-notas").value = "";
+    const empleadoInput = document.getElementById("asistencia-empleado");
+    if (empleadoInput) empleadoInput.value = "";
+
+    const nombreEmpleadoInput = document.getElementById("asistencia-nombre-empleado");
+    if (nombreEmpleadoInput) nombreEmpleadoInput.value = "";
+
+    const fechaInicioInput = document.getElementById("asistencia-fecha-inicio");
+    if (fechaInicioInput) fechaInicioInput.value = "";
+
+    const fechaFinInput = document.getElementById("asistencia-fecha-fin");
+    if (fechaFinInput) fechaFinInput.value = "";
+
+    const estadoInput = document.getElementById("asistencia-estado");
+    if (estadoInput) estadoInput.value = "F";
+
+    const notasInput = document.getElementById("asistencia-notas");
+    if (notasInput) notasInput.value = "";
 }
 
 function clearJustificacionForm() {
