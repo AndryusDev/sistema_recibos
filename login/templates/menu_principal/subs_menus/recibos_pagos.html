@@ -28,7 +28,7 @@
                 <!-- Selector de empleados SOLO para administradores -->
                 {% if es_administrador %}
                 <div class="busqueda-grupo">
-                    <select id="filtroEmpleado" class="busqueda-input" onchange="filtrarPorEmpleado()">
+                    <select id="filtroEmpleado" class="busqueda-input">
                         <option value="">Todos los empleados</option>
                         {% for emp in empleados_disponibles %}
                             <option value="{{ emp.cedula }}" {% if emp.cedula == empleado_filtrado %}selected{% endif %}>
@@ -36,6 +36,9 @@
                             </option>
                         {% endfor %}
                     </select>
+                    <button onclick="filtrarPorEmpleado()" class="busqueda-boton">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
                     <button onclick="limpiarFiltroEmpleado()" class="busqueda-boton secundario">
                         <i class="fa-solid fa-user-slash"></i>
                     </button>

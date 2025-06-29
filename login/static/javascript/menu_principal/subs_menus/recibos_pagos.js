@@ -258,47 +258,50 @@ document.addEventListener('DOMContentLoaded', () => {
     window.reciboManager = new ReciboManager();
 });
 
-window.filtrarPorEmpleado = function() {
-    const selectEmpleado = document.getElementById('selectEmpleado');
-    if (!selectEmpleado) {
-        console.error('No se encontró el elemento selectEmpleado');
-        return;
-    }
-    const empleadoId = selectEmpleado.value;
-    const url = new URL(window.location.href);
-    if (empleadoId) {
-        url.searchParams.set('empleado', empleadoId);
-    } else {
-        url.searchParams.delete('empleado');
-    }
-    window.location.href = url.toString();
-};
+window.initRecibosPagos = function() {
+    console.log("Inicializando módulo de Recibos de Pagos");
 
-window.limpiarFiltroEmpleado = function() {
-    const selectEmpleado = document.getElementById('selectEmpleado');
-    if (!selectEmpleado) {
-        console.error('No se encontró el elemento selectEmpleado');
-        return;
-    }
-    selectEmpleado.value = '';
-    const url = new URL(window.location.href);
-    url.searchParams.delete('empleado');
-    window.location.href = url.toString();
-};
+    window.filtrarPorEmpleado = function() {
+        const selectEmpleado = document.getElementById('filtroEmpleado');
+        if (!selectEmpleado) {
+            console.error('No se encontró el elemento filtroEmpleado');
+            return;
+        }
+        const empleadoId = selectEmpleado.value;
+        const url = new URL(window.location.href);
+        if (empleadoId) {
+            url.searchParams.set('empleado_id', empleadoId);
+        } else {
+            url.searchParams.delete('empleado_id');
+        }
+        window.location.href = url.toString();
+    };
 
-window.buscarPorFecha = function() {
-    const fechaInicio = document.getElementById('fechaInicio').value;
-    const fechaFin = document.getElementById('fechaFin').value;
-    const url = new URL(window.location.href);
-    if (fechaInicio) {
-        url.searchParams.set('fecha_inicio', fechaInicio);
-    } else {
-        url.searchParams.delete('fecha_inicio');
-    }
-    if (fechaFin) {
-        url.searchParams.set('fecha_fin', fechaFin);
-    } else {
-        url.searchParams.delete('fecha_fin');
-    }
-    window.location.href = url.toString();
+    window.limpiarFiltroEmpleado = function() {
+        const selectEmpleado = document.getElementById('filtroEmpleado');
+        if (!selectEmpleado) {
+            console.error('No se encontró el elemento filtroEmpleado');
+            return;
+        }
+        selectEmpleado.value = '';
+        const url = new URL(window.location.href);
+        url.searchParams.delete('empleado_id');
+        window.location.href = url.toString();
+    };
+
+    window.buscarPorFecha = function() {
+        const buscarFecha = document.getElementById('buscarFecha');
+        if (!buscarFecha) {
+            console.error('No se encontró el elemento buscarFecha');
+            return;
+        }
+        const fecha = buscarFecha.value;
+        const url = new URL(window.location.href);
+        if (fecha) {
+            url.searchParams.set('fecha', fecha);
+        } else {
+            url.searchParams.delete('fecha');
+        }
+        window.location.href = url.toString();
+    };
 };

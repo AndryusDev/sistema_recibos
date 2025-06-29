@@ -97,6 +97,10 @@ function loadRegularTemplate(templateName) {
                 console.log("Llamando a initGestionRespaldo desde carga_contenido.js");
                 window.initGestionRespaldo();
             }
+            if (templateName === "recibos_pagos.html" && typeof window.initRecibosPagos === 'function') {
+                console.log("Llamando a initRecibosPagos desde carga_contenido.js");
+                window.initRecibosPagos();
+            }
         })
         .catch(error => {
             console.error(error);
@@ -206,6 +210,7 @@ document.addEventListener('templateLoaded', function(e) {
             "vacaciones.html": "/static/javascript/menu_principal/subs_menus/vacaciones.js",
             "cambiar_correo.html": "/static/javascript/menu_principal/subs_menus/correo.js",
             "cambiar_contrasena.html": "/static/javascript/menu_principal/subs_menus/cambiar_contrasena.js",
+            "recibos_pagos.html": "/static/javascript/menu_principal/subs_menus/recibos_pagos.js",
         };
 
 
