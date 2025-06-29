@@ -120,4 +120,6 @@ path('api/cambiar_correo/', views.api_cambiar_correo, name='api_cambiar_correo')
 
 path('cambiar_contrasena/', views.cambiar_contrasena, name = 'cambiar_contrasena'),
 path('api/cambiar_contrasena/', views.api_cambiar_contrasena, name = 'api_cambiar_contrasena'),
+
+path('api/asistencias/batch_faltas/', views.api_registrar_inasistencias, name='api_registrar_inasistencias'),
 ]

@@ -34,6 +34,65 @@ def login(request):
     enable_fields_json = json.dumps(enable_fields)
     return render(request, 'login.html', {'enable_fields_json': enable_fields_json})
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_registrar_inasistencias(request):
+    """
+    API para registrar inasistencias en un rango de fechas para un empleado.
+    """
+    try:
+        data = json.loads(request.body)
+        empleado_cedula = data.get('empleado')
+        fecha_inicio_str = data.get('fecha_inicio')
+        fecha_fin_str = data.get('fecha_fin')
+        notas = data.get('notas', '')
+        estado = data.get('estado', 'F')
+
+        if not empleado_cedula or not fecha_inicio_str or not fecha_fin_str:
+            return JsonResponse({'success': False, 'message': 'Faltan campos requeridos.'}, status=400)
+
+        try:
+            empleado_obj = empleado.objects.get(cedula=empleado_cedula)
+        except empleado.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
+
+        try:
+            fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+            fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({'success': False, 'message': 'Formato de fecha inválido.'}, status=400)
+
+        if fecha_fin < fecha_inicio:
+            return JsonResponse({'success': False, 'message': 'La fecha final debe ser igual o posterior a la fecha inicial.'}, status=400)
+
+        delta = (fecha_fin - fecha_inicio).days
+
+        for i in range(delta + 1):
+            fecha_actual = fecha_inicio + timedelta(days=i)
+            asistencia, created = asistencias.objects.get_or_create(
+                empleado=empleado_obj,
+                fecha=fecha_actual,
+                defaults={
+                    'estado': estado,
+                    'observaciones': notas,
+                    'hora_entrada': None,
+                    'hora_salida': None,
+                }
+            )
+            if not created:
+                asistencia.estado = estado
+                asistencia.observaciones = notas
+                asistencia.hora_entrada = None
+                asistencia.hora_salida = None
+                asistencia.save()
+
+        return JsonResponse({'success': True, 'message': f'Inasistencias registradas desde {fecha_inicio_str} hasta {fecha_fin_str}.'})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'JSON inválido.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
 @login_required
 def api_listar_vacaciones(request):
     """

@@ -1,24 +1,59 @@
 function submitAsistenciaForm() {
     // Get the form values
     var empleado = document.getElementById("asistencia-empleado").value;
-    var fecha = document.getElementById("asistencia-fecha").value;
-    var hora_entrada = document.getElementById("asistencia-hora-entrada").value;
-    var hora_salida = document.getElementById("asistencia-hora-salida").value;
+    var fechaInicio = document.getElementById("asistencia-fecha-inicio").value;
+    var fechaFin = document.getElementById("asistencia-fecha-fin").value;
     var estado = document.getElementById("asistencia-estado").value;
     var notas = document.getElementById("asistencia-notas").value;
+
+    if (!empleado) {
+        Swal.fire({
+            title: 'Error',
+            text: 'Por favor ingrese el empleado.',
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+        });
+        return;
+    }
+    if (!fechaInicio) {
+        Swal.fire({
+            title: 'Error',
+            text: 'Por favor ingrese la fecha de falta inicial.',
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+        });
+        return;
+    }
+    if (!fechaFin) {
+        Swal.fire({
+            title: 'Error',
+            text: 'Por favor ingrese la fecha final.',
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+        });
+        return;
+    }
+    if (fechaFin < fechaInicio) {
+        Swal.fire({
+            title: 'Error',
+            text: 'La fecha final debe ser igual o posterior a la fecha inicial.',
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+        });
+        return;
+    }
 
     // Create the data object
     var data = {
         empleado: empleado,
-        fecha: fecha,
-        hora_entrada: hora_entrada,
-        hora_salida: hora_salida,
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin,
         estado: estado,
         notas: notas
     };
 
     // Send the data to the API
-    fetch('/api/asistencias/', {
+    fetch('/api/asistencias/batch_faltas/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -32,7 +67,7 @@ function submitAsistenciaForm() {
         if (data.success) {
             Swal.fire({
                 title: 'Éxito',
-                text: 'Asistencia registrada correctamente',
+                text: 'Faltas registradas correctamente',
                 icon: 'success',
                 confirmButtonText: 'Aceptar'
             }).then(() => {
@@ -42,11 +77,20 @@ function submitAsistenciaForm() {
         } else {
             Swal.fire({
                 title: 'Error',
-                text: data.message,
+                text: data.message || 'No se pudo registrar las faltas.',
                 icon: 'error',
                 confirmButtonText: 'Aceptar'
             });
         }
+    })
+    .catch(error => {
+        Swal.fire({
+            title: 'Error',
+            text: 'Error al registrar las faltas.',
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+        });
+        console.error('Error:', error);
     });
 }
 
@@ -385,9 +429,9 @@ function submitJustificacionForm() {
 
 function clearAsistenciaForm() {
     document.getElementById("asistencia-empleado").value = "";
-    document.getElementById("asistencia-fecha").value = "";
-    document.getElementById("asistencia-hora-entrada").value = "";
-    document.getElementById("asistencia-hora-salida").value = "";
+    document.getElementById("asistencia-fecha-inicio").value = "";
+    document.getElementById("asistencia-fecha-fin").value = "";
+    // Removed hora_entrada and hora_salida as they are no longer in the form
     document.getElementById("asistencia-estado").value = "F";
     document.getElementById("asistencia-notas").value = "";
 }
