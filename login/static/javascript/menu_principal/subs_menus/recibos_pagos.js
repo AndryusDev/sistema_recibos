@@ -1,4 +1,3 @@
-
 // Definimos primero la función global para asegurar su disponibilidad
 window.abrirRecibo = function(boton) {
     // Verificamos si el manager está disponible
@@ -258,3 +257,48 @@ window.abrirRecibo = function(boton) {
 document.addEventListener('DOMContentLoaded', () => {
     window.reciboManager = new ReciboManager();
 });
+
+window.filtrarPorEmpleado = function() {
+    const selectEmpleado = document.getElementById('selectEmpleado');
+    if (!selectEmpleado) {
+        console.error('No se encontró el elemento selectEmpleado');
+        return;
+    }
+    const empleadoId = selectEmpleado.value;
+    const url = new URL(window.location.href);
+    if (empleadoId) {
+        url.searchParams.set('empleado', empleadoId);
+    } else {
+        url.searchParams.delete('empleado');
+    }
+    window.location.href = url.toString();
+};
+
+window.limpiarFiltroEmpleado = function() {
+    const selectEmpleado = document.getElementById('selectEmpleado');
+    if (!selectEmpleado) {
+        console.error('No se encontró el elemento selectEmpleado');
+        return;
+    }
+    selectEmpleado.value = '';
+    const url = new URL(window.location.href);
+    url.searchParams.delete('empleado');
+    window.location.href = url.toString();
+};
+
+window.buscarPorFecha = function() {
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const fechaFin = document.getElementById('fechaFin').value;
+    const url = new URL(window.location.href);
+    if (fechaInicio) {
+        url.searchParams.set('fecha_inicio', fechaInicio);
+    } else {
+        url.searchParams.delete('fecha_inicio');
+    }
+    if (fechaFin) {
+        url.searchParams.set('fecha_fin', fechaFin);
+    } else {
+        url.searchParams.delete('fecha_fin');
+    }
+    window.location.href = url.toString();
+};

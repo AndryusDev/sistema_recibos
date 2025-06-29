@@ -128,25 +128,21 @@
                         <div class="dato-item">
                             <span class="dato-label">Banco:</span>
                             <span class="dato-valor">
-                                {% with cuenta=empleado.cuentas_bancarias.filter|first %}
-                                    {% if cuenta %}
-                                        {{ cuenta.banco.nombre }}
-                                    {% else %}
-                                        No registrado
-                                    {% endif %}
-                                {% endwith %}
+                                {% if cuenta_activa %}
+                                    {{ cuenta_activa.banco.nombre }}
+                                {% else %}
+                                    No registrado
+                                {% endif %}
                             </span>
                         </div>
                         <div class="dato-item">
                         <span class="dato-label">Cuenta Bancaria:</span>
                         <span class="dato-valor">
-                            {% with cuenta_activa=empleado.cuentas_bancarias.filter|first %}
-                                {% if cuenta_activa %}
-                                    {{ cuenta_activa.numero_cuenta }} ({{ cuenta_activa.get_tipo_display }})
-                                {% else %}
-                                    No registrada
-                                {% endif %}
-                            {% endwith %}
+                            {% if cuenta_activa %}
+                                {{ cuenta_activa.numero_cuenta }} ({{ cuenta_activa.get_tipo_display }})
+                            {% else %}
+                                No registrada
+                            {% endif %}
                         </span>
                     </div>
                     </div>

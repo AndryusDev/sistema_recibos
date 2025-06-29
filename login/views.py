@@ -514,6 +514,8 @@ from django.http import HttpResponseServerError
 from .models import usuario, empleado, recibo_pago, rol
 
 def perfil_usuario(request):
+    import logging
+    logger = logging.getLogger(__name__)
     try:
         usuario_id = request.session.get('usuario_id')
         if not usuario_id:
@@ -536,6 +538,15 @@ def perfil_usuario(request):
         empleado_con_cuentas = empleado.objects.filter(
             pk=usuario_instance.empleado.pk
         ).prefetch_related('cuentas_bancarias__banco').first()
+
+        # Log total bank accounts and active account
+        if empleado_con_cuentas:
+            total_cuentas = empleado_con_cuentas.cuentas_bancarias.count()
+            cuenta_activa = empleado_con_cuentas.cuentas_bancarias.filter(activa=True).select_related('banco').first()
+            logger.info(f"Empleado {empleado_con_cuentas.cedula} tiene {total_cuentas} cuentas bancarias, cuenta activa: {cuenta_activa}")
+        else:
+            cuenta_activa = None
+            logger.info("Empleado no tiene cuentas bancarias")
         
         # Obtener recibos recientes
         recibos_recientes = recibo_pago.objects.filter(
@@ -547,6 +558,7 @@ def perfil_usuario(request):
         context = {
             'usuario': usuario_instance,
             'empleado': empleado_con_cuentas,
+            'cuenta_activa': cuenta_activa,
             'recibos_recientes': recibos_recientes,
             'roles_usuario': roles_usuario,
         }
@@ -554,7 +566,7 @@ def perfil_usuario(request):
         return render(request, 'menu_principal/subs_menus/perfil_usuario.html', context)
     
     except Exception as e:
-        print(f"Error en perfil_usuario: {str(e)}")
+        logger.error(f"Error en perfil_usuario: {str(e)}")
         return HttpResponseServerError("Error al cargar el perfil. Por favor intente más tarde.")
 
 def noticias(request):
@@ -585,9 +597,37 @@ def recibos_pagos(request):
         # Filtro para no administradores
         if not es_administrador:
             recibos = recibos.filter(cedula_id=empleado_id)
-        # Filtro adicional por empleado si se especifica
-        elif 'empleado_id' in request.GET:
-            recibos = recibos.filter(cedula_id=request.GET['empleado_id'])
+        else:
+            # Filtros adicionales para administradores
+            empleado_id_filtro = request.GET.get('empleado_id')
+            nombre_filtro = request.GET.get('nombre')
+            fecha_inicio = request.GET.get('fecha_inicio')
+            fecha_fin = request.GET.get('fecha_fin')
+            
+            if empleado_id_filtro:
+                recibos = recibos.filter(cedula_id=empleado_id_filtro)
+            
+            if nombre_filtro:
+                recibos = recibos.filter(
+                    Q(cedula__primer_nombre__icontains=nombre_filtro) |
+                    Q(cedula__segundo_nombre__icontains=nombre_filtro) |
+                    Q(cedula__primer_apellido__icontains=nombre_filtro) |
+                    Q(cedula__segundo_apellido__icontains=nombre_filtro)
+                )
+            
+            if fecha_inicio:
+                try:
+                    fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d')
+                    recibos = recibos.filter(fecha_generacion__gte=fecha_inicio_dt)
+                except ValueError:
+                    pass
+            
+            if fecha_fin:
+                try:
+                    fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d')
+                    recibos = recibos.filter(fecha_generacion__lte=fecha_fin_dt)
+                except ValueError:
+                    pass
         
         # Ordenamiento
         recibos = recibos.order_by('-fecha_generacion')
@@ -596,7 +636,10 @@ def recibos_pagos(request):
             'recibos': recibos,
             'es_administrador': es_administrador,
             'empleados_disponibles': empleado.objects.filter(status=True),
-            'empleado_filtrado': request.GET.get('empleado_id', '')
+            'empleado_filtrado': request.GET.get('empleado_id', ''),
+            'nombre_filtrado': request.GET.get('nombre', ''),
+            'fecha_inicio_filtrado': request.GET.get('fecha_inicio', ''),
+            'fecha_fin_filtrado': request.GET.get('fecha_fin', ''),
         })
     except Exception as e:
         import logging
