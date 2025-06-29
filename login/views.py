@@ -519,11 +519,14 @@ def perfil_usuario(request):
         if not usuario_id:
             return redirect('login_empleado')
         
-        # Obtener el usuario con sus relaciones
+        # Obtener el usuario con su relación empleado (sin rol, ya que no existe relación directa)
         usuario_instance = get_object_or_404(
-            usuario.objects.select_related('empleado', 'rol'),
+            usuario.objects.select_related('empleado'),
             id=usuario_id
         )
+        
+        # Obtener roles del usuario a través de usuario_rol
+        roles_usuario = usuario_rol.objects.filter(usuario=usuario_instance).select_related('rol')
         
         # Verificar si el empleado existe
         if not hasattr(usuario_instance, 'empleado'):
@@ -545,7 +548,7 @@ def perfil_usuario(request):
             'usuario': usuario_instance,
             'empleado': empleado_con_cuentas,
             'recibos_recientes': recibos_recientes,
-            # Eliminamos 'rol_usuario' ya que accederemos directamente desde usuario.rol
+            'roles_usuario': roles_usuario,
         }
         
         return render(request, 'menu_principal/subs_menus/perfil_usuario.html', context)
