@@ -76,14 +76,22 @@ contenedor__boton__verificacion.addEventListener("click", async (e) => {
 
     const cedulaInput = document.getElementById('contenedor_cedula');
     const mensajeDiv = document.getElementById('mensajeValidacion');
-    const preguntasContainer = document.getElementById('preguntasContainer');
+    // Fix: preguntasContainer element does not exist in HTML, so create it dynamically or use existing container
+    let preguntasContainer = document.getElementById('preguntasContainer');
+    if (!preguntasContainer) {
+        // Create preguntasContainer div inside the form for questions dynamically
+        const preguntasForm = document.querySelector('.contenedor__recuperarcontraseña__contenido__panel__respuestapreguntas');
+        if (preguntasForm) {
+            preguntasContainer = document.createElement('div');
+            preguntasContainer.id = 'preguntasContainer';
+            preguntasForm.insertBefore(preguntasContainer, preguntasForm.firstChild);
+        } else {
+            console.warn("No se encontró el contenedor para preguntas y no se pudo crear.");
+        }
+    }
 
     if (!mensajeDiv) {
         console.warn("Elemento con id 'mensajeValidacion' no encontrado. Se omitirá mostrar mensajes.");
-    }
-
-    if (!preguntasContainer) {
-        console.warn("Elemento con id 'preguntasContainer' no encontrado. Se omitirá mostrar preguntas.");
     }
 
     if (!cedulaInput) {
@@ -127,8 +135,67 @@ contenedor__boton__verificacion.addEventListener("click", async (e) => {
 });
 
 // Botón "Aceptar" (Paso 2 → Paso 3)
-formulario__boton__preguntas.addEventListener("click", () => {
-    goToStep__camb(3);
+formulario__boton__preguntas.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const cedulaInput = document.getElementById('contenedor_cedula');
+    const mensajeDiv = document.getElementById('mensajeValidacion');
+    const preguntasContainer = document.getElementById('preguntasContainer');
+
+    if (!cedulaInput) {
+        console.error("Elemento con id 'contenedor_cedula' no encontrado.");
+        return;
+    }
+
+    const cedula = cedulaInput.value.trim();
+
+    if (!cedula) {
+        if (mensajeDiv) mensajeDiv.textContent = 'Por favor ingrese la cédula.';
+        return;
+    }
+
+    // Collect answers from inputs
+    const respuestas = [];
+    for (let i = 1; i <= 2; i++) {
+        const preguntaLabel = document.getElementById('pregunta' + i);
+        const respuestaInput = document.getElementById('respuesta' + i);
+        if (preguntaLabel && respuestaInput) {
+            // Find pregunta id by matching label text with preguntas list is not possible here,
+            // so we will store pregunta ids in data attributes when showing questions.
+            const preguntaId = respuestaInput.getAttribute('data-pregunta-id');
+            const respuesta = respuestaInput.value.trim();
+            if (!respuesta) {
+                if (mensajeDiv) mensajeDiv.textContent = 'Por favor responda todas las preguntas.';
+                return;
+            }
+            respuestas.push({ pregunta_id: preguntaId, respuesta: respuesta });
+        }
+    }
+
+    console.log("Payload to send:", { cedula: cedula, respuestas: respuestas });
+
+    try {
+        const response = await fetch('/api/validar_respuestas_preguntas/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ cedula: cedula, respuestas: respuestas })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            if (mensajeDiv) mensajeDiv.textContent = 'Respuestas correctas. Puede continuar.';
+            goToStep__camb(3);
+        } else {
+            if (mensajeDiv) mensajeDiv.textContent = data.message || 'Respuestas incorrectas. Intente de nuevo.';
+        }
+    } catch (error) {
+        if (mensajeDiv) mensajeDiv.textContent = 'Error al validar las respuestas.';
+        console.error('Error:', error);
+    }
 });
 
 // Botones "Anterior" (Retroceder)
@@ -164,6 +231,7 @@ function mostrarPreguntas(preguntas) {
             label.textContent = pregunta.pregunta;
             input.value = ''; // Clear previous answer
             input.required = true;
+            input.setAttribute('data-pregunta-id', pregunta.id); // Store pregunta id for validation
         }
     });
 }

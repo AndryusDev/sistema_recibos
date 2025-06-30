@@ -410,6 +410,50 @@ def api_validar_cedula(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_validar_respuestas_preguntas(request):
+    try:
+        data = json.loads(request.body)
+        cedula = data.get('cedula')
+        respuestas = data.get('respuestas')  # List of dicts with 'pregunta_id' and 'respuesta'
+        if not cedula or not respuestas:
+            return JsonResponse({'success': False, 'message': 'Cédula y respuestas son requeridas'}, status=400)
+        
+        try:
+            empleado_obj = empleado.objects.get(cedula=cedula)
+        except empleado.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Empleado no encontrado'}, status=404)
+        
+        try:
+            usuario_obj = usuario.objects.get(empleado=empleado_obj)
+        except usuario.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Usuario no encontrado'}, status=404)
+        
+        errores = []
+        for item in respuestas:
+            pregunta_id = item.get('pregunta_id')
+            respuesta = item.get('respuesta')
+            if not pregunta_id or respuesta is None:
+                errores.append({'pregunta_id': pregunta_id, 'error': 'Pregunta o respuesta faltante'})
+                continue
+            try:
+                usuario_preg = usuario_pregunta.objects.get(usuario=usuario_obj, pregunta_id=pregunta_id)
+            except usuario_pregunta.DoesNotExist:
+                errores.append({'pregunta_id': pregunta_id, 'error': 'Pregunta no encontrada para el usuario'})
+                continue
+            if not check_password(respuesta.lower().strip(), usuario_preg.respuesta_hash):
+                errores.append({'pregunta_id': pregunta_id, 'error': 'Respuesta incorrecta'})
+        
+        if errores:
+            return JsonResponse({'success': False, 'message': 'Respuestas incorrectas', 'errores': errores}, status=400)
+        
+        return JsonResponse({'success': True, 'message': 'Todas las respuestas son correctas'})
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'JSON inválido'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
 import re
 
 from .models import usuario
@@ -1448,7 +1492,10 @@ def verificar_empleado(request):
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.hashers import make_password, check_password
-
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
 
 #formnulario crear Cuenta
 @require_POST
