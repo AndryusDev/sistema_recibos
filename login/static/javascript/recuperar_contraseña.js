@@ -1,4 +1,3 @@
-// Variables de botones - Adaptadas a tu formulario
 const contenedor__boton__verificacion = document.getElementById("contenedor__boton__verificacion");
 const formulario__boton__preguntas = document.getElementById("formulario__boton__preguntas");
 const boton__anterior__cambiarcontraseña = document.getElementById("boton__anterior__cambiarcontraseña");
@@ -16,9 +15,6 @@ boton__cambiarcontraseña.addEventListener("click", () => {
     // Aquí iría la lógica para confirmar el cambio
     alert("Contraseña cambiada exitosamente");
 });
-
-
-
 
 /* Funcionalidad de la barra de progresos - Adaptada */
 // Variables de la barra de progreso
@@ -75,8 +71,59 @@ function goToStep__camb(stepNumber) {
 }
 
 // Eventos de botones para avanzar y retroceder - Adaptados
-contenedor__boton__verificacion.addEventListener("click", () => {
-    goToStep__camb(2); // Usa la función unificada
+contenedor__boton__verificacion.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const cedulaInput = document.getElementById('contenedor_cedula');
+    const mensajeDiv = document.getElementById('mensajeValidacion');
+    const preguntasContainer = document.getElementById('preguntasContainer');
+
+    if (!mensajeDiv) {
+        console.warn("Elemento con id 'mensajeValidacion' no encontrado. Se omitirá mostrar mensajes.");
+    }
+
+    if (!preguntasContainer) {
+        console.warn("Elemento con id 'preguntasContainer' no encontrado. Se omitirá mostrar preguntas.");
+    }
+
+    if (!cedulaInput) {
+        console.error("Elemento con id 'contenedor_cedula' no encontrado.");
+        return;
+    }
+
+    const cedula = cedulaInput.value.trim();
+
+    if (!cedula) {
+        if (mensajeDiv) mensajeDiv.textContent = 'Por favor ingrese la cédula.';
+        if (preguntasContainer) preguntasContainer.innerHTML = '';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/validar_cedula/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ cedula: cedula })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            if (mensajeDiv) mensajeDiv.textContent = 'Cédula validada correctamente.';
+            if (preguntasContainer) mostrarPreguntas(data.preguntas);
+            goToStep__camb(2); // Avanza al siguiente panel solo si la cédula es válida
+        } else {
+            if (mensajeDiv) mensajeDiv.textContent = data.message || 'Cédula no válida.';
+            if (preguntasContainer) preguntasContainer.innerHTML = '';
+        }
+    } catch (error) {
+        if (mensajeDiv) mensajeDiv.textContent = 'Error al validar la cédula.';
+        if (preguntasContainer) preguntasContainer.innerHTML = '';
+        console.error('Error:', error);
+    }
 });
 
 // Botón "Aceptar" (Paso 2 → Paso 3)
@@ -102,6 +149,41 @@ stepsCambiar.forEach((step, index) => {
         }
     });
 });
+
+function mostrarPreguntas(preguntas) {
+    preguntasContainer.innerHTML = '';
+    // Only show two random questions from the list
+    const shuffled = preguntas.sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 2);
+
+    selected.forEach((pregunta, index) => {
+        const label = document.getElementById('pregunta' + (index + 1));
+        const input = document.getElementById('respuesta' + (index + 1));
+
+        if (label && input) {
+            label.textContent = pregunta.pregunta;
+            input.value = ''; // Clear previous answer
+            input.required = true;
+        }
+    });
+}
+
+// Helper function to get CSRF token cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
 // Inicializa la barra de progreso correctamente
 updateProgressBarCambiar();

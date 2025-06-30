@@ -121,7 +121,15 @@ function listBackups() {
 }
 
 // Función para crear un nuevo respaldo
+let backupInProgress = false;
+
 function realizarRespaldo() {
+    if (backupInProgress) {
+        console.log("Backup already in progress, ignoring duplicate request.");
+        return;
+    }
+    backupInProgress = true;
+
     const btn = document.querySelector('.accion-boton.principal');
     const originalText = btn.innerHTML;
     
@@ -141,16 +149,28 @@ function realizarRespaldo() {
         return response.json();
     })
     .then(data => {
-        alert(data.message || 'Respaldo creado correctamente');
+        console.log("Backup creation response received");
+        Swal.fire({
+            title: 'Éxito',
+            text: data.message || 'Respaldo creado correctamente',
+            icon: 'success',
+            confirmButtonText: 'Aceptar'
+        });
         listBackups();
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error al crear respaldo: ' + error.message);
+        Swal.fire({
+            title: 'Error',
+            text: 'Error al crear respaldo: ' + error.message,
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+        });
     })
     .finally(() => {
         btn.disabled = false;
         btn.innerHTML = originalText;
+        backupInProgress = false;
     });
 }
 

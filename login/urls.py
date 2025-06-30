@@ -122,4 +122,5 @@ path('cambiar_contrasena/', views.cambiar_contrasena, name = 'cambiar_contrasena
 path('api/cambiar_contrasena/', views.api_cambiar_contrasena, name = 'api_cambiar_contrasena'),
 
 path('api/asistencias/batch_faltas/', views.api_registrar_inasistencias, name='api_registrar_inasistencias'),
+path('api/validar_cedula/', views.api_validar_cedula, name='api_validar_cedula'),
 ]

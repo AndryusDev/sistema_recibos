@@ -2498,6 +2498,7 @@ fl952fxiq8j3lu6afwcp5pi0tdpwe18c	.eJwly0kKgDAMQNG7ZC3SOiFdeZMSbJGAHWwIKOLdtbh-_9
 chp55a1skf6uivddeoau16e6qfxvy18x	.eJwly0kKgDAMQNG7ZC3SOiFdeZMSbJGAHWwIKOLdtbh-_98gLFgoWXJgOt2AD0g7GMDoyiW8CdIhVCggLlu1dk0Bapd3j-4fezXMatZjA5Y9M6Vo_ZmpXB9NSj0vV1MjUA:1uVZ0u:1HrguBsM6yMrrG2cxevn8Ixmf8JMp03T73mxRM5yCFE	2025-06-28 14:06:52.50111-04
 ztnf0bnrlmiw25pvjy2zn3a2xpwuyxf7	.eJwly00KgCAQQOG7zFrCfpFW3USGFBnQLIeBIrp7SevvvRuEBQtlSw7mrlXgE1KEGXBz5RIOgnQIFUq4hErNmhPUbI8e3f_1ejDatKMCy56Z8mb9uVO5Ppq0fl4w7yLv:1uVtVl:ofy_x_xa6Ym3PoJFoYeLlzjvXpbhyldzRHqn_e1LFyM	2025-06-29 12:00:05.3442-04
 sgybx42pjvw7btjww3x8hkwm5yfcl9wp	.eJwly00KgCAQQOG7zFrCfpFW3USGFBnQLIeBIrp7SevvvRuEBQtlSw7mrlXgE1KEGXBz5RIOgnQIFUq4hErNmhPUbI8e3f_1ejDatKMCy56Z8mb9uVO5Ppq0fl4w7yLv:1uVCA0:8KBJXTzVDItfDH3xtRLbPVPd2bZiQqXGbifTwSn6qK4	2025-06-27 13:42:44.295083-04
+v5qio7ttt3aqlz8xo2cx0wzt7unfi0tm	.eJwly00KgCAQQOG7zFrCfpFW3USGFBnQLIeBIrp7SevvvRuEBQtlSw7mrlXgE1KEGXBz5RIOgnQIFUq4hErNmhPUbI8e3f_1ejDatKMCy56Z8mb9uVO5Ppq0fl4w7yLv:1uW0IM:POR_HfK_2SPMvv2KZizDsIGdBLcDZnyGS1Zm5guC2LI	2025-06-29 19:14:42.768387-04
 \.
 
 
@@ -2887,7 +2888,7 @@ COPY public.usuario_rol (id, fecha_asignacion, rol_id, usuario_id) FROM stdin;
 
 COPY public.usuarios (id, email, "contraseña_hash", ultimo_login, fecha_registro, empleado_cedula, activo) FROM stdin;
 30	adrianperez@gmail.com	pbkdf2_sha256$870000$tPn5ITc1vAVI07SLkijSzx$RCt1pwz6loWOHpxMKrWBWCU2Rjdx5wZ4J1SLkn8Gwhk=	2025-06-24 07:47:37.93713-04	2025-06-23 18:17:55.344606-04	30752547	t
-21	andryusguaiquirima@gmail.com	pbkdf2_sha256$870000$3A3xmvDUTyF89RUoaxnYoG$vPPyXXLYQb9jtdCl8wD6H5gYC2v636bGkuA7/Q3y280=	2025-06-29 16:28:35.092821-04	2025-05-19 17:39:44.430532-04	30480815	t
+21	andryusguaiquirima@gmail.com	pbkdf2_sha256$870000$3A3xmvDUTyF89RUoaxnYoG$vPPyXXLYQb9jtdCl8wD6H5gYC2v636bGkuA7/Q3y280=	2025-06-29 18:14:42.7482-04	2025-05-19 17:39:44.430532-04	30480815	t
 \.
 
 

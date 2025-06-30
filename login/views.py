@@ -382,6 +382,34 @@ def crear_cuenta(request):
 def recuperar_contraseña(request):
     return render(request, 'recuperar_contraseña.html')
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_validar_cedula(request):
+    try:
+        data = json.loads(request.body)
+        cedula = data.get('cedula')
+        if not cedula:
+            return JsonResponse({'success': False, 'message': 'Cédula es requerida'}, status=400)
+        
+        try:
+            empleado_obj = empleado.objects.get(cedula=cedula)
+        except empleado.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Empleado no encontrado'}, status=404)
+        
+        try:
+            usuario_obj = usuario.objects.get(empleado=empleado_obj)
+        except usuario.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Usuario no encontrado'}, status=404)
+        
+        preguntas_usuario = usuario_pregunta.objects.filter(usuario=usuario_obj).select_related('pregunta')
+        preguntas_list = [{'id': p.pregunta.id, 'pregunta': p.pregunta.pregunta} for p in preguntas_usuario]
+        
+        return JsonResponse({'success': True, 'preguntas': preguntas_list})
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'JSON inválido'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
 import re
 
 from .models import usuario
