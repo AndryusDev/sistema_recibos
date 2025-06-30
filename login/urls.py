@@ -119,7 +119,8 @@ path('cambiar_correo/', views.cambiar_correo, name = 'cambiar_correo'),
 path('api/cambiar_correo/', views.api_cambiar_correo, name='api_cambiar_correo'),
 
 path('cambiar_contrasena/', views.cambiar_contrasena, name = 'cambiar_contrasena'),
-path('api/cambiar_contrasena/', views.api_cambiar_contrasena, name = 'api_cambiar_contrasena'),
+    path('api/cambiar_contrasena/', views.api_cambiar_contrasena, name = 'api_cambiar_contrasena'),
+    path('api/cambiar_contrasena_por_cedula/', views.api_cambiar_contrasena_por_cedula, name='api_cambiar_contrasena_por_cedula'),
 
 path('api/asistencias/batch_faltas/', views.api_registrar_inasistencias, name='api_registrar_inasistencias'),
 path('api/validar_cedula/', views.api_validar_cedula, name='api_validar_cedula'),

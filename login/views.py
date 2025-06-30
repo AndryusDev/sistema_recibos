@@ -28,6 +28,50 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 import json
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_cambiar_contrasena_por_cedula(request):
+    logger.info(f"api_cambiar_contrasena_por_cedula called with method: {request.method}")
+    try:
+        data = json.loads(request.body)
+        cedula = data.get('cedula')
+        nueva_contrasena = data.get('nueva_contrasena', '').strip()
+        confirmar_contrasena = data.get('confirmar_contrasena', '').strip()
+
+        if not cedula:
+            return JsonResponse({'success': False, 'message': 'La cédula es requerida.'}, status=400)
+        if not nueva_contrasena:
+            return JsonResponse({'success': False, 'message': 'La nueva contraseña es requerida.'}, status=400)
+        if nueva_contrasena != confirmar_contrasena:
+            return JsonResponse({'success': False, 'message': 'La nueva contraseña y la confirmación no coinciden.'}, status=400)
+        if len(nueva_contrasena) < 8:
+            return JsonResponse({'success': False, 'message': 'La nueva contraseña debe tener al menos 8 caracteres.'}, status=400)
+
+        try:
+            empleado_obj = empleado.objects.get(cedula=cedula)
+            usuario_actual = usuario.objects.get(empleado=empleado_obj)
+        except empleado.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Empleado no encontrado.'}, status=404)
+        except usuario.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Usuario no encontrado para el empleado.'}, status=404)
+
+        # Update password
+        usuario_actual.contraseña_hash = make_password(nueva_contrasena)
+        try:
+            usuario_actual.save()
+        except Exception as save_error:
+            logger.error(f"Error saving usuario password update: {save_error}", exc_info=True)
+            return JsonResponse({'success': False, 'message': 'Error al guardar la nueva contraseña en la base de datos.'}, status=500)
+
+        return JsonResponse({'success': True, 'message': 'Contraseña actualizada correctamente.'})
+
+    except json.JSONDecodeError:
+        logger.error("JSON inválido en api_cambiar_contrasena_por_cedula", exc_info=True)
+        return JsonResponse({'success': False, 'message': 'JSON inválido.'}, status=400)
+    except Exception as e:
+        logger.error(f"Error inesperado en api_cambiar_contrasena_por_cedula: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': f'Error inesperado: {str(e)}'}, status=500)
+    
 # Create your views here.
 def login(request):
     enable_fields = {'campo1': True, 'campo2': False}
@@ -380,7 +424,8 @@ def crear_cuenta(request):
     })
 
 def recuperar_contraseña(request):
-    return render(request, 'recuperar_contraseña.html')
+    usuario_id = request.session.get('usuario_id', '')
+    return render(request, 'recuperar_contraseña.html', {'usuario_id': usuario_id})
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -547,8 +592,9 @@ def api_cambiar_contrasena(request):
 
         if not usuario_id:
             return JsonResponse({'success': False, 'message': 'El usuario_id es requerido.'}, status=400)
-        if not contrasena_actual:
-            return JsonResponse({'success': False, 'message': 'La contraseña actual es requerida.'}, status=400)
+        # Make contrasena_actual optional
+        # if not contrasena_actual:
+        #     return JsonResponse({'success': False, 'message': 'La contraseña actual es requerida.'}, status=400)
         if not nueva_contrasena:
             return JsonResponse({'success': False, 'message': 'La nueva contraseña es requerida.'}, status=400)
         if nueva_contrasena != confirmar_contrasena:
@@ -561,9 +607,10 @@ def api_cambiar_contrasena(request):
         except usuario.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Usuario no encontrado.'}, status=404)
 
-        # Verify current password
-        if not check_password(contrasena_actual, usuario_actual.contraseña_hash):
-            return JsonResponse({'success': False, 'message': 'La contraseña actual es incorrecta.'}, status=400)
+        # Verify current password only if provided
+        if contrasena_actual:
+            if not check_password(contrasena_actual, usuario_actual.contraseña_hash):
+                return JsonResponse({'success': False, 'message': 'La contraseña actual es incorrecta.'}, status=400)
 
         # Update password
         usuario_actual.contraseña_hash = make_password(nueva_contrasena)

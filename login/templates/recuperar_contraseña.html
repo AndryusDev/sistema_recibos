@@ -49,6 +49,9 @@
                     </div>
                     <div id="mensajeValidacion" style="color: red; margin-top: 10px;"></div>
                     <button id="contenedor__boton__verificacion" class="contenedor__boton__verificacion" type="button">Certificar</button>
+                    <div style="margin-top: 10px; text-align: center;">
+                        <a href="/login/" class="btn-link">Volver al Login</a>
+                    </div>
                 </form>
     
                 <form class="contenedor__recuperarcontraseña__contenido__panel__respuestapreguntas">
@@ -69,24 +72,31 @@
                     <div class="formulario__botones__crearcuenta">
                         <button id="formulario__boton__preguntas__anterior" class="formulario__boton__crearcuenta__anterior" type="button">Anterior</button>
                         <button id="formulario__boton__preguntas" class="formulario__boton__crearcuenta" type="button">Aceptar</button>
+                        <div style="margin-top: 10px; text-align: center;">
+                            <a href="/login/" class="btn-link">Volver al Login</a>
+                        </div>
                     </div>
                 </form>
                 <form id="contenedor__recuperarcontraseña__contenido__panel__cambiarcontraseña" class="contenedor__recuperarcontraseña__contenido__panel__cambiarcontraseña">
 
-                        <h2 class="contenedor__recuperarcontraseña__contenido__panel__cambiarcontraseñatitulo">Cambiar Contraseña</h2>
+                        <h2 class="contenedor__recuperarcontraseña__contenido__panel__cambiarcontrasenatitulo">Cambiar Contraseña</h2>
                         <div class="contenedor__cambiarcontraseña">
                             <label for="nueva_contraseña">Nueva Contraseña:</label>
-                            <input class="formulario__input" type="password" id="nueva_contraseña" placeholder="Ingrese nueva     contraseña">
+                            <input class="formulario__input" type="password" id="nueva_contraseña" placeholder="Ingrese nueva contraseña">
                         </div>
                     
                         <div class="contenedor__cambiarcontraseña">
                             <label for="confirmar_contraseña">Confirmar Contraseña:</label>
-                            <input class="formulario__input" type="password" id="confirmar_contraseña" placeholder="Confirme nueva contraseña">
+                            <input class="formulario__input" type="password" id="confirmar_contrasena" placeholder="Confirme nueva contraseña">
                         </div>
+                        <input type="hidden" id="usuario_id" value="{{ request.session.usuario_id }}">
                         <!-- Botones -->
                     <div class="formulario__botones__cambiarcontraseña">
                         <button id="boton__anterior__cambiarcontraseña" class="boton__anterior__cambiarcontraseña" type="button">Anterior</button>
                         <button id="boton__cambiarcontraseña" class="boton__cambiarcontraseña" type="button">Cambiar Contraseña</button>
+                        <div style="margin-top: 10px; text-align: center;">
+                            <a href="/login/" class="btn-link">Volver al Login</a>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -101,8 +111,5 @@
     <footer class="FooterWeb">
     {% include "footer.html" %}
     </footer>
-    <!--<script>
-    window.enableFields = {{ enable_fields_json | safe }};
-    </script> -->
 </body>
 </html>

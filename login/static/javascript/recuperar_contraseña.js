@@ -11,9 +11,77 @@ function resetClases() {
 }
 
 // Confirma el cambio de contraseña
-boton__cambiarcontraseña.addEventListener("click", () => {
-    // Aquí iría la lógica para confirmar el cambio
-    alert("Contraseña cambiada exitosamente");
+boton__cambiarcontraseña.addEventListener("click", async () => {
+    const usuarioIdElement = document.getElementById("usuario_id");
+    if (!usuarioIdElement) {
+        alert("Error: usuario_id no encontrado en la página.");
+        return;
+    }
+    let usuario_id = usuarioIdElement.value;
+    if (!usuario_id) {
+        // Try to get usuario_id from the cedula input if hidden input is empty
+        const cedulaInput = document.getElementById('contenedor_cedula');
+        if (cedulaInput) {
+            usuario_id = cedulaInput.value.trim();
+        }
+    }
+    // Remove contrasena_actual input since it's no longer required
+    const nueva_contrasena_input = document.getElementById("nueva_contraseña");
+    const confirmar_contrasena_input = document.getElementById("confirmar_contrasena");
+
+    if (!nueva_contrasena_input || !confirmar_contrasena_input) {
+        alert("Error: campos de contraseña no encontrados en la página.");
+        return;
+    }
+
+    const nueva_contrasena = nueva_contrasena_input.value.trim();
+    const confirmar_contrasena = confirmar_contrasena_input.value.trim();
+
+    if (!nueva_contrasena) {
+        alert("Por favor ingrese la nueva contraseña.");
+        return;
+    }
+    if (!confirmar_contrasena) {
+        alert("Por favor confirme la nueva contraseña.");
+        return;
+    }
+    if (nueva_contrasena !== confirmar_contrasena) {
+        alert("La nueva contraseña y la confirmación no coinciden.");
+        return;
+    }
+
+    console.log("Payload to send:", {
+        cedula: usuario_id,
+        nueva_contrasena: nueva_contrasena,
+        confirmar_contrasena: confirmar_contrasena
+    });
+
+    try {
+        const response = await fetch('/api/cambiar_contrasena_por_cedula/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                cedula: usuario_id,
+                nueva_contrasena: nueva_contrasena,
+                confirmar_contrasena: confirmar_contrasena
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert("Contraseña cambiada exitosamente.");
+            window.location.href = '/login/'; // Redirect to login page after password change
+        } else {
+            alert(data.message || "Error al cambiar la contraseña.");
+        }
+    } catch (error) {
+        alert("Error al cambiar la contraseña.");
+        console.error("Error:", error);
+    }
 });
 
 /* Funcionalidad de la barra de progresos - Adaptada */
